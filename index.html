@@ -7,7 +7,11 @@
   <meta name="description" content="하수에서 시작해 한 단계씩 올라가는 무료 스도쿠. 5판을 깨면 승급, 설치 없이 바로 즐기세요.">
   <title>스도쿠 승급전 - 하수부터 올라가는 무료 스도쿠</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="manifest" href="manifest.json">
+  <!-- 아이폰 홈 화면 아이콘과 앱처럼 열기 (설치 정보 manifest.json 은 js/ui.js 맨 아래에서 연결합니다) -->
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/skins.css">
 </head>
@@ -24,7 +28,7 @@
         <button type="button" class="nav-btn" data-open="rules">규칙</button>
         <button type="button" class="nav-btn" data-open="record">내 기록</button>
         <button type="button" class="nav-btn" data-open="settings">설정</button>
-        <!-- [다음 버전 자리] 랭킹 · 오늘의 퍼즐 메뉴가 들어갈 곳 -->
+        <!-- [다음 버전 자리] 랭킹 메뉴가 들어갈 곳 -->
       </nav>
     </div>
   </header>
@@ -33,10 +37,12 @@
 
     <!-- ================= 등급 줄 ================= -->
     <section class="gradebar" aria-label="내 등급">
-      <span class="gradebar-label">내 등급</span>
-      <span class="chip" id="grade-chip">하수</span>
+      <span class="gradebar-label" id="gradebar-label">내 등급</span>
+      <!-- 등급 이름을 누르면 등급 고르기 창이 열립니다 -->
+      <button type="button" class="chip" id="grade-chip">하수</button>
       <span class="gradebar-text" id="grade-text"></span>
       <span class="dots" id="grade-dots" aria-hidden="true"></span>
+      <button type="button" class="daily-btn" id="btn-daily">오늘의 퍼즐</button>
     </section>
 
     <!-- ================= 게임 ================= -->
@@ -157,8 +163,12 @@
       <ul>
         <li>같은 등급에서 5판을 깨면 다음 등급으로 올라갑니다.</li>
         <li>연속으로 3번 실패하면 한 단계 내려갑니다. 가장 낮은 등급 밑으로는 내려가지 않습니다.</li>
+        <li>판 위의 등급 이름을 누르면 승급과 상관없이 하고 싶은 등급을 골라서 할 수 있습니다.</li>
         <li>내 등급과 기록은 이 기기의 브라우저에 저장되어, 다음에 들어와도 그대로 이어집니다.</li>
       </ul>
+
+      <h2>오늘의 퍼즐</h2>
+      <p>매일 새로운 9×9 퍼즐이 하나씩 나옵니다. 같은 날에는 모든 사람이 같은 퍼즐을 풀기 때문에 가족이나 친구와 점수와 시간을 견주어 볼 수 있습니다. 실패해도 등급에는 영향이 없고, 하루도 빠지지 않고 풀면 연속 일수가 쌓입니다.</p>
     </article>
 
     <!-- [다음 버전 자리] 광고 배너가 들어갈 곳 -->
@@ -264,7 +274,18 @@
           <li>같은 등급에서 <b id="rules-wins">5</b>판을 깨면 다음 등급으로 올라갑니다.</li>
           <li>연속으로 <b id="rules-fails">3</b>번 실패하면 한 단계 내려갑니다. (가장 낮은 등급 밑으로는 내려가지 않습니다)</li>
           <li>숫자를 넣은 뒤에 <b>새 게임</b>을 누르면 하던 판은 실패로 기록됩니다.</li>
+          <li>판 위의 <b>등급 이름</b>을 누르면 승급과 상관없이 하고 싶은 등급을 골라서 할 수 있습니다.</li>
         </ul>
+
+        <h3>오늘의 퍼즐</h3>
+        <ul>
+          <li>하루에 한 판, 같은 날에는 모든 사람에게 <b>같은 퍼즐</b>이 나옵니다.</li>
+          <li>실패해도 등급에는 영향이 없고, 풀 때까지 다시 도전할 수 있습니다.</li>
+          <li>매일 빠지지 않고 풀면 <b>연속 일수</b>가 올라갑니다.</li>
+          <li>하던 승급전 판은 그대로 남아 있어서, 돌아오면 이어서 할 수 있습니다.</li>
+        </ul>
+
+        <h3>등급 목록</h3>
         <div class="grade-list" id="rules-grades"></div>
       </div>
     </div>
@@ -290,11 +311,31 @@
           <p class="card-sub" id="record-fail"></p>
         </div>
 
+        <div class="card">
+          <p class="card-label">오늘의 퍼즐</p>
+          <p class="card-main" id="record-daily"></p>
+          <p class="card-sub" id="record-daily-sub"></p>
+        </div>
+
         <h3>등급별 최고 기록</h3>
         <div class="grade-list" id="record-grades"></div>
 
         <p class="record-total" id="record-total"></p>
         <button type="button" class="link" id="btn-reset">기록 지우기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 등급 고르기 창 -->
+  <div class="overlay" id="sheet-grades" hidden>
+    <div class="sheet-box" role="dialog" aria-modal="true" aria-labelledby="grades-title">
+      <div class="sheet-head">
+        <h2 id="grades-title">등급 고르기</h2>
+        <button type="button" class="sheet-close" data-close aria-label="닫기">✕</button>
+      </div>
+      <div class="sheet-body">
+        <p class="sheet-note">하고 싶은 등급을 누르세요. 등급을 바꾸면 승급까지 남은 판 수는 처음부터 다시 셉니다.</p>
+        <div class="grade-list" id="pick-grades"></div>
       </div>
     </div>
   </div>

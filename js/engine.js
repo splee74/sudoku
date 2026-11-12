@@ -5,9 +5,25 @@
 (function (root) {
   var S = (root.SUDOKU = root.SUDOKU || {});
 
-  function shuffle(a) {
+  /*
+   * 씨앗(seed) 숫자가 같으면 언제나 같은 순서의 숫자를 내는 주사위.
+   * "오늘의 퍼즐"처럼 모든 사람에게 같은 퍼즐을 줄 때 씁니다.
+   */
+  function seeded(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6d2b79f5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffle(a, rng) {
+    rng = rng || Math.random;
     for (var i = a.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
+      var j = Math.floor(rng() * (i + 1));
       var t = a[i];
       a[i] = a[j];
       a[j] = t;
@@ -33,7 +49,7 @@
    * grid : 길이 size*size 배열, 빈칸은 0
    * 반환 : { count: 정답 개수, first: 처음 찾은 정답 }
    */
-  function solve(grid, spec, limit, randomize) {
+  function solve(grid, spec, limit, randomize, rng) {
     var n = spec.size;
     var full = (1 << n) - 1;
     var g = grid.slice();
@@ -87,7 +103,7 @@
       }
       var digits = [];
       for (var d = 1; d <= n; d++) if (bestMask & (1 << (d - 1))) digits.push(d);
-      if (randomize) shuffle(digits);
+      if (randomize) shuffle(digits, rng);
       var br = Math.floor(best / n), bc = best % n, bb = boxOf(spec, br, bc);
       for (var q = 0; q < digits.length; q++) {
         var v = 1 << (digits[q] - 1);
@@ -109,10 +125,10 @@
   }
 
   /* 숫자가 전부 채워진 올바른 판을 무작위로 하나 만듭니다. */
-  function generateSolution(spec) {
+  function generateSolution(spec, rng) {
     var empty = [];
     for (var i = 0; i < spec.size * spec.size; i++) empty.push(0);
-    return solve(empty, spec, 1, true).first;
+    return solve(empty, spec, 1, true, rng).first;
   }
 
   /*
@@ -120,18 +136,19 @@
    * 다 채워진 판에서 숫자를 하나씩 지워 보되,
    * 지웠을 때 정답이 둘 이상이 되면 다시 되돌립니다. → 정답은 항상 하나.
    * level 을 주면 (1 쉬움, 2 중간, 3 어려움) 그 어려운 정도에 맞는 판이 나올 때까지 다시 만듭니다.
+   * rng 를 주면 (seeded 로 만든 주사위) 같은 씨앗에서 언제나 같은 퍼즐이 나옵니다.
    * 반환 : { puzzle: 문제 판(빈칸 0), solution: 정답 판, givens: 실제 채워진 개수, level: 어려운 정도 }
    */
-  function generatePuzzle(spec, givens, level) {
+  function generatePuzzle(spec, givens, level, rng) {
     var total = spec.size * spec.size;
     var best = null;
     var started = Date.now();
     for (var attempt = 0; attempt < 400; attempt++) {
-      var solution = generateSolution(spec);
+      var solution = generateSolution(spec, rng);
       var puzzle = solution.slice();
       var order = [];
       for (var i = 0; i < total; i++) order.push(i);
-      shuffle(order);
+      shuffle(order, rng);
       var remaining = total;
       for (var k = 0; k < order.length && remaining > givens; k++) {
         var idx = order[k];
@@ -157,7 +174,8 @@
       }
       if (best.givens === givens && best.off === 0) break;
       // 너무 오래 걸리면 지금까지 중 가장 가까운 판을 씁니다
-      if (attempt >= 29 && (best.givens !== givens || Date.now() - started > 1500)) break;
+      // (씨앗으로 만들 때는 기기 속도와 상관없이 같은 판이 나와야 해서 시간은 보지 않습니다)
+      if (attempt >= 29 && (best.givens !== givens || (!rng && Date.now() - started > 1500))) break;
     }
     return best;
   }
@@ -322,6 +340,7 @@
     generateSolution: generateSolution,
     generatePuzzle: generatePuzzle,
     rate: rate,
+    seeded: seeded,
     peers: peers,
     boxOf: boxOf
   };

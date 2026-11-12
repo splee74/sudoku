@@ -46,7 +46,17 @@
       bestTimes: {}, // 등급별 최고 기록(초)
       bestScores: {}, // 등급별 최고 점수
       totalScore: 0, // 지금까지 모은 점수 (나중에 랭킹에 쓸 수 있음)
-      game: null // 하다가 멈춘 판
+      game: null, // 하다가 멈춘 판
+      dailyGame: null, // 하다가 멈춘 오늘의 퍼즐
+      // 오늘의 퍼즐 기록
+      daily: {
+        last: '', // 마지막으로 푼 날짜 ('2026-11-13' 모양)
+        streak: 0, // 하루도 안 빠지고 연속으로 푼 날 수
+        bestStreak: 0,
+        total: 0, // 지금까지 푼 횟수
+        score: 0, // 마지막으로 푼 날의 점수
+        seconds: 0 // 마지막으로 푼 날의 걸린 시간(초)
+      }
     };
   }
 
@@ -70,6 +80,16 @@
           if (saved.bestScores && typeof saved.bestScores === 'object') data.bestScores = saved.bestScores;
           data.totalScore = num(saved.totalScore, 0);
           data.game = saved.game || null;
+          data.dailyGame = saved.dailyGame || null;
+          var sd = saved.daily;
+          if (sd && typeof sd === 'object') {
+            data.daily.last = typeof sd.last === 'string' ? sd.last : '';
+            data.daily.streak = num(sd.streak, 0);
+            data.daily.bestStreak = num(sd.bestStreak, 0);
+            data.daily.total = num(sd.total, 0);
+            data.daily.score = num(sd.score, 0);
+            data.daily.seconds = num(sd.seconds, 0);
+          }
         }
       }
     } catch (e) {
@@ -148,6 +168,51 @@
     return { demoted: demoted, grade: C.GRADES[data.gradeIndex] };
   }
 
+  /* 등급을 직접 고릅니다. 승급까지 남은 판 수는 처음부터 다시 셉니다. */
+  function setGrade(data, index) {
+    if (index < 0 || index >= C.GRADES.length || index === data.gradeIndex) return false;
+    data.gradeIndex = index;
+    data.wins = 0;
+    data.failStreak = 0;
+    return true;
+  }
+
+  /* ---------- 오늘의 퍼즐 ---------- */
+  function two(n) {
+    return (n < 10 ? '0' : '') + n;
+  }
+  /* 날짜 → '2026-11-13' (이 기기의 날짜 기준) */
+  function dateKey(date) {
+    var d = date || new Date();
+    return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate());
+  }
+  /* 하루 전 날짜 */
+  function dayBefore(key) {
+    var p = key.split('-');
+    return dateKey(new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]) - 1));
+  }
+  function dailyDone(data, key) {
+    return data.daily.last === key;
+  }
+  /* 지금 이어지고 있는 연속 일수 (어제도 오늘도 안 풀었으면 0) */
+  function dailyStreak(data, today) {
+    var last = data.daily.last;
+    return last === today || last === dayBefore(today) ? data.daily.streak : 0;
+  }
+  /* 오늘의 퍼즐 성공 처리. 반환 : { streak: 연속 일수 } */
+  function recordDaily(data, key, seconds, score) {
+    var d = data.daily;
+    if (d.last === key) return { streak: d.streak };
+    d.streak = d.last === dayBefore(key) ? d.streak + 1 : 1;
+    if (d.streak > d.bestStreak) d.bestStreak = d.streak;
+    d.last = key;
+    d.total++;
+    d.score = score || 0;
+    d.seconds = seconds || 0;
+    if (typeof score === 'number' && score > 0) data.totalScore += score;
+    return { streak: d.streak };
+  }
+
   /* 승급까지 남은 판 수 (가장 높은 등급이면 -1) */
   function winsLeft(data) {
     if (data.gradeIndex >= C.GRADES.length - 1) return -1;
@@ -162,6 +227,11 @@
     reset: reset,
     recordWin: recordWin,
     recordLoss: recordLoss,
-    winsLeft: winsLeft
+    winsLeft: winsLeft,
+    setGrade: setGrade,
+    dateKey: dateKey,
+    dailyDone: dailyDone,
+    dailyStreak: dailyStreak,
+    recordDaily: recordDaily
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -80,7 +80,20 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--user); outline-
   min-height: 40px; margin-bottom: 8px;
   font-size: 18px;
 }
+.gradebar { flex-wrap: wrap; row-gap: 6px; } /* 좁은 화면에서는 "오늘의 퍼즐" 단추가 아랫줄로 내려갑니다 */
 .gradebar-label { color: var(--ink-soft); display: none; }
+.gradebar-label:empty { display: none; }
+/* 등급 이름 단추 (누르면 등급 고르기) */
+button.chip { border: 0; min-height: 38px; cursor: pointer; }
+button.chip:disabled { cursor: default; }
+/* 오늘의 퍼즐 단추 */
+.daily-btn {
+  min-height: 38px; padding: 2px 14px;
+  background: var(--surface); color: #c2452d;
+  border: 2px solid #c2452d; border-radius: 999px;
+  font-size: 18px; font-weight: 700; white-space: nowrap; cursor: pointer;
+}
+.daily-btn:hover, .daily-btn:active { background: #fbe9e4; }
 .gradebar-text { font-weight: 700; }
 .chip {
   background: var(--grade); color: #fff;
@@ -474,6 +487,10 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--user); outline-
 }
 .grade-row span { white-space: nowrap; }
 .grade-row.now { border: 2px solid var(--line-strong); font-weight: 700; }
+/* 등급 고르기 창 : 줄 전체가 누르는 단추 */
+button.grade-row { width: 100%; min-height: 56px; cursor: pointer; }
+button.grade-row:hover, button.grade-row:active { background: var(--peer); }
+.sheet-note { margin: 12px 4px 0; color: var(--ink-soft); font-size: 17px; }
 .grade-row b { flex: none; color: #fff; border-radius: 999px; padding: 2px 16px; min-width: 76px; text-align: center; }
 .grade-row .right { margin-left: auto; color: var(--ink-soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
 

@@ -12,6 +12,21 @@
   function create(gradeIndex) {
     var grade = C.GRADES[gradeIndex];
     var gen = E.generatePuzzle(grade, grade.givens, grade.level);
+    return build(grade, gen, gradeIndex, grade.id, '');
+  }
+
+  /*
+   * 오늘의 퍼즐을 만듭니다. dateKey 는 '2026-11-13' 같은 날짜.
+   * 날짜가 같으면 누가 만들어도 똑같은 판이 나옵니다.
+   */
+  function createDaily(dateKey) {
+    var spec = C.DAILY;
+    var seed = Number(dateKey.replace(/-/g, '')) * 31 + spec.seed;
+    var gen = E.generatePuzzle(spec, spec.givens, spec.level, E.seeded(seed));
+    return build(spec, gen, -1, 'daily', dateKey);
+  }
+
+  function build(grade, gen, gradeIndex, gradeId, dateKey) {
     var total = grade.size * grade.size;
     var fixed = [], hinted = [], notes = [], scored = [];
     for (var i = 0; i < total; i++) {
@@ -21,8 +36,9 @@
       scored.push(false);
     }
     return {
-      gradeIndex: gradeIndex,
-      gradeId: grade.id,
+      gradeIndex: gradeIndex, // 등급 순서 (오늘의 퍼즐은 -1)
+      gradeId: gradeId,
+      daily: dateKey, // 오늘의 퍼즐이면 날짜, 아니면 빈 글자
       size: grade.size,
       boxRows: grade.boxRows,
       boxCols: grade.boxCols,
@@ -50,6 +66,7 @@
     if (typeof st.streak !== 'number') st.streak = 0;
     if (typeof st.lastGain !== 'number') st.lastGain = 0;
     if (typeof st.clearBonus !== 'number') st.clearBonus = 0;
+    if (typeof st.daily !== 'string') st.daily = '';
     if (!Array.isArray(st.scored) || st.scored.length !== st.cells.length) {
       st.scored = [];
       for (var i = 0; i < st.cells.length; i++) {
@@ -60,7 +77,7 @@
   }
 
   function basePoints(st) {
-    return C.SCORE.BASE * (st.gradeIndex + 1);
+    return C.SCORE.BASE * (st.daily ? C.DAILY.points : st.gradeIndex + 1);
   }
 
   /* idx 칸이 들어 있는 가로줄·세로줄·상자 중 다 채워진 것의 개수 */
@@ -101,8 +118,9 @@
   /* 저장해 둔 판이 지금 설정과 맞는지 확인합니다. */
   function isValidSaved(st) {
     if (!st || st.status !== 'playing') return false;
-    var grade = C.GRADES[st.gradeIndex];
-    if (!grade || grade.id !== st.gradeId || grade.size !== st.size) return false;
+    var grade = st.daily ? C.DAILY : C.GRADES[st.gradeIndex];
+    if (!grade || grade.size !== st.size) return false;
+    if (st.daily ? st.gradeId !== 'daily' : grade.id !== st.gradeId) return false;
     var total = st.size * st.size;
     var keys = ['solution', 'cells', 'fixed', 'hinted', 'notes'];
     for (var i = 0; i < keys.length; i++) {
@@ -242,6 +260,7 @@
 
   S.Game = {
     create: create,
+    createDaily: createDaily,
     upgrade: upgrade,
     isValidSaved: isValidSaved,
     isEditable: isEditable,

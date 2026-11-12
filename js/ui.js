@@ -5,7 +5,7 @@
 (function () {
   var S = window.SUDOKU;
   var C = S.Config, Game = S.Game, Progress = S.Progress, Engine = S.Engine, Settings = S.Settings;
-  var SHEETS = ['rules', 'record', 'settings'];
+  var SHEETS = ['rules', 'record', 'settings', 'grades'];
 
   function $(id) {
     return document.getElementById(id);
@@ -39,6 +39,17 @@
     return String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
 
+  /* 지금 하는 판이 오늘의 퍼즐인가? */
+  function isDaily() {
+    return !!(game && game.daily);
+  }
+
+  /* '2026-11-13' → "11월 13일" */
+  function dayLabel(key) {
+    var p = String(key).split('-');
+    return Number(p[1]) + '월 ' + Number(p[2]) + '일';
+  }
+
   function setGradeColor(grade) {
     document.documentElement.style.setProperty('--grade', grade.color);
   }
@@ -58,12 +69,20 @@
     return '승급까지 ' + left + '판 남았어요';
   }
 
-  /* 등급 목록 한 줄씩 만들기 (규칙 창, 내 기록 창에서 같이 씁니다) */
-  function renderGradeList(box, withBest) {
+  /*
+   * 등급 목록 한 줄씩 만들기 (규칙 창, 내 기록 창, 등급 고르기 창에서 같이 씁니다)
+   *   withBest : 최고 기록을 같이 보여 줌
+   *   pick     : 줄을 눌러서 등급을 고를 수 있게 함
+   */
+  function renderGradeList(box, withBest, pick) {
     box.innerHTML = '';
     C.GRADES.forEach(function (g, i) {
-      var row = document.createElement('div');
-      row.className = 'grade-row' + (i === data.gradeIndex ? ' now' : '');
+      var row = document.createElement(pick ? 'button' : 'div');
+      if (pick) {
+        row.type = 'button';
+        row.setAttribute('data-grade', i);
+      }
+      row.className = 'grade-row' + (pick ? ' grade-pick' : '') + (i === data.gradeIndex ? ' now' : '');
       var name = document.createElement('b');
       name.textContent = g.name;
       name.style.background = g.color;
@@ -121,6 +140,7 @@
     if (name === 'settings') renderSettings();
     if (name === 'rules') renderRules();
     if (name === 'record') renderRecord();
+    if (name === 'grades') renderGradeList($('pick-grades'), false, true);
     var sheet = $('sheet-' + name);
     sheet.hidden = false;
     sheet.querySelector('.sheet-body').scrollTop = 0;
@@ -141,17 +161,33 @@
     var grade = C.GRADES[data.gradeIndex];
     var next = C.GRADES[data.gradeIndex + 1];
     $('record-grade').textContent = grade.name;
+    $('sheet-record').style.setProperty('--grade', grade.color); // 오늘의 퍼즐 중에도 내 등급 색으로
     $('record-grade-info').textContent = grade.size + '×' + grade.size + ' 판' + (next ? ' · 다음 등급은 ' + next.name : '');
     if (next) renderDots($('record-dots'), data.wins);
     else $('record-dots').innerHTML = '';
     $('record-left').textContent = progressText();
     var fail = '';
-    if (!next) fail = '더 높은 등급은 곧 나옵니다 · 이 등급에서 ' + data.wins + '판 성공';
+    if (!next) fail = '이 등급에서 ' + data.wins + '판 성공';
     if (data.failStreak > 0) {
       fail = '연속 실패 ' + data.failStreak + '번' +
         (data.gradeIndex > 0 ? ' (' + C.FAILS_TO_DEMOTE + '번이면 한 단계 내려가요)' : '');
     }
     $('record-fail').textContent = fail;
+    // 오늘의 퍼즐 기록
+    var today = Progress.dateKey();
+    var dd = data.daily;
+    if (dd.total > 0) {
+      $('record-daily').textContent = '연속 ' + Progress.dailyStreak(data, today) + '일 · 모두 ' + dd.total + '번 풀었어요';
+      $('record-daily-sub').textContent =
+        (Progress.dailyDone(data, today)
+          ? '오늘 퍼즐 완료 · ' + formatScore(dd.score) + '점 · ' + formatTime(dd.seconds * 1000)
+          : '오늘 퍼즐은 아직 안 풀었어요') +
+        '\n가장 길었던 연속 기록 ' + dd.bestStreak + '일';
+    } else {
+      $('record-daily').textContent = '아직 푼 적이 없어요';
+      $('record-daily-sub').textContent = '판 위의 "오늘의 퍼즐"을 눌러 보세요';
+    }
+
     renderGradeList($('record-grades'), true);
     $('record-total').textContent = data.totalGames > 0
       ? '지금까지 ' + data.totalGames + '판 중 ' + data.totalWins + '판 성공 · 모은 점수 ' + formatScore(data.totalScore) + '점'
@@ -256,10 +292,30 @@
 
   /* ---------------- 등급 줄 ---------------- */
   function renderGradeBar() {
+    var today = Progress.dateKey();
+    var chip = $('grade-chip');
+    if (isDaily()) {
+      // 오늘의 퍼즐을 하는 동안 : 날짜와 연속 일수를 보여 줍니다
+      setGradeColor(C.DAILY);
+      chip.textContent = C.DAILY.name;
+      chip.disabled = true;
+      $('gradebar-label').textContent = '';
+      var streak = Progress.dailyStreak(data, today);
+      $('grade-text').textContent = dayLabel(game.daily) + (streak > 0 ? ' · 연속 ' + streak + '일' : '');
+      $('grade-dots').innerHTML = '';
+      $('btn-daily').textContent = '승급전으로';
+      $('btn-new').textContent = '승급전으로 돌아가기';
+      return;
+    }
     var grade = C.GRADES[data.gradeIndex];
     var next = C.GRADES[data.gradeIndex + 1];
     setGradeColor(grade);
-    $('grade-chip').textContent = grade.name;
+    chip.textContent = grade.name + (C.FREE_GRADE_SELECT ? ' ▾' : '');
+    chip.disabled = !C.FREE_GRADE_SELECT;
+    chip.setAttribute('aria-label', grade.name + (C.FREE_GRADE_SELECT ? ' (눌러서 등급 고르기)' : ''));
+    $('gradebar-label').textContent = '내 등급';
+    $('btn-daily').textContent = '오늘의 퍼즐' + (Progress.dailyDone(data, today) ? ' ✓' : '');
+    $('btn-new').textContent = '새 게임';
     if (next) {
       $('grade-text').textContent = '승급까지 ' + Progress.winsLeft(data) + '판';
       renderDots($('grade-dots'), data.wins);
@@ -292,8 +348,11 @@
     startTimer();
   }
 
+  /* 하던 판을 저장합니다. 승급전 판과 오늘의 퍼즐은 따로 저장합니다. */
   function persist() {
-    data.game = game && game.status === 'playing' ? game : null;
+    var live = game && game.status === 'playing' ? game : null;
+    if (isDaily()) data.dailyGame = live;
+    else data.game = live;
     Progress.save(data);
     lastSave = Date.now();
   }
@@ -310,6 +369,7 @@
   /* "새 게임" 버튼 : 숫자를 넣은 판을 버리면 실패로 기록됩니다 */
   function pressNew() {
     if (ending) return;
+    if (isDaily()) return leaveDaily(); // 오늘의 퍼즐 중에는 "승급전으로 돌아가기" 단추
     if (!game || game.status !== 'playing' || untouched()) return launch();
     showModal('하던 판은 실패로 기록됩니다.\n새 게임을 시작할까요?', '새 게임', '아니요', function () {
       stopTimer();
@@ -323,6 +383,69 @@
         launch();
       }
     });
+  }
+
+  /* ---------------- 등급 고르기 ---------------- */
+  function pickGrade(index) {
+    closeSheets();
+    if (ending || isDaily() || !C.FREE_GRADE_SELECT || index === data.gradeIndex) return;
+    function go() {
+      Progress.setGrade(data, index);
+      data.game = null;
+      Progress.save(data);
+      launch();
+    }
+    if (!game || game.status !== 'playing' || untouched()) return go();
+    showModal('하던 판은 실패로 기록됩니다.\n' + C.GRADES[index].name + ' 등급으로 바꿀까요?', '바꾸기', '아니요', function () {
+      stopTimer();
+      Progress.recordLoss(data, game.score);
+      game.status = 'lost';
+      go();
+    });
+  }
+
+  /* ---------------- 오늘의 퍼즐 ---------------- */
+  /* "오늘의 퍼즐" 단추 : 승급전 ↔ 오늘의 퍼즐을 오갑니다 */
+  function pressDaily() {
+    if (ending) return;
+    if (isDaily()) return leaveDaily();
+    var today = Progress.dateKey();
+    if (Progress.dailyDone(data, today)) {
+      var dd = data.daily;
+      showModal(
+        '오늘의 퍼즐은 이미 풀었어요!\n' + formatScore(dd.score) + '점 · ' + formatTime(dd.seconds * 1000) +
+          '\n연속 ' + dd.streak + '일째 · 내일 새 퍼즐이 나와요',
+        '확인', '');
+      return;
+    }
+    persist(); // 하던 승급전 판은 그대로 두었다가, 돌아오면 이어서 합니다
+    startDaily(today);
+  }
+
+  function startDaily(today) {
+    S.Effects.stop();
+    $('result').hidden = true;
+    var saved = data.dailyGame;
+    if (Game.isValidSaved(saved) && saved.daily === today) beginGame(saved);
+    else beginGame(Game.createDaily(today));
+    persist();
+  }
+
+  /* 오늘의 퍼즐에서 승급전으로 돌아갑니다 */
+  function leaveDaily() {
+    persist();
+    S.Effects.stop();
+    $('result').hidden = true;
+    if (Game.isValidSaved(data.game) && !data.game.daily) beginGame(data.game);
+    else launch();
+  }
+
+  /* 결과 창의 "다시 하기" 단추 */
+  function pressAgain() {
+    if (!isDaily()) return launch();
+    if (game.status === 'won') return leaveDaily();
+    data.dailyGame = null; // 실패한 오늘의 퍼즐 : 같은 판을 처음부터 다시
+    startDaily(Progress.dateKey());
   }
 
   /* ---------------- 판 만들기 ---------------- */
@@ -533,7 +656,10 @@
     for (var i = 0; i < game.cells.length; i++) {
       if (game.cells[i] !== game.solution[i]) remaining++;
     }
-    var blanks = game.size * game.size - C.GRADES[game.gradeIndex].givens;
+    var blanks = 0; // 처음에 비어 있던 칸 수 (힌트로 채운 칸도 원래는 빈칸)
+    for (var b = 0; b < game.cells.length; b++) {
+      if (!game.fixed[b] || game.hinted[b]) blanks++;
+    }
     if (!said.half && remaining === Math.floor(blanks / 2)) {
       said.half = true;
       toast('절반 왔어요! 💪');
@@ -702,8 +828,15 @@
     var finished = game;
     var seconds = Math.floor(finished.elapsedMs / 1000);
     var before = C.GRADES[data.gradeIndex];
-    var res = won ? Progress.recordWin(data, seconds, finished.score) : Progress.recordLoss(data, finished.score);
-    data.game = null;
+    var res;
+    if (finished.daily) {
+      // 오늘의 퍼즐은 등급에 영향을 주지 않습니다
+      res = won ? Progress.recordDaily(data, finished.daily, seconds, finished.score) : {};
+      data.dailyGame = null;
+    } else {
+      res = won ? Progress.recordWin(data, seconds, finished.score) : Progress.recordLoss(data, finished.score);
+      data.game = null;
+    }
     Progress.save(data);
 
     // 마지막 숫자가 들어간 모습을 잠깐 보여 준 다음 결과 창을 띄웁니다
@@ -730,7 +863,7 @@
     $('result-mark').className = 'result-mark' + (won ? '' : ' fail');
     $('result-title').textContent = won ? '성공!' : '실패';
     $('result-sub').textContent = won
-      ? before.name + ' 한 판을 깼어요'
+      ? (finished.daily ? dayLabel(finished.daily) + ' 오늘의 퍼즐을 풀었어요' : before.name + ' 한 판을 깼어요')
       : '틀린 숫자가 ' + C.MAX_MISTAKES + '번 나왔어요';
     $('result-time').textContent = formatTime(finished.elapsedMs);
     $('result-score').textContent = formatScore(finished.score);
@@ -742,6 +875,16 @@
     $('result-detail').textContent = detail;
 
     var msg;
+    if (finished.daily) {
+      msg = won
+        ? '연속 ' + res.streak + '일째 풀었어요!\n내일 새 퍼즐이 나와요'
+        : '등급에는 영향이 없어요\n풀 때까지 다시 도전할 수 있어요';
+      $('result-progress').textContent = msg;
+      $('result-dots').innerHTML = '';
+      $('btn-again').textContent = won ? '승급전 하기' : '다시 도전';
+      return;
+    }
+    $('btn-again').textContent = '다시 하기';
     if (won) {
       if (res.promoted) msg = '축! ' + grade.name + ' 승급!';
       else msg = progressText();
@@ -768,7 +911,11 @@
 
   /* ---------------- 버튼 연결 ---------------- */
   $('btn-new').addEventListener('click', pressNew);
-  $('btn-again').addEventListener('click', launch);
+  $('btn-again').addEventListener('click', pressAgain);
+  $('btn-daily').addEventListener('click', pressDaily);
+  $('grade-chip').addEventListener('click', function () {
+    if (!isDaily() && C.FREE_GRADE_SELECT) openSheet('grades');
+  });
   $('btn-result-close').addEventListener('click', function () {
     $('result').hidden = true;
     S.Effects.stop();
@@ -805,6 +952,8 @@
     var opener = t.closest('[data-open]');
     if (opener) return openSheet(opener.getAttribute('data-open'));
     if (t.closest('[data-close]')) return closeSheets();
+    var gradeRow = t.closest('.grade-pick');
+    if (gradeRow) return pickGrade(Number(gradeRow.getAttribute('data-grade')));
     var row = t.closest('.set-row');
     if (row) return toggleSetting(row);
     var skinBtn = t.closest('.skin-btn');
@@ -892,6 +1041,10 @@
     link.rel = 'manifest';
     link.href = 'manifest.json';
     document.head.appendChild(link);
+    // 한 번 열어 본 뒤에는 인터넷이 끊겨도 켜지게 합니다 (sw.js)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    }
   }
 
   /* 저장해 둔 스킨을 입힙니다 */
