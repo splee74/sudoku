@@ -1,0 +1,225 @@
+/* ============================================================
+   스킨 : 설정 창에서 고르는 판 모양과 색.
+   고른 스킨 이름이 <html data-skin="이름"> 으로 들어가고,
+   여기서 그 이름에 맞는 색을 입힙니다. (목록은 js/skins.js)
+   "기본" 스킨은 css/style.css 맨 위의 색을 그대로 씁니다.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   파스텔 6가지 : 흰 상자와 색 상자가 번갈아 나오는 판
+   --tint 한 가지 색만 정하면 나머지 색은 거기서 만들어집니다.
+   ------------------------------------------------------------ */
+:root[data-skin^="pastel-"] {
+  --bg: color-mix(in srgb, var(--tint) 12%, #ffffff);
+  --surface: #ffffff;
+  --ink: #33333b;
+  --ink-soft: #686873;
+  --line: color-mix(in srgb, var(--tint) 30%, #cfcfd4);
+  --line-strong: color-mix(in srgb, var(--tint) 35%, #55555c);
+  --cell-alt: color-mix(in srgb, var(--tint) 62%, #ffffff);
+  --peer: color-mix(in srgb, var(--tint) 26%, #ffffff);
+  --peer-alt: var(--tint);
+  --same: #ffe98f;
+  --sel: #ffc94a;
+  --wave: #ffffff;
+}
+:root[data-skin="pastel-green"]  { --tint: #b5dfae; --accent: #3f8f52; --accent-shadow: #2c6b3b; }
+:root[data-skin="pastel-yellow"] { --tint: #efdc6a; --accent: #9a7a08; --accent-shadow: #735b05; --same: #cfe8ff; --sel: #8ec9ff; }
+:root[data-skin="pastel-purple"] { --tint: #b2a8ea; --accent: #6558c0; --accent-shadow: #473c95; }
+:root[data-skin="pastel-pink"]   { --tint: #f6b0b0; --accent: #c9566a; --accent-shadow: #9c3f50; }
+:root[data-skin="pastel-sky"]    { --tint: #9bdbe3; --accent: #1f8b98; --accent-shadow: #166871; }
+:root[data-skin="pastel-orange"] { --tint: #f4b06a; --accent: #c4741a; --accent-shadow: #955710; --same: #cfe8ff; --sel: #8ec9ff; }
+
+/* ------------------------------------------------------------
+   타일 모양 공통 (아이보리 타일 · 나무판 · 알록달록)
+   칸이 하나하나 떨어져 있고, 상자 사이에는 선을 따로 긋습니다.
+   ------------------------------------------------------------ */
+:root[data-tile] .board { padding: var(--gap); }
+:root[data-tile] .cell {
+  border: 0;
+  margin: var(--gap);
+  border-radius: var(--tile-radius);
+}
+:root[data-tile] .cell.edge-r::after,
+:root[data-tile] .cell.edge-b::before {
+  content: "";
+  position: absolute;
+  background: var(--box-line);
+  pointer-events: none;
+  z-index: 1;
+}
+:root[data-tile] .cell.edge-r::after {
+  top: calc(-1 * var(--gap)); bottom: calc(-1 * var(--gap));
+  right: calc(-1 * var(--gap) - var(--box-line-w) / 2);
+  width: var(--box-line-w);
+}
+:root[data-tile] .cell.edge-b::before {
+  left: calc(-1 * var(--gap)); right: calc(-1 * var(--gap));
+  bottom: calc(-1 * var(--gap) - var(--box-line-w) / 2);
+  height: var(--box-line-w);
+}
+:root[data-tile] .cell:hover { box-shadow: none; }
+
+/* ------------------------------------------------------------
+   아이보리 타일 : 도드라진 크림색 타일에 새긴 듯한 숫자
+   ------------------------------------------------------------ */
+:root[data-skin="ivory"] {
+  --bg: #ece7dc;
+  --surface: #faf7f0;
+  --ink: #463f33;
+  --ink-soft: #776d5d;
+  --line: #d6cdbb;
+  --line-strong: #a89c85;
+  --board-bg: #d3c9b5;
+  --cell-bg: #f5f0e5;
+  --given: #6e6152;
+  --user: #2a5a9c;
+  --peer: #e8dcc2;
+  --same: #f5e2a4;
+  --sel: #efc463;
+  --wrong-bg: #f7d9d1;
+  --accent: #85755a;
+  --accent-shadow: #645741;
+  --wave: #ffffff;
+  --gap: 1.5px;
+  --tile-radius: 5px;
+  --box-line: #8f8370;
+  --box-line-w: 2px;
+}
+:root[data-skin="ivory"] .cell {
+  font-family: Georgia, "Times New Roman", serif;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -2px 0 rgba(110, 90, 60, 0.14);
+}
+:root[data-skin="ivory"] .cell .val { text-shadow: 0 1px 0 #ffffff, 0 -1px 0 rgba(90, 70, 40, 0.3); }
+:root[data-skin="ivory"] .cell.dup { box-shadow: inset 0 0 0 2px var(--wrong); }
+
+/* ------------------------------------------------------------
+   나무판 : 나무 칸에 숫자마다 색이 다른 타일을 올려놓은 모양
+   ------------------------------------------------------------ */
+:root[data-skin="wood"] {
+  --bg: #eaf0df;
+  --surface: #fffdf6;
+  --ink: #2f2a22;
+  --ink-soft: #655c4d;
+  --line: #d9cfb8;
+  --line-strong: #efd2a4;          /* 나무 테두리(액자) */
+  --board-bg: #f3d8ae;             /* 밝은 단풍나무 */
+  --cell-bg: #f0d2a5;
+  --peer: #fbe9c9;
+  --same: #f0d2a5;
+  --sel: #fff0a0;
+  --wrong-bg: #ffffff;
+  --user: #1b5aa6;
+  --accent: #4f8a35;               /* 잔디색 */
+  --accent-shadow: #3a6826;
+  --wave: #fff8d8;
+  --gap: 2.5px;
+  --tile-radius: 16%;
+  --box-line: #1d1b19;             /* 상자 사이 검은 선 */
+  --box-line-w: 3px;
+}
+/* 나무 액자 + 그 안쪽의 검은 테두리 선 (img/sudoku_img01.png 의 판 모양) */
+:root[data-skin="wood"] .board {
+  border-width: 9px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 3px #1d1b19, 0 3px 8px rgba(60, 40, 10, 0.3);
+  padding: calc(var(--gap) + 3px);
+}
+:root[data-skin="wood"] .cell {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  color: #1f1a17;
+  /* 나무에 얕게 파 놓은 빈칸 */
+  box-shadow: inset 0 0 0 1.5px rgba(150, 100, 50, 0.3), inset 0 2px 2px rgba(120, 80, 30, 0.18);
+}
+/* 숫자가 놓인 칸은 판 위에 올려놓은 파스텔색 타일 */
+:root[data-skin="wood"] .cell:not([data-v=""]) { box-shadow: 0 2px 3px rgba(70, 45, 15, 0.45); }
+:root[data-skin="wood"] .cell.user:not([data-v=""]) { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85), 0 2px 3px rgba(70, 45, 15, 0.45); }
+/* 타일 색 다섯 가지 (분홍 · 보라 · 하늘 · 연두 · 나무색) 를 숫자마다 나눠 씁니다 */
+:root[data-skin="wood"] .cell[data-v="1"] { background: #b9d9f2; }
+:root[data-skin="wood"] .cell[data-v="2"] { background: #ecc79c; }
+:root[data-skin="wood"] .cell[data-v="3"] { background: #bfdc9f; }
+:root[data-skin="wood"] .cell[data-v="4"] { background: #a9c2ea; }
+:root[data-skin="wood"] .cell[data-v="5"] { background: #f7bccb; }
+:root[data-skin="wood"] .cell[data-v="6"] { background: #cdbbea; }
+:root[data-skin="wood"] .cell[data-v="7"] { background: #a8d6c0; }
+:root[data-skin="wood"] .cell[data-v="8"] { background: #f29fb6; }
+:root[data-skin="wood"] .cell[data-v="9"] { background: #d6e79a; }
+
+/* ------------------------------------------------------------
+   알록달록 : 상자마다 색이 다른 타일
+   ------------------------------------------------------------ */
+:root[data-skin="colorful"] {
+  --bg: #ece8f6;
+  --surface: #ffffff;
+  --ink: #2e2a3a;
+  --ink-soft: #3d2f1f;
+  --line: #d4cde6;
+  --line-strong: #9c805f;
+  --board-bg: #bfa283;
+  --cell-bg: #a78d6e;
+  --peer: #d4bd9f;
+  --same: #a78d6e;
+  --sel: #fff3b0;
+  --wrong-bg: #ffffff;
+  --user: #1456c8;
+  --accent: #1456c8;
+  --accent-shadow: #0e3f94;
+  --wave: #ffffff;
+  --gap: 2.5px;
+  --tile-radius: 18%;
+  --box-line: rgba(70, 45, 20, 0.45);
+  --box-line-w: 2px;
+}
+:root[data-skin="colorful"] body { --ink-soft: #645d75; } /* 판 밖의 흐린 글자 */
+:root[data-skin="colorful"] .board { --ink-soft: #3d2f1f; border-width: 5px; } /* 메모 글자는 진하게 */
+:root[data-skin="colorful"] .cell[data-box="0"] { --tile: #2fa84f; }
+:root[data-skin="colorful"] .cell[data-box="1"] { --tile: #ff6fae; }
+:root[data-skin="colorful"] .cell[data-box="2"] { --tile: #6b2a86; }
+:root[data-skin="colorful"] .cell[data-box="3"] { --tile: #22b8dc; --tile-ink: #06323d; }
+:root[data-skin="colorful"] .cell[data-box="4"] { --tile: #e3173e; }
+:root[data-skin="colorful"] .cell[data-box="5"] { --tile: #f0b90b; --tile-ink: #4a3600; }
+:root[data-skin="colorful"] .cell[data-box="6"] { --tile: #1456c8; }
+:root[data-skin="colorful"] .cell[data-box="7"] { --tile: #ff8a2a; --tile-ink: #4a2200; }
+:root[data-skin="colorful"] .cell[data-box="8"] { --tile: #7fbf2a; --tile-ink: #1f3a00; }
+:root[data-skin="colorful"] .cell { box-shadow: inset 0 2px 3px rgba(60, 35, 10, 0.3); }
+:root[data-skin="colorful"] .cell:not([data-v=""]) {
+  background: var(--tile);
+  color: var(--tile-ink, #ffffff);
+  box-shadow: 0 2px 0 rgba(50, 30, 10, 0.4);
+}
+/* 내가 넣은 숫자는 조금 밝은 타일 + 흰 테두리 */
+:root[data-skin="colorful"] .cell.user:not([data-v=""]) {
+  background: color-mix(in srgb, var(--tile) 78%, #ffffff);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85), 0 2px 0 rgba(50, 30, 10, 0.4);
+}
+
+/* ------------------------------------------------------------
+   나무판 · 알록달록 공통 : 타일에 색이 있어서, 강조는 테두리로 표시합니다
+   ------------------------------------------------------------ */
+:root[data-skin="wood"] .num.on,
+:root[data-skin="colorful"] .num.on,
+:root[data-skin="wood"] .notes span.hl,
+:root[data-skin="colorful"] .notes span.hl { background: #ffe58a; }
+:root[data-skin="wood"] .cell.same:not([data-v=""]),
+:root[data-skin="colorful"] .cell.same:not([data-v=""]) {
+  box-shadow: inset 0 0 0 3px #ffffff, 0 0 0 3px #f2b600;
+  z-index: 2;
+}
+:root[data-skin="wood"] .cell.sel,
+:root[data-skin="colorful"] .cell.sel {
+  outline: 3px solid #1d1d1d;
+  outline-offset: 1px;
+  z-index: 3;
+}
+:root[data-skin="wood"] .cell.wrong:not([data-v=""]),
+:root[data-skin="colorful"] .cell.wrong:not([data-v=""]) {
+  background: #ffffff;
+  color: var(--wrong);
+  box-shadow: inset 0 0 0 3px var(--wrong);
+}
+:root[data-skin="wood"] .cell.dup:not([data-v=""]),
+:root[data-skin="colorful"] .cell.dup:not([data-v=""]) {
+  box-shadow: inset 0 0 0 3px #ffffff, 0 0 0 3px var(--wrong);
+  z-index: 2;
+}

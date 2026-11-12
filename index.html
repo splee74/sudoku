@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3eee3">
+  <meta name="description" content="하수에서 시작해 한 단계씩 올라가는 무료 스도쿠. 5판을 깨면 승급, 설치 없이 바로 즐기세요.">
+  <title>스도쿠 승급전 - 하수부터 올라가는 무료 스도쿠</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/skins.css">
+</head>
+<body>
+
+  <!-- ================= 맨 위 메뉴 ================= -->
+  <header class="site-head">
+    <div class="site-head-in">
+      <a class="logo" href="./index.html">
+        <img src="icon.svg" alt="" width="34" height="34">
+        <span>스도쿠 승급전</span>
+      </a>
+      <nav class="site-nav" aria-label="메뉴">
+        <button type="button" class="nav-btn" data-open="rules">규칙</button>
+        <button type="button" class="nav-btn" data-open="record">내 기록</button>
+        <button type="button" class="nav-btn" data-open="settings">설정</button>
+        <!-- [다음 버전 자리] 랭킹 · 오늘의 퍼즐 메뉴가 들어갈 곳 -->
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <!-- ================= 등급 줄 ================= -->
+    <section class="gradebar" aria-label="내 등급">
+      <span class="gradebar-label">내 등급</span>
+      <span class="chip" id="grade-chip">하수</span>
+      <span class="gradebar-text" id="grade-text"></span>
+      <span class="dots" id="grade-dots" aria-hidden="true"></span>
+    </section>
+
+    <!-- ================= 게임 ================= -->
+    <section class="game" id="game">
+      <div class="board-col">
+        <div class="info">
+          <span class="mistakes"><span class="lbl">틀림</span> <span id="game-marks" aria-hidden="true"></span>
+            <span id="game-mistakes">0/3</span></span>
+          <span class="score" id="game-score-wrap">점수 <b id="game-score">0</b></span>
+          <span class="time">
+            <span class="timer" id="game-timer" aria-label="걸린 시간">00:00</span>
+            <button type="button" class="pause-btn" id="btn-pause" aria-label="잠시 멈춤">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>
+            </button>
+          </span>
+        </div>
+
+        <div class="board-wrap">
+          <div class="board" id="board" role="grid" aria-label="스도쿠 판"></div>
+          <div class="pause-cover" id="pause-cover" hidden>
+            <p>잠시 멈췄어요</p>
+            <button type="button" class="btn btn-primary" id="btn-resume">계속하기</button>
+          </div>
+          <div class="toast" id="toast" hidden></div>
+        </div>
+      </div>
+
+      <div class="side">
+        <div class="tools">
+          <!-- 도구 버튼 : 아이콘 그림은 여기 svg 안에서 바꿀 수 있습니다 -->
+          <button type="button" class="tool tool-undo" id="btn-undo">
+            <!-- 파란 되돌리기 화살표 -->
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 4 4 9l5 5M4 9h10a6 6 0 0 1 0 12h-2" stroke="#2f7bd6" stroke-width="2.800"/>
+            </svg>
+            <span>되돌리기</span>
+          </button>
+          <button type="button" class="tool tool-erase" id="btn-erase">
+            <!-- 분홍·파랑 지우개 -->
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <g transform="rotate(-38 12 11)">
+                <rect x="2.500" y="6.500" width="19" height="9.500" rx="2.200" fill="#f58fb0" stroke="none"/>
+                <path d="M2.500 8.700a2.200 2.200 0 0 1 2.200-2.200H9.500v9.500H4.700a2.200 2.200 0 0 1-2.200-2.200Z" fill="#4f8fe6" stroke="none"/>
+                <rect x="9.500" y="6.500" width="1.600" height="9.500" fill="#ffffff" stroke="none" opacity="0.850"/>
+              </g>
+              <path d="M6 21.200h12" stroke="#c7a9b4" stroke-width="2"/>
+            </svg>
+            <span>지우개</span>
+          </button>
+          <button type="button" class="tool tool-memo" id="btn-memo" aria-pressed="false">
+            <!-- 메모지와 연필 -->
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3.500" width="13.500" height="17.500" rx="2" fill="#fff7d6" stroke="#d9a520" stroke-width="1.500"/>
+              <path d="M6 8.500h7.500M6 12h5M6 15.500h3" stroke="#d9a520" stroke-width="1.500"/>
+              <g transform="rotate(40 17 13)">
+                <rect x="15" y="4.500" width="4" height="11" fill="#35a66b" stroke="none"/>
+                <rect x="15" y="2.500" width="4" height="2.600" rx="1" fill="#ff7d93" stroke="none"/>
+                <path d="M15 15.500h4l-2 4.200Z" fill="#f3d3a2" stroke="none"/>
+                <path d="M16.300 18.200h1.400l-.7 1.500Z" fill="#33312c" stroke="none"/>
+              </g>
+            </svg>
+            <span>메모 <b id="memo-onoff">꺼짐</b></span>
+          </button>
+          <button type="button" class="tool tool-hint" id="btn-hint">
+            <!-- 노란 전구 -->
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2.500a6.500 6.500 0 0 0-4.300 11.400c.8.700 1.100 1.500 1.100 2.600h6.400c0-1.100.3-1.900 1.100-2.600A6.500 6.500 0 0 0 12 2.500Z" fill="#ffd84d" stroke="#e39a00" stroke-width="1.500"/>
+              <path d="M9.300 19h5.400M10.300 21.500h3.400" stroke="#8b8478" stroke-width="1.800"/>
+              <path d="M10 7.500a3 3 0 0 1 2.500-1.500" stroke="#ffffff" stroke-width="1.500"/>
+            </svg>
+            <span>힌트 <b id="hint-left">3</b></span>
+          </button>
+        </div>
+
+        <div class="numpad" id="numpad"></div>
+
+        <button type="button" class="btn btn-primary" id="btn-new">새 게임</button>
+      </div>
+    </section>
+
+    <!-- [다음 버전 자리] 광고 배너가 들어갈 곳 -->
+    <div class="slot slot-ad" id="slot-ad-middle" hidden></div>
+
+    <!-- ================= 설명 글 ================= -->
+    <article class="about">
+      <h1>스도쿠 승급전, 하수에서 시작해 한 단계씩 올라가세요</h1>
+      <p>스도쿠 승급전은 설치 없이 바로 즐기는 무료 스도쿠입니다. 작은 4×4 판에서 규칙을 익히고, 판을 깰 때마다 등급이 올라가며 점점 큰 판에 도전합니다. 퍼즐은 매번 새로 만들어지고, 정답은 언제나 하나뿐입니다.</p>
+
+      <h2>스도쿠는 어떤 놀이인가요</h2>
+      <p>스도쿠는 빈칸에 숫자를 채워 넣는 숫자 퍼즐입니다. 계산은 전혀 필요 없습니다. 어느 칸에 어떤 숫자가 들어갈 수 있는지 차근차근 따져 보는 놀이라서, 하루에 한두 판씩 풀면 집중력을 기르는 데 좋습니다.</p>
+
+      <h2>하는 방법</h2>
+      <p>판을 숫자로 가득 채우면 성공입니다. 지켜야 할 약속은 세 가지뿐입니다.</p>
+      <ul>
+        <li>가로줄 하나에 같은 숫자가 두 번 나오면 안 됩니다.</li>
+        <li>세로줄 하나에 같은 숫자가 두 번 나오면 안 됩니다.</li>
+        <li>굵은 선으로 묶인 상자 하나에 같은 숫자가 두 번 나오면 안 됩니다.</li>
+      </ul>
+      <p>빈칸을 누른 다음 숫자 버튼을 누르면 숫자가 들어갑니다. 틀린 숫자를 3번 넣으면 그 판은 실패로 끝납니다.</p>
+
+      <h2>처음 하는 분을 위한 요령</h2>
+      <ul>
+        <li><b>거의 다 찬 곳부터 보세요.</b> 빈칸이 한두 개만 남은 줄이나 상자는 빠진 숫자가 무엇인지 금방 보입니다.</li>
+        <li><b>숫자 하나를 정해서 따라가 보세요.</b> 숫자 버튼을 누르면 판에 있는 같은 숫자가 모두 표시됩니다. 그 숫자가 아직 없는 줄과 상자에서 들어갈 자리가 한 곳뿐인지 찾아보세요.</li>
+        <li><b>헷갈리면 메모를 쓰세요.</b> 들어갈 수 있는 숫자를 칸에 작게 적어 두면, 다른 칸이 채워질 때마다 후보가 줄어들어 답이 드러납니다.</li>
+        <li><b>찍지 마세요.</b> 정답은 하나뿐이라 모든 칸은 따져서 알아낼 수 있습니다. 정말 막혔을 때는 힌트를 쓰세요.</li>
+      </ul>
+
+      <h2>점수는 이렇게 올라갑니다</h2>
+      <ul>
+        <li>숫자를 맞힐 때마다 점수를 받고, 등급이 높을수록 한 칸의 점수가 큽니다.</li>
+        <li>틀리지 않고 연속으로 맞히면 점수가 점점 커져서, 최대 3배까지 받습니다.</li>
+        <li>한 줄이나 상자 하나를 완성하면 보너스, 판을 깨면 완성 보너스를 받습니다.</li>
+        <li>등급별 최고 점수와 지금까지 모은 점수는 "내 기록"에서 볼 수 있습니다.</li>
+      </ul>
+
+      <h2>승급전은 이렇게 진행됩니다</h2>
+      <ul>
+        <li>같은 등급에서 5판을 깨면 다음 등급으로 올라갑니다.</li>
+        <li>연속으로 3번 실패하면 한 단계 내려갑니다. 가장 낮은 등급 밑으로는 내려가지 않습니다.</li>
+        <li>내 등급과 기록은 이 기기의 브라우저에 저장되어, 다음에 들어와도 그대로 이어집니다.</li>
+      </ul>
+    </article>
+
+    <!-- [다음 버전 자리] 광고 배너가 들어갈 곳 -->
+    <div class="slot slot-ad" id="slot-ad-bottom" hidden></div>
+  </main>
+
+  <!-- ================= 맨 아래 ================= -->
+  <footer class="site-foot">
+    <div class="foot-links">
+      <button type="button" class="link" data-open="rules">규칙</button>
+      <button type="button" class="link" data-open="record">내 기록</button>
+      <button type="button" class="link" data-open="settings">설정</button>
+      <!-- [다음 버전 자리] 카카오톡 공유 · 문의하기 · 개인정보 처리방침 링크가 들어갈 곳 -->
+    </div>
+    <p>© 2026 스도쿠 승급전</p>
+  </footer>
+
+  <!-- ================= 결과 창 ================= -->
+  <div class="overlay" id="result" hidden>
+    <div class="modal-box result-box" role="dialog" aria-modal="true" aria-labelledby="result-title">
+      <div class="result-mark" id="result-mark" aria-hidden="true"></div>
+      <h2 class="result-title" id="result-title">성공!</h2>
+      <p class="result-sub" id="result-sub"></p>
+
+      <div class="card result-stats">
+        <div>
+          <p class="card-label">점수</p>
+          <p class="result-num" id="result-score">0</p>
+        </div>
+        <div>
+          <p class="card-label">걸린 시간</p>
+          <p class="result-num" id="result-time">00:00</p>
+        </div>
+        <p class="card-sub" id="result-detail"></p>
+      </div>
+
+      <div class="card">
+        <div class="dots" id="result-dots" aria-hidden="true"></div>
+        <p class="card-main" id="result-progress"></p>
+      </div>
+
+      <!-- [다음 버전 자리] 랭킹 등록 · 카카오톡 공유 버튼이 들어갈 곳 -->
+      <div class="slot" id="slot-result-extra" hidden></div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="btn-again">다시 하기</button>
+        <button type="button" class="btn btn-secondary" id="btn-result-close">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 승급 축하 창 -->
+  <div class="overlay overlay-top" id="promo" hidden>
+    <div class="promo-box">
+      <p class="promo-cheer">축!</p>
+      <div class="badge badge-big" id="promo-badge">
+        <span class="badge-name" id="promo-grade">평민</span>
+      </div>
+      <p class="promo-text" id="promo-text">평민 승급!</p>
+      <button type="button" class="btn btn-primary" id="btn-promo-ok">좋아요!</button>
+    </div>
+  </div>
+
+  <!-- 규칙 창 -->
+  <div class="overlay" id="sheet-rules" hidden>
+    <div class="sheet-box" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+      <div class="sheet-head">
+        <h2 id="rules-title">스도쿠 규칙</h2>
+        <button type="button" class="sheet-close" data-close aria-label="닫기">✕</button>
+      </div>
+      <div class="sheet-body rules">
+        <h3>기본 규칙</h3>
+        <ul>
+          <li>빈칸에 숫자를 채워 판을 완성하는 놀이입니다.</li>
+          <li><b>가로줄</b> 하나에 같은 숫자는 한 번만 들어갑니다.</li>
+          <li><b>세로줄</b> 하나에도 같은 숫자는 한 번만 들어갑니다.</li>
+          <li><b>굵은 선으로 묶인 상자</b> 안에서도 같은 숫자는 한 번만 들어갑니다.</li>
+          <li>4×4 판은 1~4, 6×6 판은 1~6, 9×9 판은 1~9를 씁니다.</li>
+        </ul>
+
+        <h3>하는 방법</h3>
+        <ul>
+          <li>빈칸을 누른 다음, 숫자 버튼을 누르면 숫자가 들어갑니다.</li>
+          <li>틀린 숫자는 빨갛게 표시됩니다. <b>3번 틀리면</b> 그 판은 실패입니다.</li>
+          <li><b>메모</b>를 켜면 칸에 후보 숫자를 작게 적어 둘 수 있습니다.</li>
+          <li><b>힌트</b>는 한 칸을 정답으로 채워 줍니다. 한 판에 3번까지 쓸 수 있습니다.</li>
+          <li><b>되돌리기</b>는 바로 전 동작을 취소하고, <b>지우개</b>는 틀린 숫자나 메모를 지웁니다.</li>
+          <li>시간 옆의 <b>멈춤 버튼</b>을 누르면 잠시 쉬었다 할 수 있습니다.</li>
+          <li>창을 닫아도 하던 판은 저장되어, 다시 들어오면 이어서 할 수 있습니다.</li>
+        </ul>
+
+        <h3>점수</h3>
+        <ul>
+          <li>숫자를 맞힐 때마다 점수를 받습니다. 등급이 높을수록 한 칸의 점수가 큽니다.</li>
+          <li>틀리지 않고 <b>연속으로 맞히면</b> 점수가 점점 커집니다. (최대 3배)</li>
+          <li><b>한 줄이나 상자 하나를 완성</b>하면 보너스 점수를 받습니다.</li>
+          <li><b>판을 깨면</b> 완성 보너스를, 한 번도 안 틀렸으면 보너스를 더 받습니다.</li>
+          <li>힌트로 채운 칸은 점수가 없습니다.</li>
+        </ul>
+
+        <h3>승급과 강등</h3>
+        <ul>
+          <li>같은 등급에서 <b id="rules-wins">5</b>판을 깨면 다음 등급으로 올라갑니다.</li>
+          <li>연속으로 <b id="rules-fails">3</b>번 실패하면 한 단계 내려갑니다. (가장 낮은 등급 밑으로는 내려가지 않습니다)</li>
+          <li>숫자를 넣은 뒤에 <b>새 게임</b>을 누르면 하던 판은 실패로 기록됩니다.</li>
+        </ul>
+        <div class="grade-list" id="rules-grades"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 내 기록 창 -->
+  <div class="overlay" id="sheet-record" hidden>
+    <div class="sheet-box" role="dialog" aria-modal="true" aria-labelledby="record-title">
+      <div class="sheet-head">
+        <h2 id="record-title">내 기록</h2>
+        <button type="button" class="sheet-close" data-close aria-label="닫기">✕</button>
+      </div>
+      <div class="sheet-body record">
+        <div class="badge" id="record-badge">
+          <span class="badge-label">내 등급</span>
+          <span class="badge-name" id="record-grade">하수</span>
+        </div>
+        <p class="grade-info" id="record-grade-info"></p>
+
+        <div class="card">
+          <div class="dots" id="record-dots" aria-hidden="true"></div>
+          <p class="card-main" id="record-left"></p>
+          <p class="card-sub" id="record-fail"></p>
+        </div>
+
+        <h3>등급별 최고 기록</h3>
+        <div class="grade-list" id="record-grades"></div>
+
+        <p class="record-total" id="record-total"></p>
+        <button type="button" class="link" id="btn-reset">기록 지우기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 설정 창 -->
+  <div class="overlay" id="sheet-settings" hidden>
+    <div class="sheet-box" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="sheet-head">
+        <h2 id="settings-title">설정</h2>
+        <button type="button" class="sheet-close" data-close aria-label="닫기">✕</button>
+      </div>
+      <div class="sheet-body" id="settings-body"></div>
+    </div>
+  </div>
+
+  <!-- 확인 창 -->
+  <div class="overlay overlay-top" id="modal" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true">
+      <p class="modal-text" id="modal-text"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="modal-cancel">아니요</button>
+        <button type="button" class="btn btn-primary" id="modal-ok">예</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confetti" hidden></canvas>
+
+  <script src="js/config.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/skins.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/effects.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

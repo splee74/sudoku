@@ -1,0 +1,15 @@
+{
+  "name": "스도쿠 승급전",
+  "short_name": "스도쿠",
+  "description": "하수부터 한 단계씩 올라가는 스도쿠 승급전",
+  "lang": "ko",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3eee3",
+  "theme_color": "#f3eee3",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
