@@ -59,7 +59,9 @@
       },
       // 통계 (내 기록 창과 배지에 씁니다)
       stats: freshStats(),
-      // 등급별 통계 : { 등급id: { played: 끝낸 판, won: 깬 판, sec: 깬 판의 시간 합(초) } } (오늘의 퍼즐은 'daily')
+      // 등급별 통계 (오늘의 퍼즐은 'daily')
+      //   { 등급id: { played: 끝낸 판, won: 깬 판, sec: 깬 판의 시간 합(초), perfect: 무결점 성공,
+      //              streak: 지금 연승, best: 최다 연승, bestSec: 가장 빠른 성공(초) } }
       gradeStats: {},
       // 받은 배지 : { 배지id: 받은 날짜 } (목록은 js/badges.js)
       badges: {}
@@ -75,7 +77,8 @@
       bestWinStreak: 0, // 가장 길었던 연승
       maxPromoted: 0, // 승급으로 올라가 본 가장 높은 등급 (등급 고르기로 고른 것은 안 침)
       wins9: 0, // 9×9 판을 깬 횟수
-      best9: 0 // 9×9 판 가장 빠른 기록(초, 0 = 없음)
+      best9: 0, // 9×9 판 가장 빠른 기록(초, 0 = 없음)
+      playSec: 0 // 지금까지 게임한 시간(초)
     };
   }
 
@@ -132,6 +135,8 @@
     } catch (e) {
       /* 저장 실패는 조용히 넘어갑니다 */
     }
+    // 로그인해 있으면 계정에도 저장합니다 (js/account.js 가 연결)
+    if (S.Progress.onSave) S.Progress.onSave(data);
   }
 
   function reset() {
@@ -251,14 +256,19 @@
     var st = data.stats;
     var id = g.daily ? 'daily' : g.gradeId;
     var gs = data.gradeStats[id];
-    if (!gs || typeof gs !== 'object') gs = data.gradeStats[id] = { played: 0, won: 0, sec: 0 };
+    if (!gs || typeof gs !== 'object') gs = data.gradeStats[id] = {};
     var seconds = Math.floor((g.elapsedMs || 0) / 1000);
     var hints = C.MAX_HINTS - g.hintsLeft;
     gs.played = num(gs.played, 0) + 1;
     st.hintsUsed += Math.max(0, hints);
+    st.playSec += seconds;
+    gs.streak = won ? num(gs.streak, 0) + 1 : 0;
+    gs.best = Math.max(num(gs.best, 0), gs.streak);
     if (won) {
       gs.won = num(gs.won, 0) + 1;
       gs.sec = num(gs.sec, 0) + seconds;
+      if (g.mistakes === 0) gs.perfect = num(gs.perfect, 0) + 1;
+      if (!gs.bestSec || seconds < gs.bestSec) gs.bestSec = seconds;
       if (g.mistakes === 0) st.perfectWins++;
       if (hints === 0) st.noHintWins++;
       st.winStreak++;
@@ -270,6 +280,53 @@
     } else {
       st.winStreak = 0;
     }
+  }
+
+  /*
+   * 두 기록 합치기 (로그인했을 때 이 기기의 기록과 계정에 저장된 기록을 합칩니다)
+   *   등급과 진행 상황 : 더 많이 한 쪽을 따릅니다
+   *   최고 기록, 배지, 최다 연승 : 두 쪽에서 좋은 것을 모두 남깁니다
+   */
+  function amount(d) {
+    return num(d.totalGames, 0) + num(d.daily && d.daily.total, 0);
+  }
+  function merge(a, b) {
+    var base = amount(b) > amount(a) ? b : a;
+    var other = base === a ? b : a;
+    var out = JSON.parse(JSON.stringify(base));
+    var k;
+    for (k in other.bestTimes) {
+      if (typeof other.bestTimes[k] === 'number' && !(out.bestTimes[k] <= other.bestTimes[k])) out.bestTimes[k] = other.bestTimes[k];
+    }
+    for (k in other.bestScores) {
+      if (typeof other.bestScores[k] === 'number' && !(out.bestScores[k] >= other.bestScores[k])) out.bestScores[k] = other.bestScores[k];
+    }
+    for (k in other.badges) if (!out.badges[k]) out.badges[k] = other.badges[k];
+    ['bestWinStreak', 'maxPromoted', 'perfectWins', 'noHintWins', 'wins9'].forEach(function (f) {
+      out.stats[f] = Math.max(num(out.stats[f], 0), num(other.stats[f], 0));
+    });
+    if (other.stats.best9 && (!out.stats.best9 || other.stats.best9 < out.stats.best9)) out.stats.best9 = other.stats.best9;
+    out.daily.bestStreak = Math.max(num(out.daily.bestStreak, 0), num(other.daily.bestStreak, 0));
+    for (k in other.gradeStats) {
+      var o = other.gradeStats[k], m = out.gradeStats[k];
+      if (!m) { out.gradeStats[k] = o; continue; }
+      m.best = Math.max(num(m.best, 0), num(o.best, 0));
+      if (o.bestSec && (!m.bestSec || o.bestSec < m.bestSec)) m.bestSec = o.bestSec;
+    }
+    // 하던 판은 이 기기 것을 남깁니다
+    out.game = a.game || null;
+    out.dailyGame = a.dailyGame || null;
+    return out;
+  }
+
+  /* 저장된 글(JSON)을 기록으로 읽습니다 (계정에서 받아 온 기록에 씀) */
+  function parse(raw) {
+    var keep = Storage.get(SAVE_KEY);
+    Storage.set(SAVE_KEY, raw);
+    var d = load();
+    if (keep === null) Storage.remove(SAVE_KEY);
+    else Storage.set(SAVE_KEY, keep);
+    return d;
   }
 
   /* 승급까지 남은 판 수 (가장 높은 등급이면 -1) */
@@ -292,6 +349,10 @@
     dailyDone: dailyDone,
     dailyStreak: dailyStreak,
     recordDaily: recordDaily,
-    recordStats: recordStats
+    recordStats: recordStats,
+    merge: merge,
+    parse: parse,
+    amount: amount,
+    onSave: null
   };
 })(typeof window !== 'undefined' ? window : globalThis);

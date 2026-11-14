@@ -359,13 +359,7 @@ button.chip:disabled { cursor: default; }
 
 .slot { width: 100%; }
 
-/* ---------- 설명 글 ---------- */
-.about { max-width: 760px; margin: 44px auto 0; font-size: 19px; line-height: 1.7; }
-.about h1 { font-size: 27px; line-height: 1.35; margin: 0 0 12px; }
-.about h2 { font-size: 23px; margin: 30px 0 8px; }
-.about p { margin: 0 0 12px; }
-.about ul { margin: 0 0 12px; padding-left: 24px; }
-.about li { margin-bottom: 8px; }
+/* ---------- 설명 글 : css/about.css ---------- */
 
 /* ---------- 맨 아래 ---------- */
 .site-foot {

@@ -9,7 +9,7 @@
  *
  * 새 파일(그림, js, css)을 추가했으면 아래 FILES 목록에도 한 줄 넣어 주세요.
  */
-var CACHE = 'sudoku-files-v2';
+var CACHE = 'sudoku-files-v6';
 var FILES = [
   './',
   'index.html',
@@ -21,8 +21,12 @@ var FILES = [
   'icons/icon-maskable-512.png',
   'icons/apple-touch-icon.png',
   'img/skin-wood.jpg',
+  'img/splash.webp',
+  'img/sudoku_img01.webp',
   'css/style.css',
   'css/skins.css',
+  'css/screens.css',
+  'css/about.css',
   'css/dark.css',
   'js/config.js',
   'js/engine.js',
@@ -33,6 +37,7 @@ var FILES = [
   'js/sound.js',
   'js/effects.js',
   'js/badges.js',
+  'js/account.js',
   'js/tutorial.js',
   'js/ui.js'
 ];

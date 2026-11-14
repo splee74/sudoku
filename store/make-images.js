@@ -46,12 +46,16 @@ async function open(browser, opts, settings, save) {
   }, [save || SAVE, Object.assign({ tutorialDone: true }, settings || {})]);
   const page = await ctx.newPage();
   await page.goto(BASE + 'index.html');
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(400);
+  await page.click('#splash-start', { force: true }); // 시작 그림의 "지금 시작하기"
+  await page.waitForTimeout(600);
   return { ctx, page };
 }
 
 /* 판의 빈칸을 앞에서부터 ratio 만큼 정답으로 채우고, 칸 하나를 골라 둡니다 */
 async function fillSome(page, ratio) {
+  await page.click('#home-new'); // 홈 → 새 게임
+  await page.waitForTimeout(300);
   const g = await page.evaluate(() => {
     const s = SUDOKU._debug.game();
     return { sol: s.solution, fixed: s.fixed };
@@ -75,26 +79,32 @@ async function fillSome(page, ratio) {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const phone = { viewport: { width: 432, height: 768 }, deviceScaleFactor: 2.5, hasTouch: true, isMobile: true };
 
-  // 1. 기본 화면 (고수 9×9)
+  // 1. 홈 화면
   let { ctx, page } = await open(browser, phone);
-  await fillSome(page, 0.45);
-  await page.screenshot({ path: path.join(SHOTS, '1-game.png') });
+  await page.screenshot({ path: path.join(SHOTS, '1-home.png') });
   await ctx.close();
 
-  // 2. 나무판 스킨
+  // 2. 게임 화면 (고수 9×9)
+  ({ ctx, page } = await open(browser, phone));
+  await fillSome(page, 0.45);
+  await page.screenshot({ path: path.join(SHOTS, '2-game.png') });
+  await ctx.close();
+
+  // 3. 나무판 스킨
   ({ ctx, page } = await open(browser, phone, { skin: 'wood' }));
   await fillSome(page, 0.35);
-  await page.screenshot({ path: path.join(SHOTS, '2-wood.png') });
+  await page.screenshot({ path: path.join(SHOTS, '3-wood.png') });
   await ctx.close();
 
-  // 3. 다크 모드
+  // 4. 다크 모드
   ({ ctx, page } = await open(browser, phone, { theme: 'dark' }));
   await fillSome(page, 0.55);
-  await page.screenshot({ path: path.join(SHOTS, '3-dark.png') });
+  await page.screenshot({ path: path.join(SHOTS, '4-dark.png') });
   await ctx.close();
 
-  // 4. 승급 축하
+  // 5. 승급 축하
   ({ ctx, page } = await open(browser, phone, { skin: 'pastel-purple' }));
+  await page.click('#home-new');
   await page.evaluate(() => {
     document.getElementById('promo-grade').textContent = '영웅';
     document.getElementById('promo-text').textContent = '영웅 승급!';
@@ -103,27 +113,30 @@ async function fillSome(page, ratio) {
     SUDOKU.Effects.confetti(4000);
   });
   await page.waitForTimeout(900);
-  await page.screenshot({ path: path.join(SHOTS, '4-promo.png') });
+  await page.screenshot({ path: path.join(SHOTS, '5-promo.png') });
   await ctx.close();
 
-  // 5. 내 기록 · 배지
-  ({ ctx, page } = await open(browser, phone, { skin: 'pastel-sky' }));
-  await page.click('.nav-btn[data-open="record"]');
-  await page.evaluate(() => {
-    const body = document.querySelector('#sheet-record .sheet-body');
-    body.scrollTop = document.getElementById('record-stats').offsetTop - 60;
-  });
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: path.join(SHOTS, '5-badges.png') });
+  // 6. 내 기록
+  ({ ctx, page } = await open(browser, phone));
+  await page.click('.tab[data-tab="record"]');
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: path.join(SHOTS, '6-record.png') });
   await ctx.close();
 
-  // 6. 따라 하기
+  // 7. 배지
+  ({ ctx, page } = await open(browser, phone));
+  await page.click('.tab[data-tab="badges"]');
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: path.join(SHOTS, '7-badges.png') });
+  await ctx.close();
+
+  // 8. 따라 하기
   ({ ctx, page } = await open(browser, phone, { tutorialDone: false }, {}));
   await page.click('#tut-next');
   await page.click('#tut-next');
   await page.click('#tut-board .cell[data-idx="2"]');
   await page.waitForTimeout(500);
-  await page.screenshot({ path: path.join(SHOTS, '6-tutorial.png') });
+  await page.screenshot({ path: path.join(SHOTS, '8-tutorial.png') });
   await ctx.close();
 
   // 대표 그림 1024×500

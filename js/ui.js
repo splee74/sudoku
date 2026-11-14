@@ -1,11 +1,12 @@
 /*
  * 화면 : 판을 그리고, 버튼 누름을 처리합니다.
- * 페이지를 열면 바로 게임이 시작되고, 결과·규칙·내 기록·설정은 창으로 뜹니다.
+ * 시작 그림(1.5초) → 홈 화면 → "계속하기"나 "새 게임"을 누르면 게임 화면으로 갑니다.
+ * 아래쪽 메뉴로 홈 · 배지 · 내 기록 화면을 오가고, 결과·규칙·설정은 창으로 뜹니다.
  */
 (function () {
   var S = window.SUDOKU;
   var C = S.Config, Game = S.Game, Progress = S.Progress, Engine = S.Engine, Settings = S.Settings;
-  var SHEETS = ['rules', 'record', 'settings', 'grades'];
+  var SHEETS = ['rules', 'settings', 'grades'];
 
   function $(id) {
     return document.getElementById(id);
@@ -139,7 +140,6 @@
     closeSheets();
     if (name === 'settings') renderSettings();
     if (name === 'rules') renderRules();
-    if (name === 'record') renderRecord();
     if (name === 'grades') renderGradeList($('pick-grades'), false, true);
     var sheet = $('sheet-' + name);
     sheet.hidden = false;
@@ -157,61 +157,229 @@
     renderGradeList($('rules-grades'), false);
   }
 
-  function renderRecord() {
-    var grade = C.GRADES[data.gradeIndex];
-    var next = C.GRADES[data.gradeIndex + 1];
-    $('record-grade').textContent = grade.name;
-    $('sheet-record').style.setProperty('--grade', grade.color); // 오늘의 퍼즐 중에도 내 등급 색으로
-    $('record-grade-info').textContent = grade.size + '×' + grade.size + ' 판' + (next ? ' · 다음 등급은 ' + next.name : '');
-    if (next) renderDots($('record-dots'), data.wins);
-    else $('record-dots').innerHTML = '';
-    $('record-left').textContent = progressText();
-    var fail = '';
-    if (!next) fail = '이 등급에서 ' + data.wins + '판 성공';
-    if (data.failStreak > 0) {
-      fail = '연속 실패 ' + data.failStreak + '번' +
-        (data.gradeIndex > 0 ? ' (' + C.FAILS_TO_DEMOTE + '번이면 한 단계 내려가요)' : '');
-    }
-    $('record-fail').textContent = fail;
-    // 오늘의 퍼즐 기록
-    var today = Progress.dateKey();
-    var dd = data.daily;
-    if (dd.total > 0) {
-      $('record-daily').textContent = '연속 ' + Progress.dailyStreak(data, today) + '일 · 모두 ' + dd.total + '번 풀었어요';
-      $('record-daily-sub').textContent =
-        (Progress.dailyDone(data, today)
-          ? '오늘 퍼즐 완료 · ' + formatScore(dd.score) + '점 · ' + formatTime(dd.seconds * 1000)
-          : '오늘 퍼즐은 아직 안 풀었어요') +
-        '\n가장 길었던 연속 기록 ' + dd.bestStreak + '일';
-    } else {
-      $('record-daily').textContent = '아직 푼 적이 없어요';
-      $('record-daily-sub').textContent = '판 위의 "오늘의 퍼즐"을 눌러 보세요';
-    }
+  /* ---------------- 화면 바꾸기 : 홈 · 배지 · 내 기록 · 게임 ---------------- */
+  var screen = 'home';
+  var recordMode = 'grade'; // 내 기록 화면 : 'grade' 승급전, 'daily' 오늘의 퍼즐
+  var recordGrade = -1; // 내 기록 화면에서 고른 등급 (-1 = 지금 내 등급)
 
-    renderStats();
-    renderBadges();
-    renderGradeList($('record-grades'), true);
-    $('record-total').textContent = data.totalGames > 0
-      ? '지금까지 ' + data.totalGames + '판 중 ' + data.totalWins + '판 성공 · 모은 점수 ' + formatScore(data.totalScore) + '점'
-      : '아직 끝낸 판이 없어요';
+  function showScreen(name) {
+    if (name !== 'game' && screen === 'game' && game && game.status === 'playing') persist();
+    screen = name;
+    document.body.setAttribute('data-screen', name);
+    var tabs = document.querySelectorAll('.tab[data-tab]');
+    for (var i = 0; i < tabs.length; i++) {
+      var on = tabs[i].getAttribute('data-tab') === name;
+      tabs[i].classList.toggle('on', on);
+      if (on) tabs[i].setAttribute('aria-current', 'page');
+      else tabs[i].removeAttribute('aria-current');
+    }
+    if (name === 'home') renderHome();
+    if (name === 'badges') renderBadges();
+    if (name === 'record') renderRecord();
+    if (name === 'game') {
+      renderGradeBar();
+      renderGame();
+    } else {
+      hideToast();
+    }
+    lastTick = Date.now();
+    window.scrollTo(0, 0);
   }
 
-  /* 내 기록 창 : 통계 여섯 칸 */
-  function renderStats() {
-    var st = data.stats;
+  /* 이어서 할 수 있는 판 (지금 판이 끝났으면 저장해 둔 승급전 판) */
+  function resumable() {
+    if (game && game.status === 'playing') return game;
+    if (Game.isValidSaved(data.game)) return data.game;
+    return null;
+  }
+
+  function renderHome() {
+    var today = Progress.dateKey();
     var grade = C.GRADES[data.gradeIndex];
-    var gs = data.gradeStats[grade.id] || {};
-    var done = data.totalGames + (data.gradeStats.daily ? data.gradeStats.daily.played || 0 : 0);
-    var wins = data.totalWins + (data.gradeStats.daily ? data.gradeStats.daily.won || 0 : 0);
-    var items = [
-      ['끝낸 판', done ? formatScore(done) + '판' : '-'],
+    var next = C.GRADES[data.gradeIndex + 1];
+    $('home-streak').querySelector('b').textContent = Progress.dailyStreak(data, today) + '일';
+    $('home-score').querySelector('b').textContent = formatScore(data.totalScore);
+
+    // 오늘의 퍼즐 카드
+    $('home-daily-date').textContent = dayLabel(today);
+    var dailyLive = (isDaily() && game.status === 'playing') ||
+      (Game.isValidSaved(data.dailyGame) && data.dailyGame.daily === today);
+    $('home-daily-btn').textContent = Progress.dailyDone(data, today) ? '완료 ✓' : dailyLive ? '이어서 하기' : '플레이';
+    $('home-daily').classList.toggle('done', Progress.dailyDone(data, today));
+
+    // 내 등급 카드
+    var card = $('home-grade');
+    card.style.setProperty('--grade', grade.color);
+    $('home-grade-name').textContent = grade.name;
+    if (next) {
+      renderDots($('home-grade-dots'), data.wins);
+      $('home-grade-left').textContent = '승급까지 ' + Progress.winsLeft(data) + '판';
+    } else {
+      $('home-grade-dots').innerHTML = '';
+      $('home-grade-left').textContent = '가장 높은 등급';
+    }
+    card.querySelector('.hcard-btn').hidden = !C.FREE_GRADE_SELECT;
+
+    // 계속하기 · 새 게임
+    var r = resumable();
+    $('home-continue').hidden = !r;
+    if (r) {
+      $('home-continue-sub').textContent = formatTime(r.elapsedMs) + ' · ' + (r.daily ? '오늘의 퍼즐' : (C.GRADES[r.gradeIndex] || grade).name);
+    }
+    $('home-new-sub').textContent = grade.name;
+    $('home-new').classList.toggle('solo', !r); // 이어서 할 판이 없으면 새 게임이 주인공
+  }
+
+  /* 홈의 "계속하기" */
+  function homeContinue() {
+    if (game && game.status === 'playing') return showScreen('game');
+    if (Game.isValidSaved(data.game)) {
+      beginGame(data.game);
+      return showScreen('game');
+    }
+    homeNew();
+  }
+
+  /* 홈의 "새 게임" : 숫자를 넣은 승급전 판이 있으면 실패로 기록됩니다 */
+  function homeNew() {
+    if (ending) return;
+    persist();
+    var cur = Game.isValidSaved(data.game) ? data.game : null;
+    if (game && !game.daily && game.status === 'playing') cur = game;
+    function go() {
+      launch();
+      showScreen('game');
+    }
+    if (!cur || untouched(cur)) return go();
+    showModal('하던 판은 실패로 기록됩니다.\n새 게임을 시작할까요?', '새 게임', '아니요', function () {
+      abandon(cur, go);
+    });
+  }
+
+  /* 하던 승급전 판을 실패로 기록하고 next 를 부릅니다 (연속 실패로 강등되면 먼저 알려 줌) */
+  function abandon(cur, next) {
+    if (cur === game) stopTimer();
+    var res = Progress.recordLoss(data, cur.score);
+    Progress.recordStats(data, cur, false);
+    cur.status = 'lost';
+    data.game = null;
+    Progress.save(data);
+    if (res.demoted) {
+      showModal('연속 ' + C.FAILS_TO_DEMOTE + '번 실패해서\n' + res.grade.name + '(으)로 내려왔어요.', '확인', '', next);
+    } else {
+      next();
+    }
+  }
+
+  /* 홈의 "오늘의 퍼즐" 카드 */
+  function homeDaily() {
+    if (isDaily() && game.status === 'playing') return showScreen('game');
+    var today = Progress.dateKey();
+    if (Progress.dailyDone(data, today)) return pressDaily(); // 이미 풀었다는 안내
+    persist();
+    startDaily(today);
+    showScreen('game');
+  }
+
+  /* ---------------- 내 기록 화면 ---------------- */
+  function renderRecord() {
+    renderProfile();
+
+    // 전체 요약
+    var dailyGs = data.gradeStats.daily || {};
+    var done = data.totalGames + (dailyGs.played || 0);
+    var wins = data.totalWins + (dailyGs.won || 0);
+    fillStats($('record-summary'), [
+      ['끝낸 판', done ? formatScore(done) + '판' : '0판'],
       ['성공률', done ? Math.round((wins / done) * 100) + '%' : '-'],
-      ['최다 연승', st.bestWinStreak + '연승'],
-      ['무결점 성공', st.perfectWins + '판'],
-      [grade.name + ' 평균 시간', gs.won ? formatTime(Math.round(gs.sec / gs.won) * 1000) : '-'],
-      ['9×9 최고 기록', st.best9 ? formatTime(st.best9 * 1000) : '-']
-    ];
-    var box = $('record-stats');
+      ['모은 점수', formatScore(data.totalScore)]
+    ]);
+
+    // 승급전 / 오늘의 퍼즐 탭
+    var tabs = document.querySelectorAll('.mode-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].setAttribute('aria-selected', tabs[i].getAttribute('data-mode') === recordMode ? 'true' : 'false');
+    }
+    var chips = $('record-chips');
+    chips.innerHTML = '';
+    chips.hidden = recordMode !== 'grade';
+    var gi = recordGrade >= 0 ? recordGrade : data.gradeIndex;
+    if (recordMode === 'grade') {
+      C.GRADES.forEach(function (g, idx) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'gchip' + (idx === gi ? ' on' : '');
+        b.setAttribute('data-rec-grade', idx);
+        b.setAttribute('aria-pressed', idx === gi ? 'true' : 'false');
+        b.style.setProperty('--c', g.color);
+        b.textContent = g.name;
+        chips.appendChild(b);
+      });
+    }
+
+    var cards;
+    if (recordMode === 'grade') {
+      var g = C.GRADES[gi];
+      var gs = data.gradeStats[g.id] || {};
+      var bt = data.bestTimes[g.id];
+      cards = [
+        ['grid', '깬 판', (gs.won || 0) + (gs.played ? ' / ' + gs.played : '')],
+        ['thumb', '완벽한 승리', gs.perfect || 0],
+        ['flag', '최다 연승', gs.best || 0],
+        ['clock', '최고 시간', typeof bt === 'number' ? formatTime(bt * 1000) : '-'],
+        ['star', '최고 점수', typeof data.bestScores[g.id] === 'number' ? formatScore(data.bestScores[g.id]) : '-'],
+        ['avg', '평균 시간', gs.won ? formatTime(Math.round(gs.sec / gs.won) * 1000) : '-']
+      ];
+    } else {
+      var today = Progress.dateKey();
+      var dd = data.daily;
+      cards = [
+        ['grid', '푼 날', dd.total + '일'],
+        ['fire', '지금 연속', Progress.dailyStreak(data, today) + '일'],
+        ['flag', '가장 긴 연속', dd.bestStreak + '일'],
+        ['thumb', '완벽한 승리', dailyGs.perfect || 0],
+        ['clock', '최고 시간', dailyGs.bestSec ? formatTime(dailyGs.bestSec * 1000) : '-'],
+        ['star', Progress.dailyDone(data, today) ? '오늘 점수' : '오늘 퍼즐', Progress.dailyDone(data, today) ? formatScore(dd.score) : '아직']
+      ];
+    }
+    var box = $('record-cards');
+    box.innerHTML = '';
+    cards.forEach(function (c) {
+      var el = document.createElement('div');
+      el.className = 'rec-card';
+      var icon = document.createElement('span');
+      icon.className = 'rec-icon';
+      icon.innerHTML = ICONS[c[0]] || '';
+      var label = document.createElement('span');
+      label.className = 'rec-label';
+      label.textContent = c[1];
+      var val = document.createElement('b');
+      val.className = 'rec-val';
+      val.textContent = c[2];
+      el.appendChild(icon);
+      el.appendChild(label);
+      el.appendChild(val);
+      box.appendChild(el);
+    });
+
+    var fail = data.failStreak > 0 && data.gradeIndex > 0
+      ? ' · 연속 실패 ' + data.failStreak + '번 (' + C.FAILS_TO_DEMOTE + '번이면 강등)'
+      : '';
+    $('record-total').textContent = '지금 내 등급 ' + C.GRADES[data.gradeIndex].name + ' · ' + progressText() + fail;
+  }
+
+  /* 기록 카드 아이콘 (선 그림) */
+  var ICONS = {
+    grid: '<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"/></svg>',
+    thumb: '<svg viewBox="0 0 24 24"><path d="M7 10.5V20H4.5a1 1 0 0 1-1-1v-7.5a1 1 0 0 1 1-1Zm0 0 4-7a2 2 0 0 1 2.6 2.3l-.8 3.7h5.4a2 2 0 0 1 2 2.4l-1.4 7a2 2 0 0 1-2 1.6H7"/></svg>',
+    flag: '<svg viewBox="0 0 24 24"><path d="M5 21V4m0 0h11l-2.5 4.5L16 13H5"/></svg>',
+    clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/></svg>',
+    star: '<svg viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9Z"/></svg>',
+    avg: '<svg viewBox="0 0 24 24"><path d="M4 19.5h16M6.5 16V11M11 16V6.5M15.5 16v-6M20 16V8.5"/></svg>',
+    fire: '<svg viewBox="0 0 24 24"><path d="M12 21a6.5 6.5 0 0 0 6.5-6.5c0-4.5-4-6.5-4.5-10.5-2.5 1.5-4 4-3.5 7-1.5-.5-2.5-2-2.5-3.5-1.5 1.5-2.5 4-2.5 7A6.5 6.5 0 0 0 12 21Z"/></svg>'
+  };
+
+  function fillStats(box, items) {
     box.innerHTML = '';
     items.forEach(function (it) {
       var cell = document.createElement('div');
@@ -226,7 +394,103 @@
     });
   }
 
-  /* 내 기록 창 : 배지 모음 (받은 것은 색, 아직인 것은 흐리게) */
+  /* 게임한 시간 : 95분 → "1시간 35분" */
+  function playTime(sec) {
+    var m = Math.floor(sec / 60);
+    if (m < 60) return m + '분';
+    return Math.floor(m / 60) + '시간' + (m % 60 ? ' ' + (m % 60) + '분' : '');
+  }
+
+  /* ---------------- 로그인 (js/account.js) ---------------- */
+  var accountState = 'out';
+  var accountMsg = '';
+
+  function renderProfile() {
+    var A = S.Account;
+    var u = A.user();
+    var avatar = $('profile-avatar');
+    avatar.innerHTML = '';
+    avatar.style.backgroundImage = '';
+    if (u && u.photo) avatar.style.backgroundImage = 'url("' + u.photo.replace(/"/g, '') + '")';
+    else avatar.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="4.2"/><path d="M4 21c.6-4 3.9-6.5 8-6.5s7.4 2.5 8 6.5"/></svg>';
+
+    var name = $('profile-name');
+    if (u) name.textContent = u.name;
+    else if (accountState === 'restoring') name.textContent = (A.lastName() || '') + ' 로그인 확인 중…';
+    else name.textContent = '로그인하여 기록 지키기';
+    var sub = '게임한 시간 ' + playTime(data.stats.playSec || 0);
+    if (u) sub = (u.provider === 'facebook' ? '페이스북' : '구글') + ' 계정에 저장 중 · ' + sub;
+    $('profile-sub').textContent = sub;
+
+    var box = $('login-btns');
+    box.innerHTML = '';
+    if (u) {
+      box.appendChild(loginButton('logout', '로그아웃'));
+      var del = loginButton('delete', '계정과 저장된 기록 지우기');
+      del.className = 'link login-delete';
+      box.appendChild(del);
+    } else if (accountState !== 'restoring') {
+      A.providers().forEach(function (p) {
+        box.appendChild(loginButton(p, p === 'facebook' ? '페이스북으로 로그인' : 'Google로 로그인'));
+      });
+    }
+    var note = accountMsg;
+    if (!note && !u) {
+      note = A.configured()
+        ? '로그인하면 휴대폰을 바꾸거나 앱을 지웠다 깔아도 등급과 기록이 그대로 남아요.'
+        : '로그인은 준비 중이에요. 지금은 기록이 이 기기에만 저장돼요.';
+    }
+    if (!note && u) note = accountState === 'syncing' ? '기록을 맞추는 중…' : '기록이 계정에 저장되고 있어요.';
+    $('login-note').textContent = note;
+  }
+
+  var LOGO = {
+    google: '<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2Z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.4 3-4.1 5.6-4.1Z"/></svg>',
+    facebook: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#1877F2"/><path fill="#fff" d="M13.4 22v-7h2.3l.4-2.8h-2.7v-1.8c0-.8.3-1.4 1.4-1.4h1.4V6.6c-.3 0-1.1-.1-2.1-.1-2.1 0-3.5 1.3-3.5 3.6v2.1H8.3V15h2.3v7Z"/></svg>'
+  };
+
+  function loginButton(id, text) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'login-btn login-' + id;
+    b.setAttribute('data-login', id);
+    b.disabled = accountState === 'busy';
+    if (LOGO[id]) {
+      var i = document.createElement('span');
+      i.className = 'login-logo';
+      i.innerHTML = LOGO[id];
+      b.appendChild(i);
+    }
+    b.appendChild(document.createTextNode(text));
+    return b;
+  }
+
+  function pressLogin(id) {
+    accountMsg = '';
+    if (id === 'delete') {
+      showModal('계정에 저장된 기록과 로그인 정보를 지울까요?\n되돌릴 수 없어요.\n(이 기기에 있는 기록은 그대로 남아요)', '지우기', '아니요', function () {
+        S.Account.deleteAccount();
+      });
+      return;
+    }
+    if (id === 'logout') {
+      showModal('로그아웃할까요?\n기록은 이 기기에도 그대로 남아요.', '로그아웃', '아니요', function () {
+        S.Account.signOut();
+      });
+      return;
+    }
+    S.Account.signIn(id);
+  }
+
+  S.Account.onChange(function (status, user, msg) {
+    accountState = status;
+    accountMsg = status === 'error' ? msg || '' : '';
+    if (status === 'in' && user && splashDone) appToast(user.name + '님, 반가워요!');
+    if (status === 'deleted') appToast('계정을 지웠어요');
+    if (screen === 'record') renderProfile();
+  });
+
+  /* 내 기록 화면 : 배지 모음 (받은 것은 색, 아직인 것은 흐리게) */
   function renderBadges() {
     $('record-badge-count').textContent = S.Badges.count(data) + ' / ' + S.Badges.LIST.length;
     var box = $('record-badges');
@@ -344,6 +608,13 @@
       row.appendChild(sw);
       body.appendChild(row);
     });
+
+    // 개인정보처리방침 (앱에서는 맨 아래 줄이 없어서 여기에 둡니다)
+    var info = document.createElement('a');
+    info.className = 'link settings-privacy';
+    info.href = 'privacy.html';
+    info.textContent = '개인정보처리방침';
+    body.appendChild(info);
   }
 
   function toggleSetting(row) {
@@ -365,6 +636,19 @@
     el.hidden = false;
     window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(hideToast, ms || 1600);
+  }
+  /* 어느 화면에서나 아래쪽에 잠깐 뜨는 알림 (로그인, 나가기 안내) */
+  var appToastTimer = 0;
+  function appToast(msg) {
+    var el = $('app-toast');
+    el.textContent = msg;
+    el.hidden = true;
+    void el.offsetWidth;
+    el.hidden = false;
+    window.clearTimeout(appToastTimer);
+    appToastTimer = window.setTimeout(function () {
+      el.hidden = true;
+    }, 2200);
   }
   function hideToast() {
     window.clearTimeout(toastTimer);
@@ -439,10 +723,11 @@
   }
 
   /* 아직 아무것도 넣지 않은 판인가? (메모는 괜찮음) */
-  function untouched() {
-    if (game.mistakes > 0 || game.hintsLeft < C.MAX_HINTS) return false;
-    for (var i = 0; i < game.cells.length; i++) {
-      if (!game.fixed[i] && game.cells[i] !== 0) return false;
+  function untouched(g) {
+    g = g || game;
+    if (g.mistakes > 0 || g.hintsLeft < C.MAX_HINTS) return false;
+    for (var i = 0; i < g.cells.length; i++) {
+      if (!g.fixed[i] && g.cells[i] !== 0) return false;
     }
     return true;
   }
@@ -470,20 +755,20 @@
   /* ---------------- 등급 고르기 ---------------- */
   function pickGrade(index) {
     closeSheets();
-    if (ending || isDaily() || !C.FREE_GRADE_SELECT || index === data.gradeIndex) return;
+    if (ending || !C.FREE_GRADE_SELECT || index === data.gradeIndex) return;
+    persist();
+    var cur = Game.isValidSaved(data.game) ? data.game : null;
+    if (game && !game.daily && game.status === 'playing') cur = game;
     function go() {
       Progress.setGrade(data, index);
       data.game = null;
       Progress.save(data);
       launch();
+      showScreen('game');
     }
-    if (!game || game.status !== 'playing' || untouched()) return go();
+    if (!cur || untouched(cur)) return go();
     showModal('하던 판은 실패로 기록됩니다.\n' + C.GRADES[index].name + ' 등급으로 바꿀까요?', '바꾸기', '아니요', function () {
-      stopTimer();
-      Progress.recordLoss(data, game.score);
-      Progress.recordStats(data, game, false);
-      game.status = 'lost';
-      go();
+      abandon(cur, go);
     });
   }
 
@@ -778,7 +1063,7 @@
     var now = Date.now();
     var delta = now - lastTick;
     lastTick = now;
-    if (!game || game.status !== 'playing' || paused || document.hidden || overlayOpen()) return;
+    if (!game || game.status !== 'playing' || paused || document.hidden || overlayOpen() || screen !== 'game') return;
     // 화면이 꺼져 있던 시간은 세지 않습니다
     game.elapsedMs += Math.min(delta, 1000);
     $('game-timer').textContent = formatTime(game.elapsedMs);
@@ -1037,6 +1322,16 @@
   $('btn-result-close').addEventListener('click', function () {
     $('result').hidden = true;
     S.Effects.stop();
+    showScreen('home');
+  });
+  $('btn-home').addEventListener('click', function () {
+    showScreen('home');
+  });
+  $('home-continue').addEventListener('click', homeContinue);
+  $('home-new').addEventListener('click', homeNew);
+  $('home-daily').addEventListener('click', homeDaily);
+  $('home-grade').addEventListener('click', function () {
+    if (C.FREE_GRADE_SELECT) openSheet('grades');
   });
   $('btn-pause').addEventListener('click', pressPause);
   $('btn-resume').addEventListener('click', pressPause);
@@ -1061,9 +1356,13 @@
   });
   $('btn-reset').addEventListener('click', function () {
     showModal('등급과 기록을 모두 지우고\n하수부터 다시 시작할까요?', '지우기', '아니요', function () {
+      stopTimer();
       data = Progress.reset();
+      game = null;
+      recordGrade = -1;
       closeSheets();
-      launch();
+      Progress.save(data);
+      showScreen(screen);
     });
   });
 
@@ -1071,6 +1370,20 @@
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (!t.closest) return;
+    var tab = t.closest('[data-tab]');
+    if (tab) return showScreen(tab.getAttribute('data-tab'));
+    var mode = t.closest('.mode-tab');
+    if (mode) {
+      recordMode = mode.getAttribute('data-mode');
+      return renderRecord();
+    }
+    var chip = t.closest('[data-rec-grade]');
+    if (chip) {
+      recordGrade = Number(chip.getAttribute('data-rec-grade'));
+      return renderRecord();
+    }
+    var login = t.closest('[data-login]');
+    if (login) return pressLogin(login.getAttribute('data-login'));
     var opener = t.closest('[data-open]');
     if (opener) return openSheet(opener.getAttribute('data-open'));
     if (t.closest('[data-close]')) return closeSheets();
@@ -1126,7 +1439,7 @@
       if (e.key === 'Escape') closeSheets();
       return;
     }
-    if (overlayOpen() || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (overlayOpen() || e.ctrlKey || e.metaKey || e.altKey || screen !== 'game') return;
     var key = e.key;
     if (key === 'p' || key === 'P' || key === 'ㅔ') {
       pressPause();
@@ -1201,15 +1514,16 @@
 
   function onBack() {
     backReady = false;
+    if (!splashDone) return armBack();
     if (closeTopOverlay()) return armBack(); // 창만 닫고, 다음 뒤로 가기도 받을 준비
-    if (game && game.status === 'playing' && !ending && !paused) {
-      setPaused(true);
-      persist();
-    } else if (game && game.status === 'playing') {
-      persist();
+    if (screen !== 'home') {
+      // 게임 · 배지 · 내 기록 화면 → 홈 (하던 판은 저장되고 시간이 멈춤)
+      if (!ending) showScreen('home');
+      return armBack();
     }
+    if (game && game.status === 'playing') persist();
     // 여기서는 다시 쌓지 않습니다 : 한 번 더 누르면 앱이 닫힙니다
-    toast('한 번 더 누르면 나가요\n하던 판은 저장돼요', 2500, true);
+    appToast('한 번 더 누르면 나가요');
   }
 
   window.addEventListener('popstate', onBack);
@@ -1249,14 +1563,46 @@
   S.Skins.apply(Settings.get('skin'));
   S.Theme.apply();
 
-  /* 시작 : 하던 판이 있으면 이어서, 없으면 새 판 */
-  if (Game.isValidSaved(data.game)) {
-    beginGame(data.game);
-  } else {
-    data.game = null;
-    launch();
-  }
+  /* 앱으로 열었으면 홈 화면의 설명 글을 숨깁니다 (인터넷 창에서는 보여 줌) */
+  if (isAppMode()) document.documentElement.classList.add('is-app');
+  // 새로 고침해도 늘 맨 위에서 시작 (브라우저가 예전 스크롤 위치로 옮기지 않게)
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
-  /* 처음 켠 사람에게는 따라 하기를 먼저 보여 줍니다 (한 판이라도 해 본 사람은 건너뜀) */
-  if (!Settings.get('tutorialDone') && data.totalGames === 0 && !data.daily.total) openTutorial();
+  /* 로그인 : 계정 기록과 합친 결과를 받으면 화면을 새로 그립니다 */
+  S.Account.start(
+    function () {
+      if (game && game.status === 'playing') {
+        if (isDaily()) data.dailyGame = game;
+        else data.game = game;
+      }
+      return data;
+    },
+    function (merged) {
+      data = merged;
+      Progress.save(data);
+      showScreen(screen);
+    }
+  );
+
+  /* 시작 : 하던 판이 있으면 준비만 해 두고(시간은 멈춤) 홈 화면을 보여 줍니다 */
+  if (Game.isValidSaved(data.game)) beginGame(data.game);
+  else data.game = null;
+  showScreen('home');
+
+  /* 시작 그림 : "지금 시작하기"(깜박이는 단추)를 누르면 홈 화면으로 */
+  var splashDone = false;
+  function leaveSplash() {
+    if (splashDone) return;
+    splashDone = true;
+    var sp = $('splash');
+    sp.classList.add('out');
+    window.setTimeout(function () {
+      sp.hidden = true;
+    }, 400);
+    S.Sound.play('memoOn'); // 누를 때 짧은 소리 (설정에서 효과음을 끄면 안 남)
+    /* 처음 켠 사람에게는 따라 하기를 먼저 보여 줍니다 (한 판이라도 해 본 사람은 건너뜀) */
+    if (!Settings.get('tutorialDone') && data.totalGames === 0 && !data.daily.total) openTutorial();
+  }
+  $('splash-start').addEventListener('click', leaveSplash);
+  $('splash-start').focus();
 })();

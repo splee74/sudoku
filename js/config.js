@@ -18,6 +18,22 @@
     FREE_GRADE_SELECT: true,
 
     /*
+     * 로그인 (Google · 페이스북) : 구글 Firebase 를 씁니다.
+     *   Firebase 콘솔(console.firebase.google.com) → 프로젝트 설정 → "내 앱"의 웹 앱 설정 값을
+     *   아래에 그대로 옮겨 적으면 로그인 단추가 켜집니다. (만드는 법은 store/README.md 의 "로그인 설정")
+     *   apiKey 가 비어 있으면 로그인 단추가 "준비 중"으로 나옵니다.
+     *   이 값들은 숨길 필요가 없는 공개 값입니다. (기록은 Firestore 보안 규칙으로 본인만 볼 수 있게 막습니다)
+     */
+    FIREBASE: {
+      apiKey: '',
+      authDomain: '',
+      projectId: '',
+      appId: ''
+    },
+    // 보여 줄 로그인 단추 : 'google', 'facebook' (페이스북은 Meta 개발자 앱을 만든 뒤에 넣으세요)
+    LOGIN_PROVIDERS: ['google', 'facebook'],
+
+    /*
      * 오늘의 퍼즐 : 하루에 한 판, 같은 날에는 모든 사람에게 같은 퍼즐이 나옵니다.
      *   givens, level : 등급 목록과 같은 뜻 (채워진 숫자 개수, 어려운 정도)
      *   points        : 점수 크기 (등급 순서와 같은 뜻. 5면 다섯 번째 등급 "영웅"과 같은 점수)
