@@ -198,3 +198,114 @@
   .ab-hero { padding: 28px 30px; }
   .ab-hero h1 { font-size: 30px; }
 }
+
+/* ============================================================
+   규칙 창 (게임 · 홈의 "규칙", "플레이 방법")
+   위의 설명 글 카드(ab-*)를 함께 쓰고, 창 너비에 맞게 조금 작게 합니다.
+   ============================================================ */
+.rbook { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; font-size: 17px; line-height: 1.5; }
+.rbook p { margin: 0; }
+.rbook h3 {
+  display: flex; align-items: center; gap: 10px;
+  margin: 6px 0 10px; font-size: 21px; color: var(--ink);
+}
+.rbook h3 .ab-ico { width: 36px; height: 36px; font-size: 19px; border-radius: 10px; }
+.rb-sec { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px dashed var(--line); scroll-margin-top: 8px; }
+.rb-lead { font-size: 17px; }
+.rb-note { color: var(--ink-soft); font-size: 15px; text-align: center; }
+
+/* 따라 하기 단추 */
+.rb-tut {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 65%, #000));
+  color: var(--accent-ink); border: 0; border-radius: 18px;
+  padding: 14px 16px; text-align: left;
+  box-shadow: 0 4px 0 var(--accent-shadow, #1f4a36);
+}
+.rb-tut:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--accent-shadow, #1f4a36); }
+.rb-tut-i { flex: none; width: 46px; height: 46px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.rb-tut-t { flex: 1; font-size: 15px; line-height: 1.4; opacity: 0.95; }
+.rb-tut-t b { display: block; font-size: 19px; opacity: 1; }
+.rb-tut-go { font-size: 32px; font-weight: 300; line-height: 1; }
+
+/* 바로 가기 */
+.rb-jump { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
+.rb-jump::-webkit-scrollbar { display: none; }
+.rb-jump button {
+  flex: none; white-space: nowrap;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+  padding: 6px 14px; font-size: 15px; font-weight: 700;
+}
+.rb-jump button:active { background: var(--peer); }
+
+/* 기본 규칙 : 작은 판 */
+.rbook .ab-rules { gap: 6px; }
+.rbook .ab-rule { padding: 10px 4px; }
+.rbook .ab-rule figcaption { font-size: 14px; line-height: 1.35; }
+.rbook .mini i { font-size: 15px; }
+.rb-sizes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.rb-sizes span {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 6px 2px; text-align: center; font-size: 14px; color: var(--ink-soft);
+}
+.rb-sizes b { color: var(--ink); font-size: 16px; }
+
+/* 하는 방법 */
+.rbook .ab-steps { margin-top: 8px; gap: 8px; }
+.rbook .ab-steps li { font-size: 14.5px; padding: 14px 4px 10px; }
+.rbook .ab-step-i { font-size: 24px; }
+.rb-miss { display: flex; align-items: center; gap: 14px; padding: 12px 14px; }
+.rb-marks { flex: none; display: flex; gap: 4px; }
+.rb-marks i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--wrong); }
+.rb-marks i.on { background: var(--wrong); }
+.rb-red { color: var(--wrong); }
+.rb-miss p { font-size: 15.5px; }
+.rb-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rb-tool {
+  border-radius: 16px; border: 2px solid; padding: 10px 12px;
+  display: grid; grid-template-columns: 34px 1fr; column-gap: 8px; align-items: center;
+  color: #2b2a26;
+}
+.rb-tool svg { grid-row: span 2; width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rb-tool b { font-size: 16px; line-height: 1.2; }
+.rb-tool span { font-size: 13px; line-height: 1.3; color: #5d574b; }
+/* 게임 화면 도구 단추와 같은 색 */
+.rb-undo  { background: #e9f2fd; border-color: #b6d2f4; }
+.rb-erase { background: #fdeaf1; border-color: #f5bdd0; }
+.rb-memo  { background: #e6f6ec; border-color: #a8dcbd; }
+.rb-hint  { background: #fff5d6; border-color: #f0d282; }
+:root[data-theme="dark"] .rb-tool { color: var(--ink); }
+:root[data-theme="dark"] .rb-tool span { color: var(--ink-soft); }
+:root[data-theme="dark"] .rb-undo  { background: #1e2d42; border-color: #355478; }
+:root[data-theme="dark"] .rb-erase { background: #3b232e; border-color: #6e3c52; }
+:root[data-theme="dark"] .rb-memo  { background: #1d3729; border-color: #36694c; }
+:root[data-theme="dark"] .rb-hint  { background: #3a3218; border-color: #776222; }
+.rb-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
+.rb-row-i { flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 21px; }
+.rb-row-i svg { width: 22px; height: 22px; }
+.rb-row p, .rb-badges p, .rb-tips p { font-size: 15px; color: var(--ink-soft); line-height: 1.45; }
+.rb-row b, .rb-badges p > b:first-child { display: block; font-size: 16.5px; color: var(--ink); }
+
+/* 점수 · 승급 */
+.rbook .ab-score.rb-score { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.rbook .ab-pt { padding: 12px 6px; }
+.rbook .ab-pt b { font-size: 26px; }
+.rbook .ab-pt span { font-size: 14px; }
+.rbook .ab-updown { gap: 8px; }
+.rbook .ab-up b, .rbook .ab-down b { font-size: 15.5px; }
+.rbook .ab-up em, .rbook .ab-down em { font-style: normal; font-size: 20px; }
+.rbook .ab-up small, .rbook .ab-down small { font-size: 13px; line-height: 1.35; }
+.rb-tips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.rb-tips li { display: flex; gap: 10px; align-items: flex-start; padding: 2px 4px; }
+.rb-tips li > span { flex: none; font-size: 20px; line-height: 1.3; }
+.rb-tips b { color: var(--ink); }
+
+/* 오늘의 퍼즐 · 배지 */
+.rbook .ab-list { gap: 8px; }
+.rbook .ab-list li { padding: 10px 12px; }
+.rbook .ab-list li > span { font-size: 22px; }
+.rbook .ab-list p { font-size: 14.5px; }
+.rbook .ab-list b { font-size: 16px; }
+.rb-badges { display: flex; flex-direction: column; gap: 6px; text-align: center; }
+.rb-badge-row { font-size: 28px; letter-spacing: 6px; }
+.rbook .grade-list { margin-top: 0; }

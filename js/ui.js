@@ -1370,6 +1370,14 @@
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (!t.closest) return;
+    var jump = t.closest('[data-jump]');
+    if (jump) {
+      // 규칙 창의 바로 가기 : 그 묶음까지 창 안에서 부드럽게 내려갑니다
+      var target = $(jump.getAttribute('data-jump'));
+      var body = target && target.closest('.sheet-body');
+      if (body) body.scrollTo({ top: target.offsetTop - body.offsetTop - 8, behavior: 'smooth' });
+      return;
+    }
     var tab = t.closest('[data-tab]');
     if (tab) return showScreen(tab.getAttribute('data-tab'));
     var mode = t.closest('.mode-tab');
@@ -1563,7 +1571,7 @@
   S.Skins.apply(Settings.get('skin'));
   S.Theme.apply();
 
-  /* 앱으로 열었으면 홈 화면의 설명 글을 숨깁니다 (인터넷 창에서는 보여 줌) */
+  /* 앱으로 열었는지 표시 (화면 꾸밈에서 앱만 다르게 할 때 씀) */
   if (isAppMode()) document.documentElement.classList.add('is-app');
   // 새로 고침해도 늘 맨 위에서 시작 (브라우저가 예전 스크롤 위치로 옮기지 않게)
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';

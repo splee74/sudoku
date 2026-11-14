@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f3eee3">
   <meta name="description" content="하수에서 시작해 한 단계씩 올라가는 무료 스도쿠. 5판을 깨면 승급, 설치 없이 바로 즐기세요.">
   <title>스도쿠 승급전 - 하수부터 올라가는 무료 스도쿠</title>
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
   <!-- 아이폰 홈 화면 아이콘과 앱처럼 열기 (설치 정보 manifest.json 은 js/ui.js 맨 아래에서 연결합니다) -->
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="mobile-web-app-capable" content="yes">
@@ -51,7 +51,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
       </button>
       <span class="logo">
-        <img src="icon.svg" alt="" width="34" height="34">
+        <img src="icons/icon-192.png" alt="" width="34" height="34">
         <span>스도쿠 승급전</span>
       </span>
       <nav class="site-nav" aria-label="메뉴">
@@ -450,69 +450,130 @@
     </div>
   </div>
 
-  <!-- 규칙 창 -->
+  <!-- 규칙 창 : 카드 · 작은 판 그림으로 꾸민 규칙 (꾸밈은 css/about.css 의 "규칙 창") -->
   <div class="overlay" id="sheet-rules" hidden>
     <div class="sheet-box" role="dialog" aria-modal="true" aria-labelledby="rules-title">
       <div class="sheet-head">
         <h2 id="rules-title">스도쿠 규칙</h2>
         <button type="button" class="sheet-close" data-close aria-label="닫기">✕</button>
       </div>
-      <div class="sheet-body rules">
-        <h3>기본 규칙</h3>
-        <ul>
-          <li>빈칸에 숫자를 채워 판을 완성하는 놀이입니다.</li>
-          <li><b>가로줄</b> 하나에 같은 숫자는 한 번만 들어갑니다.</li>
-          <li><b>세로줄</b> 하나에도 같은 숫자는 한 번만 들어갑니다.</li>
-          <li><b>굵은 선으로 묶인 상자</b> 안에서도 같은 숫자는 한 번만 들어갑니다.</li>
-          <li>4×4 판은 1~4, 6×6 판은 1~6, 9×9 판은 1~9를 씁니다.</li>
-        </ul>
+      <div class="sheet-body rbook">
 
-        <h3>하는 방법</h3>
-        <ul>
-          <li>빈칸을 누른 다음, 숫자 버튼을 누르면 숫자가 들어갑니다.</li>
-          <li>틀린 숫자는 빨갛게 표시됩니다. <b>3번 틀리면</b> 그 판은 실패입니다.</li>
-          <li><b>메모</b>를 켜면 칸에 후보 숫자를 작게 적어 둘 수 있습니다.</li>
-          <li><b>힌트</b>는 한 칸을 정답으로 채워 줍니다. 한 판에 3번까지 쓸 수 있습니다.</li>
-          <li><b>되돌리기</b>는 바로 전 동작을 취소하고, <b>지우개</b>는 틀린 숫자나 메모를 지웁니다.</li>
-          <li>시간 옆의 <b>멈춤 버튼</b>을 누르면 잠시 쉬었다 할 수 있습니다.</li>
-          <li>창을 닫아도 하던 판은 저장되어, 다시 들어오면 이어서 할 수 있습니다.</li>
-        </ul>
+        <!-- 따라 하기 -->
+        <button type="button" class="rb-tut" id="btn-tutorial">
+          <span class="rb-tut-i" aria-hidden="true">👆</span>
+          <span class="rb-tut-t"><b>처음이세요?</b>작은 판으로 직접 눌러 보며 배워요</span>
+          <span class="rb-tut-go" aria-hidden="true">›</span>
+        </button>
 
-        <h3>점수</h3>
-        <ul>
-          <li>숫자를 맞힐 때마다 점수를 받습니다. 등급이 높을수록 한 칸의 점수가 큽니다.</li>
-          <li>틀리지 않고 <b>연속으로 맞히면</b> 점수가 점점 커집니다. (최대 3배)</li>
-          <li><b>한 줄이나 상자 하나를 완성</b>하면 보너스 점수를 받습니다.</li>
-          <li><b>판을 깨면</b> 완성 보너스를, 한 번도 안 틀렸으면 보너스를 더 받습니다.</li>
-          <li>힌트로 채운 칸은 점수가 없습니다.</li>
-        </ul>
+        <!-- 바로 가기 -->
+        <nav class="rb-jump" aria-label="규칙 바로 가기">
+          <button type="button" data-jump="rb-basic">기본 규칙</button>
+          <button type="button" data-jump="rb-how">하는 방법</button>
+          <button type="button" data-jump="rb-score">점수</button>
+          <button type="button" data-jump="rb-grade">승급</button>
+          <button type="button" data-jump="rb-daily">오늘의 퍼즐</button>
+          <button type="button" data-jump="rb-list">등급 목록</button>
+        </nav>
 
-        <h3>승급과 강등</h3>
-        <ul>
-          <li>같은 등급에서 <b id="rules-wins">5</b>판을 깨면 다음 등급으로 올라갑니다.</li>
-          <li>연속으로 <b id="rules-fails">3</b>번 실패하면 한 단계 내려갑니다. (가장 낮은 등급 밑으로는 내려가지 않습니다)</li>
-          <li>숫자를 넣은 뒤에 <b>새 게임</b>을 누르면 하던 판은 실패로 기록됩니다.</li>
-          <li>판 위의 <b>등급 이름</b>을 누르면 승급과 상관없이 하고 싶은 등급을 골라서 할 수 있습니다.</li>
-        </ul>
+        <!-- 기본 규칙 -->
+        <section class="rb-sec" id="rb-basic">
+          <h3><span class="ab-ico" aria-hidden="true">📏</span>기본 규칙</h3>
+          <p class="rb-lead">빈칸에 숫자를 채워 <b>판을 가득 채우면 성공!</b><br>약속은 세 가지뿐이에요.</p>
+          <div class="ab-rules">
+            <figure class="ab-card ab-rule">
+              <div class="mini" aria-hidden="true"><i class="on">1</i><i class="on br">2</i><i class="on ask">?</i><i class="on">4</i><i class="bb">3</i><i class="br bb"></i><i class="bb">1</i><i class="bb">2</i><i>2</i><i class="br"></i><i>4</i><i>3</i><i></i><i class="br">3</i><i>2</i><i></i></div>
+              <figcaption><b>가로줄</b><br>같은 숫자 한 번만</figcaption>
+            </figure>
+            <figure class="ab-card ab-rule">
+              <div class="mini" aria-hidden="true"><i class="on">1</i><i class="br">2</i><i></i><i>4</i><i class="on bb">3</i><i class="br bb"></i><i class="bb">1</i><i class="bb">2</i><i class="on">2</i><i class="br"></i><i>4</i><i>3</i><i class="on ask">?</i><i class="br">3</i><i>2</i><i></i></div>
+              <figcaption><b>세로줄</b><br>같은 숫자 한 번만</figcaption>
+            </figure>
+            <figure class="ab-card ab-rule">
+              <div class="mini" aria-hidden="true"><i>1</i><i class="br">2</i><i></i><i>4</i><i class="bb">3</i><i class="br bb"></i><i class="bb">1</i><i class="bb">2</i><i>2</i><i class="br"></i><i class="on">4</i><i class="on">3</i><i></i><i class="br">3</i><i class="on">2</i><i class="on ask">?</i></div>
+              <figcaption><b>굵은 선 상자</b><br>같은 숫자 한 번만</figcaption>
+            </figure>
+          </div>
+          <div class="rb-sizes">
+            <span><b>4×4</b> 판 → 1~4</span>
+            <span><b>6×6</b> 판 → 1~6</span>
+            <span><b>9×9</b> 판 → 1~9</span>
+          </div>
+        </section>
 
-        <h3>오늘의 퍼즐</h3>
-        <ul>
-          <li>하루에 한 판, 같은 날에는 모든 사람에게 <b>같은 퍼즐</b>이 나옵니다.</li>
-          <li>실패해도 등급에는 영향이 없고, 풀 때까지 다시 도전할 수 있습니다.</li>
-          <li>매일 빠지지 않고 풀면 <b>연속 일수</b>가 올라갑니다.</li>
-          <li>하던 승급전 판은 그대로 남아 있어서, 돌아오면 이어서 할 수 있습니다.</li>
-        </ul>
+        <!-- 하는 방법 -->
+        <section class="rb-sec" id="rb-how">
+          <h3><span class="ab-ico" aria-hidden="true">🎮</span>하는 방법</h3>
+          <ol class="ab-steps">
+            <li><span class="ab-step-n">1</span><span class="ab-step-i" aria-hidden="true">👆</span><b>빈칸 누르기</b></li>
+            <li><span class="ab-step-n">2</span><span class="ab-step-i" aria-hidden="true">🔢</span><b>숫자 누르기</b></li>
+            <li><span class="ab-step-n">3</span><span class="ab-step-i" aria-hidden="true">🎉</span><b>다 채우면 성공</b></li>
+          </ol>
+          <div class="ab-card rb-miss">
+            <span class="rb-marks" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></span>
+            <p>틀린 숫자는 <b class="rb-red">빨갛게</b> 표시돼요.<br><b>3번 틀리면</b> 그 판은 실패예요.</p>
+          </div>
+          <div class="rb-tools">
+            <div class="rb-tool rb-undo"><svg viewBox="0 0 24 24" aria-hidden="true"> <path d="M9 4 4 9l5 5M4 9h10a6 6 0 0 1 0 12h-2" stroke="#2f7bd6" stroke-width="2.800"/> </svg><b>되돌리기</b><span>바로 전 동작 취소</span></div>
+            <div class="rb-tool rb-erase"><svg viewBox="0 0 24 24" aria-hidden="true"> <g transform="rotate(-38 12 11)"> <rect x="2.500" y="6.500" width="19" height="9.500" rx="2.200" fill="#f58fb0" stroke="none"/> <path d="M2.500 8.700a2.200 2.200 0 0 1 2.200-2.200H9.500v9.500H4.700a2.200 2.200 0 0 1-2.200-2.200Z" fill="#4f8fe6" stroke="none"/> <rect x="9.500" y="6.500" width="1.600" height="9.500" fill="#ffffff" stroke="none" opacity="0.850"/> </g> <path d="M6 21.200h12" stroke="#c7a9b4" stroke-width="2"/> </svg><b>지우개</b><span>틀린 숫자 · 메모 지우기</span></div>
+            <div class="rb-tool rb-memo"><svg viewBox="0 0 24 24" aria-hidden="true"> <rect x="3" y="3.500" width="13.500" height="17.500" rx="2" fill="#fff7d6" stroke="#d9a520" stroke-width="1.500"/> <path d="M6 8.500h7.500M6 12h5M6 15.500h3" stroke="#d9a520" stroke-width="1.500"/> <g transform="rotate(40 17 13)"> <rect x="15" y="4.500" width="4" height="11" fill="#35a66b" stroke="none"/> <rect x="15" y="2.500" width="4" height="2.600" rx="1" fill="#ff7d93" stroke="none"/> <path d="M15 15.500h4l-2 4.200Z" fill="#f3d3a2" stroke="none"/> <path d="M16.300 18.200h1.400l-.7 1.500Z" fill="#33312c" stroke="none"/> </g> </svg><b>메모</b><span>후보 숫자를 작게 적기</span></div>
+            <div class="rb-tool rb-hint"><svg viewBox="0 0 24 24" aria-hidden="true"> <path d="M12 2.500a6.500 6.500 0 0 0-4.300 11.400c.8.700 1.100 1.500 1.100 2.600h6.400c0-1.100.3-1.900 1.100-2.600A6.500 6.500 0 0 0 12 2.500Z" fill="#ffd84d" stroke="#e39a00" stroke-width="1.500"/> <path d="M9.300 19h5.400M10.300 21.500h3.400" stroke="#8b8478" stroke-width="1.800"/> <path d="M10 7.500a3 3 0 0 1 2.500-1.500" stroke="#ffffff" stroke-width="1.500"/> </svg><b>힌트</b><span>한 칸 정답 · 한 판 3번</span></div>
+          </div>
+          <div class="ab-card rb-row">
+            <span class="rb-row-i rb-pause"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/></svg></span>
+            <p><b>멈춤 단추</b>시간 옆 단추로 잠시 쉬었다 해요.</p>
+          </div>
+          <div class="ab-card rb-row">
+            <span class="rb-row-i" aria-hidden="true">💾</span>
+            <p><b>자동 저장</b>앱을 닫아도 하던 판은 그대로, 다시 열면 이어서 해요.</p>
+          </div>
+        </section>
 
-        <h3>배지</h3>
-        <ul>
-          <li>첫 승리, 무결점, 연승, 오늘의 퍼즐 연속 풀기 같은 목표를 이루면 <b>배지</b>를 받습니다.</li>
-          <li>받은 배지와 통계는 <b>내 기록</b>에서 볼 수 있습니다.</li>
-        </ul>
+        <!-- 점수 -->
+        <section class="rb-sec" id="rb-score">
+          <h3><span class="ab-ico" aria-hidden="true">⭐</span>점수</h3>
+          <div class="ab-score rb-score">
+            <div class="ab-card ab-pt"><b>×3</b><span>연속으로 맞히면 점점 커져 <em>최대 3배</em></span></div>
+            <div class="ab-card ab-pt"><b>+α</b><span>줄 · 상자 완성 <em>보너스</em></span></div>
+            <div class="ab-card ab-pt"><b>🏁</b><span>판을 깨면 <em>완성 보너스</em></span></div>
+            <div class="ab-card ab-pt"><b>💎</b><span>안 틀리면 <em>보너스 더</em></span></div>
+          </div>
+          <p class="rb-note">⬆ 등급이 높을수록 한 칸 점수가 커요 · 힌트로 채운 칸은 점수가 없어요</p>
+        </section>
 
-        <h3>등급 목록</h3>
-        <div class="grade-list" id="rules-grades"></div>
+        <!-- 승급과 강등 -->
+        <section class="rb-sec" id="rb-grade">
+          <h3><span class="ab-ico" aria-hidden="true">🏆</span>승급과 강등</h3>
+          <div class="ab-updown">
+            <div class="ab-card ab-up"><span aria-hidden="true">⬆️</span><b>같은 등급에서 <em id="rules-wins">5</em>판 깨면 승급</b></div>
+            <div class="ab-card ab-down"><span aria-hidden="true">⬇️</span><b><em id="rules-fails">3</em>번 연속 실패면 강등</b><small>가장 낮은 등급 밑으로는 안 내려가요</small></div>
+          </div>
+          <ul class="rb-tips">
+            <li><span aria-hidden="true">🎚️</span><p><b>등급 이름</b>을 누르면 승급과 상관없이 원하는 등급을 골라서 할 수 있어요.</p></li>
+            <li><span aria-hidden="true">⚠️</span><p>숫자를 넣은 뒤 <b>새 게임</b>을 누르면 하던 판은 실패로 기록돼요.</p></li>
+          </ul>
+        </section>
 
-        <button type="button" class="btn btn-secondary rules-tut" id="btn-tutorial">작은 판으로 따라 하기 다시 보기</button>
+        <!-- 오늘의 퍼즐 · 배지 -->
+        <section class="rb-sec" id="rb-daily">
+          <h3><span class="ab-ico" aria-hidden="true">📅</span>오늘의 퍼즐</h3>
+          <ul class="ab-list">
+            <li><span aria-hidden="true">🗓️</span><p><b>하루에 한 판</b>같은 날에는 모두에게 같은 퍼즐이 나와요.</p></li>
+            <li><span aria-hidden="true">🛡️</span><p><b>등급에는 영향 없음</b>실패해도 풀 때까지 다시 도전할 수 있어요.</p></li>
+            <li><span aria-hidden="true">🔥</span><p><b>연속 일수</b>매일 빠지지 않고 풀면 쌓여요.</p></li>
+            <li><span aria-hidden="true">↩️</span><p><b>승급전은 그대로</b>하던 승급전 판은 남아 있어서 돌아오면 이어서 해요.</p></li>
+          </ul>
+          <div class="ab-card rb-badges">
+            <span class="rb-badge-row" aria-hidden="true">🌱💎🔥⚡🏆</span>
+            <p><b>배지 모으기</b>첫 승리, 무결점, 연승, 오늘의 퍼즐 연속 같은 목표를 이루면 배지를 받아요. 아래 메뉴의 <b>배지</b>에서 볼 수 있어요.</p>
+          </div>
+        </section>
+
+        <!-- 등급 목록 -->
+        <section class="rb-sec" id="rb-list">
+          <h3><span class="ab-ico" aria-hidden="true">🪜</span>등급 목록</h3>
+          <div class="grade-list" id="rules-grades"></div>
+        </section>
       </div>
     </div>
   </div>

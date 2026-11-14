@@ -14,8 +14,7 @@ body[data-screen="game"] .tabbar { display: none; }
 body:not([data-screen="home"]) .about,
 body:not([data-screen="home"]) .site-foot,
 body:not([data-screen="home"]) .slot-ad { display: none !important; }
-html.is-app .about,
-html.is-app .site-foot { display: none; }
+/* 앱에서도 홈 화면 아래로 내리면 설명 글이 이어집니다 */
 .settings-privacy { display: block; margin: 14px auto 0; text-align: center; }
 body:not([data-screen="game"]) { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }

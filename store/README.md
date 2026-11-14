@@ -3,7 +3,7 @@
 이 폴더에는 플레이스토어에 올릴 때 필요한 글과 그림이 들어 있습니다.
 
 | 파일 | 쓰는 곳 |
-|---|---|
+| --- | --- |
 | `feature-graphic.png` (1024×500) | 기본 스토어 등록정보 → 그래픽 이미지 |
 | `screenshots/*.png` (1080×1920, 8장) | 기본 스토어 등록정보 → 휴대전화 스크린샷 |
 | `../icons/icon-512.png` (512×512) | 기본 스토어 등록정보 → 앱 아이콘 |
@@ -28,7 +28,7 @@
 
 ### 2단계 : 앱 파일 만들기 (PWABuilder)
 
-1. https://www.pwabuilder.com 에 게임 주소 `https://splee74.github.io/sudoku/` 를 넣고 Start
+1. <https://www.pwabuilder.com> 에 게임 주소 `https://splee74.github.io/sudoku/` 를 넣고 Start
 2. **Package for stores → Android → Generate Package**
    - Package ID : `io.github.splee74.sudoku` 처럼 정하면 됩니다 (한 번 올리면 못 바꿈)
    - App name : 스도쿠 승급전 / Launcher name : 스도쿠
@@ -52,7 +52,7 @@
 
 ### 4단계 : Play Console 에 올리기
 
-1. https://play.google.com/console 개발자 계정 만들기 (한 번 25달러)
+1. <https://play.google.com/console> 개발자 계정 만들기 (한 번 25달러)
 2. **앱 만들기** → 앱 이름 "스도쿠 승급전", 게임, 무료
 3. 아래 "스토어 글", "앱 콘텐츠 답변" 대로 채우기
 4. **개인 개발자 계정이면** 바로 공개할 수 없고, 먼저 **비공개 테스트**를 해야 합니다.
@@ -64,17 +64,20 @@
 ## 스토어 글
 
 **앱 이름** (30자 이내)
-```
+
+```text
 스도쿠 승급전
 ```
 
 **간단한 설명** (80자 이내)
-```
+
+```text
 하수에서 신까지! 4×4부터 9×9까지 한 단계씩 올라가는 스도쿠. 오늘의 퍼즐, 배지 모으기
 ```
 
 **자세한 설명** (4000자 이내)
-```
+
+```text
 하수에서 시작해 한 단계씩 올라가는 스도쿠, 스도쿠 승급전입니다.
 
 ■ 처음이어도 괜찮아요
@@ -111,7 +114,7 @@ Google이나 페이스북으로 로그인하면 휴대폰을 바꿔도 등급과
 ## 앱 콘텐츠 답변 (Play Console → 정책 → 앱 콘텐츠)
 
 | 항목 | 답 |
-|---|---|
+| --- | --- |
 | 개인정보처리방침 | `https://splee74.github.io/sudoku/privacy.html` |
 | 광고 | 광고 없음 |
 | 앱 액세스 권한 | 모든 기능을 제한 없이 사용 가능 (로그인은 고를 수 있는 기능이라 로그인 없이도 전부 됨) |
@@ -125,7 +128,7 @@ Google이나 페이스북으로 로그인하면 휴대폰을 바꿔도 등급과
 ### 데이터 보안 답변 (로그인 기능이 켜진 경우)
 
 | 질문 | 답 |
-|---|---|
+| --- | --- |
 | 사용자 데이터를 수집하거나 공유하나요? | **예** (로그인한 사람의 정보를 Firebase 에 저장) |
 | 전송 중 암호화되나요? | **예** |
 | 사용자가 데이터 삭제를 요청할 수 있나요? | **예** — 앱 안 "내 기록 → 계정과 저장된 기록 지우기" |
@@ -146,7 +149,7 @@ Google이나 페이스북으로 로그인하면 휴대폰을 바꿔도 등급과
 
 ### 1. Firebase 프로젝트 만들기
 
-1. https://console.firebase.google.com → **프로젝트 추가** → 이름 `sudoku-seunggeupjeon` 등 → Google 애널리틱스는 **사용 안 함** (개인정보처리방침과 맞추려고)
+1. <https://console.firebase.google.com> → **프로젝트 추가** → 이름 `sudoku-seunggeupjeon` 등 → Google 애널리틱스는 **사용 안 함** (개인정보처리방침과 맞추려고)
 2. 프로젝트 화면의 **</> (웹)** 단추 → 앱 이름 "스도쿠 승급전" → 등록
 3. 화면에 나오는 `firebaseConfig` 의 `apiKey`, `authDomain`, `projectId`, `appId` 네 개를 `js/config.js` 의 `FIREBASE` 에 옮겨 적기
 
@@ -161,7 +164,7 @@ Google이나 페이스북으로 로그인하면 휴대폰을 바꿔도 등급과
 1. 왼쪽 **빌드 → Firestore Database → 데이터베이스 만들기** → 위치 `asia-northeast3 (서울)` → **프로덕션 모드**
 2. **규칙** 탭에 아래를 그대로 붙여 넣고 **게시** (자기 기록만 읽고 쓸 수 있게 막는 규칙)
 
-```
+```text
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -176,7 +179,7 @@ service cloud.firestore {
 
 페이스북은 Meta 쪽 설정이 더 필요합니다. 귀찮으면 `js/config.js` 의 `LOGIN_PROVIDERS` 에서 `'facebook'` 을 빼면 Google 단추만 나옵니다.
 
-1. https://developers.facebook.com → **앱 만들기** → "Facebook 로그인으로 사용자 인증" 고르기
+1. <https://developers.facebook.com> → **앱 만들기** → "Facebook 로그인으로 사용자 인증" 고르기
 2. 앱 설정의 **앱 ID**, **앱 시크릿 코드** 를 Firebase **Authentication → Sign-in method → Facebook** 에 넣고 사용 설정
 3. Firebase 가 보여 주는 **OAuth 리디렉션 URI** 를 복사해서 Meta 앱의 **Facebook 로그인 → 설정 → 유효한 OAuth 리디렉션 URI** 에 붙여 넣기
 4. Meta 앱의 **기본 설정** 에 개인정보처리방침 주소(`.../privacy.html`)와 데이터 삭제 안내 주소(같은 주소)를 넣고, 앱을 **라이브(공개)** 로 바꾸기
