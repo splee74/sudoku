@@ -36,6 +36,8 @@ html, body {
   word-break: keep-all; /* 한글이 단어 중간에서 줄바꿈되지 않게 */
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+  /* 화면 맨 위에서 아래로 당겨도 새로 고침되지 않게 (휴대폰 크롬의 당겨서 새로 고침 끄기) */
+  overscroll-behavior-y: none;
 }
 
 button {
