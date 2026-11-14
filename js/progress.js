@@ -56,7 +56,26 @@
         total: 0, // 지금까지 푼 횟수
         score: 0, // 마지막으로 푼 날의 점수
         seconds: 0 // 마지막으로 푼 날의 걸린 시간(초)
-      }
+      },
+      // 통계 (내 기록 창과 배지에 씁니다)
+      stats: freshStats(),
+      // 등급별 통계 : { 등급id: { played: 끝낸 판, won: 깬 판, sec: 깬 판의 시간 합(초) } } (오늘의 퍼즐은 'daily')
+      gradeStats: {},
+      // 받은 배지 : { 배지id: 받은 날짜 } (목록은 js/badges.js)
+      badges: {}
+    };
+  }
+
+  function freshStats() {
+    return {
+      perfectWins: 0, // 한 번도 안 틀리고 깬 판
+      noHintWins: 0, // 힌트 없이 깬 판
+      hintsUsed: 0, // 지금까지 쓴 힌트
+      winStreak: 0, // 지금 이어지는 연승
+      bestWinStreak: 0, // 가장 길었던 연승
+      maxPromoted: 0, // 승급으로 올라가 본 가장 높은 등급 (등급 고르기로 고른 것은 안 침)
+      wins9: 0, // 9×9 판을 깬 횟수
+      best9: 0 // 9×9 판 가장 빠른 기록(초, 0 = 없음)
     };
   }
 
@@ -90,6 +109,15 @@
             data.daily.score = num(sd.score, 0);
             data.daily.seconds = num(sd.seconds, 0);
           }
+          var st = saved.stats;
+          if (st && typeof st === 'object') {
+            for (var k in data.stats) data.stats[k] = num(st[k], 0);
+          } else {
+            // 통계가 생기기 전부터 하던 사람 : 지금 등급까지는 올라온 것으로 칩니다
+            data.stats.maxPromoted = data.gradeIndex;
+          }
+          if (saved.gradeStats && typeof saved.gradeStats === 'object') data.gradeStats = saved.gradeStats;
+          if (saved.badges && typeof saved.badges === 'object') data.badges = saved.badges;
         }
       }
     } catch (e) {
@@ -144,6 +172,7 @@
       data.gradeIndex++;
       data.wins = 0;
       promoted = true;
+      if (data.gradeIndex > data.stats.maxPromoted) data.stats.maxPromoted = data.gradeIndex;
     }
     return { promoted: promoted, grade: C.GRADES[data.gradeIndex], newBest: newBest, newBestScore: newBestScore };
   }
@@ -213,6 +242,36 @@
     return { streak: d.streak };
   }
 
+  /*
+   * 끝난 판 하나를 통계에 넣습니다. (승급전, 오늘의 퍼즐, 버린 판 모두)
+   *   g   : 끝난 판 (game.js 의 판 상태)
+   *   won : 깼는지
+   */
+  function recordStats(data, g, won) {
+    var st = data.stats;
+    var id = g.daily ? 'daily' : g.gradeId;
+    var gs = data.gradeStats[id];
+    if (!gs || typeof gs !== 'object') gs = data.gradeStats[id] = { played: 0, won: 0, sec: 0 };
+    var seconds = Math.floor((g.elapsedMs || 0) / 1000);
+    var hints = C.MAX_HINTS - g.hintsLeft;
+    gs.played = num(gs.played, 0) + 1;
+    st.hintsUsed += Math.max(0, hints);
+    if (won) {
+      gs.won = num(gs.won, 0) + 1;
+      gs.sec = num(gs.sec, 0) + seconds;
+      if (g.mistakes === 0) st.perfectWins++;
+      if (hints === 0) st.noHintWins++;
+      st.winStreak++;
+      if (st.winStreak > st.bestWinStreak) st.bestWinStreak = st.winStreak;
+      if (g.size === 9) {
+        st.wins9++;
+        if (!st.best9 || seconds < st.best9) st.best9 = seconds;
+      }
+    } else {
+      st.winStreak = 0;
+    }
+  }
+
   /* 승급까지 남은 판 수 (가장 높은 등급이면 -1) */
   function winsLeft(data) {
     if (data.gradeIndex >= C.GRADES.length - 1) return -1;
@@ -232,6 +291,7 @@
     dateKey: dateKey,
     dailyDone: dailyDone,
     dailyStreak: dailyStreak,
-    recordDaily: recordDaily
+    recordDaily: recordDaily,
+    recordStats: recordStats
   };
 })(typeof window !== 'undefined' ? window : globalThis);

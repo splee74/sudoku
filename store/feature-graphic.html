@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>대표 그림 (1024×500)</title>
+<!--
+  플레이스토어 "그래픽 이미지(1024×500)"를 만드는 페이지입니다.
+  글자를 고친 뒤 store/make-images.js 를 다시 돌리면 feature-graphic.png 가 새로 만들어집니다.
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1024px; height: 500px; overflow: hidden; }
+  body {
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+    background: linear-gradient(135deg, #f6f1e6 0%, #efe6d2 100%);
+    color: #2b2a26; word-break: keep-all;
+    display: flex; align-items: center; gap: 40px; padding: 0 56px;
+  }
+  .text { flex: 1; }
+  .logo { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+  .logo img { width: 76px; height: 76px; border-radius: 18px; box-shadow: 0 6px 16px rgba(40, 30, 10, 0.18); }
+  h1 { white-space: nowrap; font-size: 60px; font-weight: 900; letter-spacing: -2px; line-height: 1.1; }
+  .tag { font-size: 30px; font-weight: 700; line-height: 1.4; color: #3d3a33; }
+  .grades { display: flex; gap: 8px; margin-top: 26px; flex-wrap: wrap; }
+  .grades span { color: #fff; font-size: 20px; font-weight: 800; padding: 4px 14px; border-radius: 999px; }
+  .board {
+    flex: none; width: 340px; height: 340px;
+    display: grid; grid-template-columns: repeat(9, 1fr);
+    background: #fffdf8; border: 4px solid #4a463d; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 18px 40px rgba(40, 30, 10, 0.25); transform: rotate(3deg);
+  }
+  .board b {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800; border-right: 1px solid #cfc6b4; border-bottom: 1px solid #cfc6b4;
+  }
+  .board b.u { color: #1b5aa6; }
+  .board b.s { background: #ffd35c; }
+  .board b.p { background: #ece5d3; }
+</style>
+</head>
+<body>
+  <div class="text">
+    <div class="logo"><img src="../icons/icon-512.png" alt=""><h1>스도쿠 승급전</h1></div>
+    <p class="tag">하수에서 시작해 신까지,<br>한 단계씩 올라가는 스도쿠</p>
+    <div class="grades">
+      <span style="background:#6f7f8c">하수</span><span style="background:#4d8558">평민</span><span style="background:#2f6aa8">중수</span>
+      <span style="background:#6a4fa3">고수</span><span style="background:#a3477f">영웅</span><span style="background:#1f1f1f">신</span>
+    </div>
+  </div>
+  <div class="board" id="board"></div>
+  <script>
+    // 그림용 9×9 판 (정답판 일부만 보여 줌)
+    var sol = '534678912672195348198342567859761423426853791713924856961537284287419635345286179';
+    var show = '530000900600195000098000060800060003400803001700020006060000280000419005000080000';
+    var user = { 2: 1, 12: 1, 31: 1, 40: 1, 58: 1 };
+    var board = document.getElementById('board');
+    for (var i = 0; i < 81; i++) {
+      var b = document.createElement('b');
+      var r = Math.floor(i / 9), c = i % 9;
+      if (c % 3 === 2 && c < 8) b.style.borderRight = '3px solid #4a463d';
+      if (r % 3 === 2 && r < 8) b.style.borderBottom = '3px solid #4a463d';
+      var v = show[i] !== '0' ? show[i] : (user[i] ? sol[i] : '');
+      b.textContent = v;
+      if (user[i]) b.className = 'u';
+      if (i === 40) b.className = 'u s';
+      else if (r === 4 || c === 4) b.className += ' p';
+      board.appendChild(b);
+    }
+  </script>
+</body>
+</html>

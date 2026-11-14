@@ -53,4 +53,45 @@
   }
 
   S.Skins = { LIST: LIST, current: current, apply: apply };
+
+  /*
+   * 화면 밝기 (다크 모드)
+   *   <html data-theme="dark"> 가 붙으면 css/dark.css 의 어두운 색이 입혀집니다.
+   *   'auto' 이면 휴대폰 설정(밝게/어둡게)을 따라가고, 휴대폰 설정을 바꾸면 바로 바뀝니다.
+   */
+  var THEME_LIST = [
+    { id: 'auto', name: '휴대폰 따라가기' },
+    { id: 'light', name: '밝게' },
+    { id: 'dark', name: '어둡게' }
+  ];
+  var darkQuery = root.matchMedia ? root.matchMedia('(prefers-color-scheme: dark)') : null;
+
+  function isDark() {
+    var t = S.Settings.get('theme');
+    if (t === 'dark') return true;
+    if (t === 'light') return false;
+    return !!(darkQuery && darkQuery.matches);
+  }
+
+  function applyTheme(id) {
+    if (id) S.Settings.setTheme(id);
+    var dark = isDark();
+    var el = document.documentElement;
+    if (dark) el.setAttribute('data-theme', 'dark');
+    else el.removeAttribute('data-theme');
+    // 휴대폰 맨 위 알림줄 색도 바탕색에 맞춥니다
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', getComputedStyle(el).getPropertyValue('--bg').trim() || (dark ? '#1b1a17' : '#f3eee3'));
+    return dark;
+  }
+
+  if (darkQuery) {
+    var follow = function () {
+      if (S.Settings.get('theme') === 'auto') applyTheme();
+    };
+    if (darkQuery.addEventListener) darkQuery.addEventListener('change', follow);
+    else if (darkQuery.addListener) darkQuery.addListener(follow);
+  }
+
+  S.Theme = { LIST: THEME_LIST, apply: applyTheme, isDark: isDark };
 })(typeof window !== 'undefined' ? window : globalThis);

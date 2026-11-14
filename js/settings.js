@@ -48,6 +48,18 @@
     }
     // 고른 스킨 (목록은 skins.js)
     values.skin = typeof saved.skin === 'string' ? saved.skin : 'default';
+    // 화면 밝기 : 'auto' 휴대폰 따라가기 · 'light' 밝게 · 'dark' 어둡게
+    values.theme = THEMES.indexOf(saved.theme) >= 0 ? saved.theme : 'auto';
+    // 처음 하는 사람을 위한 따라 하기를 끝냈거나 건너뛰었는지
+    values.tutorialDone = saved.tutorialDone === true;
+  }
+
+  var THEMES = ['auto', 'light', 'dark'];
+
+  function setTheme(id) {
+    if (THEMES.indexOf(id) < 0) return;
+    values.theme = id;
+    store();
   }
 
   function store() {
@@ -74,5 +86,5 @@
 
   load();
 
-  S.Settings = { ITEMS: ITEMS, get: get, set: set, setSkin: setSkin, load: load };
+  S.Settings = { ITEMS: ITEMS, get: get, set: set, setSkin: setSkin, setTheme: setTheme, load: load };
 })(typeof window !== 'undefined' ? window : globalThis);

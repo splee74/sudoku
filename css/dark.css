@@ -1,0 +1,117 @@
+/* ============================================================
+   다크 모드 : <html data-theme="dark"> 일 때 입히는 어두운 색.
+   설정 창의 "화면 밝기"에서 고르고, "휴대폰 따라가기"면 휴대폰 설정을 따릅니다.
+
+   - 기본 스킨 : 판까지 모두 어둡게
+   - 파스텔 6가지 : 스킨 색을 살린 어두운 판
+   - 아이보리 타일 · 나무판 · 알록달록 : 판은 원래 모습 그대로, 판 바깥만 어둡게
+     (진짜 타일과 나무 느낌이 나는 스킨이라 판까지 어둡게 하면 어색합니다)
+   ============================================================ */
+
+/* ---------- 공통 : 판 바깥(메뉴, 버튼, 창)과 기본 스킨의 판 ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1b1a17;
+  --surface: #27251f;
+  --ink: #ece6d8;
+  --ink-soft: #aaa394;
+  --line: #48443b;
+  --line-strong: #b5aa94;
+  --user: #84b6ff;
+  --wrong: #ff7d6e;
+  --wrong-bg: #4d2621;
+  --sel: #6e5c1c;
+  --same: #4a4224;
+  --peer: #34312a;
+  --wave: #2f5c3e;
+}
+:root[data-theme="dark"]:not([data-skin]),
+:root[data-theme="dark"][data-skin="default"] {
+  --accent: #368260;
+  --accent-shadow: #1f4d38;
+}
+
+:root[data-theme="dark"] .overlay { background: rgba(0, 0, 0, 0.66); }
+:root[data-theme="dark"] .toast { color: var(--bg); }
+:root[data-theme="dark"] .gain { color: #ff9e5e; text-shadow: 0 0 3px #000, 0 0 3px #000, 0 0 6px #000; }
+:root[data-theme="dark"] #result-score { color: #ff9e5e; }
+:root[data-theme="dark"] .result-mark.fail { background: #6b665c; }
+:root[data-theme="dark"] .cell.wrong.sel { background: #6e2c25; }
+:root[data-theme="dark"] .switch { background: #5c574d; }
+:root[data-theme="dark"] .daily-btn { color: #ff8f75; border-color: #ff8f75; }
+:root[data-theme="dark"] .daily-btn:hover,
+:root[data-theme="dark"] .daily-btn:active { background: #3c2621; }
+
+/* 도구 버튼 : 아이콘 색은 그대로, 바탕만 어둡게 */
+:root[data-theme="dark"] .tool,
+:root[data-theme="dark"] .tool:disabled { color: var(--ink); }
+:root[data-theme="dark"] .tool-undo  { background: #1e2d42; border-color: #355478; }
+:root[data-theme="dark"] .tool-erase { background: #3b232e; border-color: #6e3c52; }
+:root[data-theme="dark"] .tool-memo  { background: #1d3729; border-color: #36694c; }
+:root[data-theme="dark"] .tool-hint  { background: #3a3218; border-color: #776222; }
+:root[data-theme="dark"] .tool.on { background: #2e6cbd; border-color: #2e6cbd; color: #fff; }
+
+/* ---------- 파스텔 6가지 : 스킨 색(--tint)을 섞은 어두운 판 ---------- */
+:root[data-theme="dark"][data-skin^="pastel-"] {
+  --bg: color-mix(in srgb, var(--tint) 7%, #18181c);
+  --surface: #25252b;
+  --ink: #ececf1;
+  --ink-soft: #a6a6b1;
+  --line: color-mix(in srgb, var(--tint) 22%, #3b3b43);
+  --line-strong: color-mix(in srgb, var(--tint) 55%, #9c9ca6);
+  --cell-alt: color-mix(in srgb, var(--tint) 22%, #25252b);
+  --peer: color-mix(in srgb, var(--tint) 13%, #2d2d34);
+  --peer-alt: color-mix(in srgb, var(--tint) 34%, #25252b);
+  --same: #5a4e22;
+  --sel: #7a6420;
+  --wave: color-mix(in srgb, var(--tint) 45%, #25252b);
+  --user: #8cbdff;
+}
+
+/* ---------- 타일 스킨 3가지 : 판 바깥만 어둡게 ---------- */
+/* 판 바깥에서 쓰는 숫자 버튼 글자색 */
+:root[data-theme="dark"][data-skin="ivory"],
+:root[data-theme="dark"][data-skin="wood"],
+:root[data-theme="dark"][data-skin="colorful"] { --user: #8cbdff; }
+:root[data-theme="dark"][data-skin="colorful"] body { --ink-soft: #aaa394; }
+
+/* 판 안쪽은 원래 스킨 색으로 되돌립니다 (css/skins.css 와 같은 값) */
+:root[data-theme="dark"][data-skin="ivory"] .board {
+  --ink: #463f33;
+  --ink-soft: #776d5d;
+  --line-strong: #a89c85;
+  --user: #2a5a9c;
+  --wrong: #c0362a;
+  --peer: #e8dcc2;
+  --same: #f5e2a4;
+  --sel: #efc463;
+  --wrong-bg: #f7d9d1;
+  --wave: #ffffff;
+}
+:root[data-theme="dark"][data-skin="wood"] .board {
+  --ink: #2f2a22;
+  --ink-soft: #655c4d;
+  --line-strong: #efd2a4;
+  --user: #1b5aa6;
+  --wrong: #c0362a;
+  --peer: #fbe9c9;
+  --same: #f0d2a5;
+  --sel: #fff0a0;
+  --wrong-bg: #ffffff;
+  --wave: #fff8d8;
+}
+:root[data-theme="dark"][data-skin="colorful"] .board {
+  --ink: #2e2a3a;
+  --ink-soft: #3d2f1f;
+  --line-strong: #9c805f;
+  --user: #1456c8;
+  --wrong: #c0362a;
+  --peer: #d4bd9f;
+  --same: #a78d6e;
+  --sel: #fff3b0;
+  --wrong-bg: #ffffff;
+  --wave: #ffffff;
+}
+/* 나무판 · 알록달록의 밝은 노란 강조 단추 위에서는 숫자를 진하게 */
+:root[data-theme="dark"][data-skin="wood"] .num.on,
+:root[data-theme="dark"][data-skin="colorful"] .num.on { color: #1b5aa6; }

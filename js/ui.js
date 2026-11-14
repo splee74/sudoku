@@ -133,7 +133,7 @@
   }
   /* 무언가 창이 떠 있으면 시간이 멈추고 키보드 입력도 받지 않습니다 */
   function overlayOpen() {
-    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden;
+    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || S.Tutorial.isOpen();
   }
   function openSheet(name) {
     closeSheets();
@@ -188,16 +188,95 @@
       $('record-daily-sub').textContent = '판 위의 "오늘의 퍼즐"을 눌러 보세요';
     }
 
+    renderStats();
+    renderBadges();
     renderGradeList($('record-grades'), true);
     $('record-total').textContent = data.totalGames > 0
       ? '지금까지 ' + data.totalGames + '판 중 ' + data.totalWins + '판 성공 · 모은 점수 ' + formatScore(data.totalScore) + '점'
       : '아직 끝낸 판이 없어요';
   }
 
+  /* 내 기록 창 : 통계 여섯 칸 */
+  function renderStats() {
+    var st = data.stats;
+    var grade = C.GRADES[data.gradeIndex];
+    var gs = data.gradeStats[grade.id] || {};
+    var done = data.totalGames + (data.gradeStats.daily ? data.gradeStats.daily.played || 0 : 0);
+    var wins = data.totalWins + (data.gradeStats.daily ? data.gradeStats.daily.won || 0 : 0);
+    var items = [
+      ['끝낸 판', done ? formatScore(done) + '판' : '-'],
+      ['성공률', done ? Math.round((wins / done) * 100) + '%' : '-'],
+      ['최다 연승', st.bestWinStreak + '연승'],
+      ['무결점 성공', st.perfectWins + '판'],
+      [grade.name + ' 평균 시간', gs.won ? formatTime(Math.round(gs.sec / gs.won) * 1000) : '-'],
+      ['9×9 최고 기록', st.best9 ? formatTime(st.best9 * 1000) : '-']
+    ];
+    var box = $('record-stats');
+    box.innerHTML = '';
+    items.forEach(function (it) {
+      var cell = document.createElement('div');
+      cell.className = 'stat';
+      var v = document.createElement('b');
+      v.textContent = it[1];
+      var l = document.createElement('span');
+      l.textContent = it[0];
+      cell.appendChild(v);
+      cell.appendChild(l);
+      box.appendChild(cell);
+    });
+  }
+
+  /* 내 기록 창 : 배지 모음 (받은 것은 색, 아직인 것은 흐리게) */
+  function renderBadges() {
+    $('record-badge-count').textContent = S.Badges.count(data) + ' / ' + S.Badges.LIST.length;
+    var box = $('record-badges');
+    box.innerHTML = '';
+    S.Badges.LIST.forEach(function (b) {
+      var got = data.badges[b.id];
+      var el = document.createElement('div');
+      el.className = 'badge-tile' + (got ? ' got' : '');
+      var icon = document.createElement('span');
+      icon.className = 'badge-icon';
+      icon.textContent = got ? b.icon : '🔒';
+      icon.setAttribute('aria-hidden', 'true');
+      var name = document.createElement('b');
+      name.textContent = b.name;
+      var desc = document.createElement('span');
+      desc.className = 'badge-desc';
+      desc.textContent = got ? dayLabel(got) + ' 받음' : b.desc;
+      el.title = b.desc;
+      el.setAttribute('aria-label', b.name + ', ' + b.desc + (got ? ', 받음' : ', 아직 못 받음'));
+      el.appendChild(icon);
+      el.appendChild(name);
+      el.appendChild(desc);
+      box.appendChild(el);
+    });
+  }
+
   /* 설정 화면은 settings.js의 ITEMS 목록대로 만들어집니다 */
   function renderSettings() {
     var body = $('settings-body');
     body.innerHTML = '';
+
+    // 화면 밝기 (다크 모드)
+    var th = document.createElement('h3');
+    th.textContent = '화면 밝기';
+    body.appendChild(th);
+    var seg = document.createElement('div');
+    seg.className = 'seg';
+    seg.setAttribute('role', 'radiogroup');
+    seg.setAttribute('aria-label', '화면 밝기');
+    S.Theme.LIST.forEach(function (t) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'seg-btn';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('data-theme-id', t.id);
+      b.setAttribute('aria-checked', Settings.get('theme') === t.id ? 'true' : 'false');
+      b.textContent = t.name;
+      seg.appendChild(b);
+    });
+    body.appendChild(seg);
 
     // 스킨 고르기 (목록은 skins.js)
     var sh = document.createElement('h3');
@@ -276,14 +355,16 @@
   }
 
   /* ---------------- 응원 메시지 ---------------- */
-  function toast(msg) {
+  /* ms : 보여 주는 시간 (안 적으면 1.6초), wide : 두 줄짜리 긴 안내 */
+  function toast(msg, ms, wide) {
     var el = $('toast');
     el.textContent = msg;
+    el.classList.toggle('toast-wide', !!wide);
     el.hidden = true;
     void el.offsetWidth;
     el.hidden = false;
     window.clearTimeout(toastTimer);
-    toastTimer = window.setTimeout(hideToast, 1600);
+    toastTimer = window.setTimeout(hideToast, ms || 1600);
   }
   function hideToast() {
     window.clearTimeout(toastTimer);
@@ -374,6 +455,7 @@
     showModal('하던 판은 실패로 기록됩니다.\n새 게임을 시작할까요?', '새 게임', '아니요', function () {
       stopTimer();
       var res = Progress.recordLoss(data, game.score);
+      Progress.recordStats(data, game, false);
       data.game = null;
       game.status = 'lost';
       Progress.save(data);
@@ -399,6 +481,7 @@
     showModal('하던 판은 실패로 기록됩니다.\n' + C.GRADES[index].name + ' 등급으로 바꿀까요?', '바꾸기', '아니요', function () {
       stopTimer();
       Progress.recordLoss(data, game.score);
+      Progress.recordStats(data, game, false);
       game.status = 'lost';
       go();
     });
@@ -837,6 +920,8 @@
       res = won ? Progress.recordWin(data, seconds, finished.score) : Progress.recordLoss(data, finished.score);
       data.game = null;
     }
+    Progress.recordStats(data, finished, won);
+    var newBadges = S.Badges.check(data);
     Progress.save(data);
 
     // 마지막 숫자가 들어간 모습을 잠깐 보여 준 다음 결과 창을 띄웁니다
@@ -846,6 +931,7 @@
       renderGame();
       renderGradeBar();
       renderResult(won, finished, before, res);
+      renderNewBadges(newBadges);
       closeSheets();
       $('result').hidden = false;
       if (won && res.promoted) showPromo(res.grade);
@@ -900,6 +986,38 @@
     else $('result-dots').innerHTML = '';
   }
 
+  /* 따라 하기 (js/tutorial.js) : 끝나면 하던 판으로 돌아옵니다 */
+  function openTutorial() {
+    if (paused) setPaused(false);
+    S.Tutorial.open(function () {
+      lastTick = Date.now();
+    });
+  }
+
+  /* 결과 창 : 이번 판에서 새로 받은 배지 */
+  function renderNewBadges(list) {
+    var box = $('result-badges');
+    box.innerHTML = '';
+    box.hidden = !list.length;
+    if (!list.length) return;
+    var label = document.createElement('p');
+    label.className = 'card-label';
+    label.textContent = '새 배지를 받았어요!';
+    box.appendChild(label);
+    list.forEach(function (b) {
+      var row = document.createElement('p');
+      row.className = 'new-badge';
+      var icon = document.createElement('span');
+      icon.className = 'badge-icon';
+      icon.textContent = b.icon;
+      var name = document.createElement('b');
+      name.textContent = b.name;
+      row.appendChild(icon);
+      row.appendChild(name);
+      box.appendChild(row);
+    });
+  }
+
   function showPromo(grade) {
     $('promo-grade').textContent = grade.name;
     $('promo-text').textContent = grade.name + ' 승급!';
@@ -937,6 +1055,10 @@
   $('modal-cancel').addEventListener('click', function () {
     closeModal(false);
   });
+  $('btn-tutorial').addEventListener('click', function () {
+    closeSheets();
+    openTutorial();
+  });
   $('btn-reset').addEventListener('click', function () {
     showModal('등급과 기록을 모두 지우고\n하수부터 다시 시작할까요?', '지우기', '아니요', function () {
       data = Progress.reset();
@@ -956,6 +1078,16 @@
     if (gradeRow) return pickGrade(Number(gradeRow.getAttribute('data-grade')));
     var row = t.closest('.set-row');
     if (row) return toggleSetting(row);
+    var themeBtn = t.closest('.seg-btn[data-theme-id]');
+    if (themeBtn) {
+      var themeId = themeBtn.getAttribute('data-theme-id');
+      S.Theme.apply(themeId);
+      var segs = document.querySelectorAll('.seg-btn[data-theme-id]');
+      for (var s = 0; s < segs.length; s++) {
+        segs[s].setAttribute('aria-checked', segs[s].getAttribute('data-theme-id') === themeId ? 'true' : 'false');
+      }
+      return;
+    }
     var skinBtn = t.closest('.skin-btn');
     if (skinBtn) {
       var picked = S.Skins.apply(skinBtn.getAttribute('data-skin-id'));
@@ -980,6 +1112,12 @@
 
   /* PC 키보드 : 숫자, 화살표, 지우기(Backspace), 메모(M), 되돌리기(Z), 멈춤(P) */
   document.addEventListener('keydown', function (e) {
+    if (S.Tutorial.isOpen()) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      S.Tutorial.key(e.key);
+      if (e.key === 'Enter' || e.key === 'Escape' || (e.key >= '1' && e.key <= '9')) e.preventDefault();
+      return;
+    }
     if (!$('modal').hidden) {
       if (e.key === 'Escape') closeModal(false);
       return;
@@ -1019,6 +1157,66 @@
     e.preventDefault();
   });
 
+  /* ---------------- 휴대폰 '뒤로 가기' 버튼 ----------------
+   * 앱으로 설치해서 열었을 때만 동작합니다. (인터넷 창에서는 보통의 뒤로 가기)
+   *   창이 떠 있으면        → 그 창을 닫습니다
+   *   게임 중이면           → 잠시 멈추고 "한 번 더 누르면 나가요"를 알려 줍니다
+   *   그 밖에는             → "한 번 더 누르면 나가요"를 알려 줍니다
+   * 안내가 뜬 뒤 화면을 만지지 않고 한 번 더 누르면 앱이 닫힙니다.
+   *
+   * 방법 : 화면을 만질 때 "가짜 페이지"를 하나 쌓아 둡니다. 뒤로 가기를 누르면
+   * 가짜 페이지가 빠지면서 popstate 가 오고, 쌓인 것이 없으면 앱이 닫힙니다.
+   * (크롬은 화면을 만지기 전에 쌓은 페이지는 뒤로 가기에서 건너뛰기 때문에, 만질 때 쌓습니다)
+   */
+  var BACK_STATE = { sudokuBack: true };
+  var backReady = false; // 가짜 페이지가 쌓여 있는가
+
+  function isAppMode() {
+    if (/[?&]app=1/.test(location.search)) return true; // 시험용 : 주소 뒤에 ?app=1
+    if (document.referrer.indexOf('android-app://') === 0) return true; // 플레이스토어 앱
+    var mq = window.matchMedia;
+    return !!(mq && (mq('(display-mode: standalone)').matches || mq('(display-mode: fullscreen)').matches)) ||
+      navigator.standalone === true;
+  }
+
+  function armBack() {
+    if (backReady || !isAppMode()) return;
+    try {
+      history.pushState(BACK_STATE, '');
+      backReady = true;
+    } catch (e) {
+      /* 막혀 있으면 보통의 뒤로 가기 */
+    }
+  }
+
+  /* 가장 위에 떠 있는 창 하나를 닫습니다. 닫은 게 있으면 true */
+  function closeTopOverlay() {
+    if (S.Tutorial && S.Tutorial.isOpen()) { S.Tutorial.close(); return true; }
+    if (!$('modal').hidden) { closeModal(false); return true; }
+    if (!$('promo').hidden) { $('btn-promo-ok').click(); return true; }
+    if (sheetOpen()) { closeSheets(); return true; }
+    if (!$('result').hidden) { $('btn-result-close').click(); return true; }
+    return false;
+  }
+
+  function onBack() {
+    backReady = false;
+    if (closeTopOverlay()) return armBack(); // 창만 닫고, 다음 뒤로 가기도 받을 준비
+    if (game && game.status === 'playing' && !ending && !paused) {
+      setPaused(true);
+      persist();
+    } else if (game && game.status === 'playing') {
+      persist();
+    }
+    // 여기서는 다시 쌓지 않습니다 : 한 번 더 누르면 앱이 닫힙니다
+    toast('한 번 더 누르면 나가요\n하던 판은 저장돼요', 2500, true);
+  }
+
+  window.addEventListener('popstate', onBack);
+  // 화면을 만지면 다시 뒤로 가기를 받을 준비를 합니다
+  document.addEventListener('pointerdown', armBack, true);
+  document.addEventListener('keydown', armBack, true);
+
   /* 화면을 떠날 때 하던 판을 저장합니다 */
   document.addEventListener('visibilitychange', function () {
     if (document.hidden && game && game.status === 'playing') persist();
@@ -1049,6 +1247,7 @@
 
   /* 저장해 둔 스킨을 입힙니다 */
   S.Skins.apply(Settings.get('skin'));
+  S.Theme.apply();
 
   /* 시작 : 하던 판이 있으면 이어서, 없으면 새 판 */
   if (Game.isValidSaved(data.game)) {
@@ -1057,4 +1256,7 @@
     data.game = null;
     launch();
   }
+
+  /* 처음 켠 사람에게는 따라 하기를 먼저 보여 줍니다 (한 판이라도 해 본 사람은 건너뜀) */
+  if (!Settings.get('tutorialDone') && data.totalGames === 0 && !data.daily.total) openTutorial();
 })();

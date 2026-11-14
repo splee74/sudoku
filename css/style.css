@@ -267,6 +267,8 @@ button.chip:disabled { cursor: default; }
   pointer-events: none;
   animation: toast-in 0.25s ease-out;
 }
+/* 뒤로 가기 안내처럼 두 줄짜리 긴 안내 */
+.toast.toast-wide { white-space: pre-line; text-align: center; border-radius: 18px; line-height: 1.4; padding: 10px 22px; }
 @keyframes toast-in {
   from { transform: translate(-50%, -16px); opacity: 0; }
   to { transform: translate(-50%, 0); opacity: 1; }
@@ -499,6 +501,16 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
 .record .grade-list { margin-top: 0; }
 .record-total { margin: 6px 0 0; color: var(--ink-soft); font-size: 17px; }
 
+/* 화면 밝기 고르기 (세 칸짜리 단추) */
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.seg-btn {
+  min-height: 52px; padding: 6px 4px;
+  background: var(--surface); border: 2px solid var(--line); border-radius: 14px;
+  font-size: 17px; font-weight: 700; line-height: 1.25;
+}
+.seg-btn:active { background: var(--peer); }
+.seg-btn[aria-checked="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+
 /* 스킨 고르기 */
 .skin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 4px; }
 .skin-btn {
@@ -554,6 +566,48 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
 }
 .set-row[aria-checked="true"] .switch { background: var(--accent); }
 .set-row[aria-checked="true"] .switch::after { transform: translateX(26px); }
+
+/* ---------- 통계 · 배지 (내 기록 창) ---------- */
+.h3-sub { font-weight: 600; font-size: 16px; margin-left: 4px; }
+.stats { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.stat {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0;
+}
+.stat b { font-size: 21px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stat span { font-size: 14px; color: var(--ink-soft); line-height: 1.3; }
+.badge-grid { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.badge-tile {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  padding: 10px 4px 8px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: 0; opacity: 0.55;
+}
+.badge-tile.got { opacity: 1; border: 2px solid var(--grade); }
+.badge-tile b { font-size: 16px; line-height: 1.25; }
+.badge-icon { font-size: 30px; line-height: 1.2; }
+.badge-tile:not(.got) .badge-icon { filter: grayscale(1); font-size: 24px; }
+.badge-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.3; }
+/* 결과 창 : 새로 받은 배지 */
+.result-badges .new-badge { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 21px; margin-top: 4px; }
+.result-badges .badge-icon { font-size: 28px; }
+
+/* ---------- 따라 하기 ---------- */
+.tut-box { max-width: 440px; }
+.tut-skip { font-size: 18px; padding: 10px 12px; }
+.tut-body { display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 12px; }
+.tut-step { margin: 0; color: var(--ink-soft); font-size: 16px; font-weight: 700; }
+.tut-text { margin: 0; min-height: 4.5em; font-size: 20px; font-weight: 700; line-height: 1.45; text-align: center; white-space: pre-line; }
+.tut-board-wrap { width: 100%; display: flex; justify-content: center; }
+.board.tut-board, .board.tut-board.small-pad { width: min(100%, 260px, calc(100dvh - 430px)); min-width: 190px; }
+.tut-pad { max-width: 320px; }
+.tut-pad.tut-dim .num { opacity: 0.4; }
+/* 눌러야 할 빈칸이 깜빡입니다 */
+.cell.tut-target { animation: tut-blink 1.1s ease-in-out infinite; }
+@keyframes tut-blink {
+  0%, 100% { box-shadow: inset 0 0 0 3px var(--sel); }
+  50% { box-shadow: inset 0 0 0 3px transparent; background: var(--same); }
+}
+.rules-tut { margin-top: 18px; font-size: 19px; min-height: 54px; }
 
 #confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; }
 
