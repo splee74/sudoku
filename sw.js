@@ -8,8 +8,9 @@
  *   - 인터넷이 안 될 때만 저장해 둔 파일로 게임을 켭니다.
  *
  * 새 파일(그림, js, css)을 추가했으면 아래 FILES 목록에도 한 줄 넣어 주세요.
+ * 버전을 올릴 때는  python tools/bump_version.py  를 쓰면 CACHE, 화면 버전, index.html 의 ?v= 가 한 번에 바뀝니다.
  */
-var CACHE = 'sudoku-files-v13';
+var CACHE = 'sudoku-files-v14';
 var FILES = [
   './',
   'index.html',
@@ -72,7 +73,8 @@ self.addEventListener('fetch', function (event) {
   var req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   event.respondWith(
-    fetch(req)
+    // cache: 'no-cache' : 휴대폰 브라우저가 잠시 들고 있던 예전 파일 말고, 늘 서버에 새것인지 물어봅니다
+    fetch(req, { cache: 'no-cache' })
       .then(function (res) {
         if (res && res.ok) {
           var copy = res.clone();
