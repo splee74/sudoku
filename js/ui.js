@@ -6,7 +6,7 @@
 (function () {
   var S = window.SUDOKU;
   var C = S.Config, Game = S.Game, Progress = S.Progress, Engine = S.Engine, Settings = S.Settings;
-  var SHEETS = ['rules', 'settings', 'grades'];
+  var SHEETS = ['rules', 'settings', 'grades', 'items'];
 
   function $(id) {
     return document.getElementById(id);
@@ -26,6 +26,9 @@
   var ending = false;
   var said = {}; // 이번 판에서 이미 보여 준 응원 메시지
   var toastTimer = 0;
+  var spotSet = {}; // 돋보기로 보여 주는 칸
+  var spotTimer = 0;
+  var magnifyPick = false; // 돋보기를 쓰고 숫자를 고르는 중
 
   /* ---------------- 공통 ---------------- */
   function formatTime(ms) {
@@ -134,13 +137,14 @@
   }
   /* 무언가 창이 떠 있으면 시간이 멈추고 키보드 입력도 받지 않습니다 */
   function overlayOpen() {
-    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || S.Tutorial.isOpen();
+    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || S.Tutorial.isOpen();
   }
   function openSheet(name) {
     closeSheets();
     if (name === 'settings') renderSettings();
     if (name === 'rules') renderRules();
     if (name === 'grades') renderGradeList($('pick-grades'), false, true);
+    if (name === 'items') renderItems();
     var sheet = $('sheet-' + name);
     sheet.hidden = false;
     sheet.querySelector('.sheet-body').scrollTop = 0;
@@ -199,6 +203,8 @@
     var next = C.GRADES[data.gradeIndex + 1];
     $('home-streak').querySelector('b').textContent = Progress.dailyStreak(data, today) + '일';
     $('home-score').querySelector('b').textContent = formatScore(data.totalScore);
+    $('home-bag').querySelector('b').textContent = Progress.itemTotal(data);
+    renderAttendBar(today);
 
     // 오늘의 퍼즐 카드
     $('home-daily-date').textContent = dayLabel(today);
@@ -705,12 +711,17 @@
     memo = false;
     ending = false;
     said = {};
+    magnifyPick = false;
+    spotSet = {};
     setPaused(false);
     hideToast();
+    S.Effects.clearBoard($('board'));
     renderGradeBar();
     buildBoard();
     renderGame();
     startTimer();
+    S.Hero.setGrade(data.gradeIndex); // 오늘의 퍼즐도 내 등급 캐릭터
+    S.Hero.reset();
   }
 
   /* 하던 판을 저장합니다. 승급전 판과 오늘의 퍼즐은 따로 저장합니다. */
@@ -725,7 +736,7 @@
   /* 아직 아무것도 넣지 않은 판인가? (메모는 괜찮음) */
   function untouched(g) {
     g = g || game;
-    if (g.mistakes > 0 || g.hintsLeft < C.MAX_HINTS) return false;
+    if (g.mistakes > 0 || g.hintsLeft < C.MAX_HINTS || g.itemsUsed > 0) return false;
     for (var i = 0; i < g.cells.length; i++) {
       if (!g.fixed[i] && g.cells[i] !== 0) return false;
     }
@@ -901,6 +912,7 @@
       if (peerSet[idx]) cls += ' peer';
       if (showSame && hl && v === hl) cls += ' same';
       if (dupSet[idx]) cls += ' dup';
+      if (spotSet[idx] && !v) cls += ' spot';
       if (idx === sel) cls += ' sel';
       el.className = cls;
       el.setAttribute('data-v', v ? v : ''); // 스킨에서 숫자별 색을 입힐 때 씁니다
@@ -937,9 +949,19 @@
     $('btn-memo').setAttribute('aria-pressed', memo ? 'true' : 'false');
     $('memo-onoff').textContent = memo ? '켜짐' : '꺼짐';
     $('game-score').textContent = formatScore(game.score);
+    $('game-score-wrap').classList.toggle('x2', !!game.double);
     $('game-score-wrap').hidden = !Settings.get('showScore');
-    $('hint-left').textContent = game.hintsLeft;
-    $('btn-hint').disabled = !live || game.hintsLeft <= 0;
+    // 힌트를 다 쓰면 힌트권 개수를 보여 줍니다
+    var tickets = Progress.itemCount(data, 'hint');
+    var useTicket = game.hintsLeft <= 0 && tickets > 0;
+    $('hint-left').parentNode.firstChild.nodeValue = useTicket ? '힌트권 ' : '힌트 ';
+    $('hint-left').textContent = useTicket ? tickets : game.hintsLeft;
+    $('btn-hint').classList.toggle('ticket', useTicket);
+    $('btn-hint').disabled = !live || (game.hintsLeft <= 0 && tickets <= 0);
+    var bag = Progress.itemTotal(data);
+    $('bag-count').textContent = bag > 99 ? '99+' : bag;
+    $('bag-count').hidden = bag <= 0;
+    $('btn-bag').disabled = !live;
     $('btn-undo').disabled = !live || game.history.length === 0;
     $('btn-pause').disabled = !live;
 
@@ -952,6 +974,7 @@
 
     $('game-timer').textContent = formatTime(game.elapsedMs);
     $('game-timer').hidden = !Settings.get('showTimer');
+    $('game').classList.toggle('no-hero', !Settings.get('hero'));
   }
 
   /* 칸들이 차례로 반짝이는 효과. 반환 : 효과가 끝날 때까지 걸리는 시간(ms) */
@@ -988,10 +1011,15 @@
       }
       return true;
     }
-    var out = { cells: [], line: false, box: false };
-    if (done(row)) { out.cells = out.cells.concat(row); out.line = true; }
-    if (done(col)) { out.cells = out.cells.concat(col); out.line = true; }
-    if (done(box)) { out.cells = out.cells.concat(box); out.box = true; }
+    var out = { cells: [], line: false, box: false, groups: [] };
+    function add(list, kind) {
+      out.cells = out.cells.concat(list);
+      out[kind] = true;
+      out.groups.push({ els: list.map(function (k) { return cellEls[k]; }), kind: kind });
+    }
+    if (done(row)) add(row, 'line');
+    if (done(col)) add(col, 'line');
+    if (done(box)) add(box, 'box');
     return out;
   }
 
@@ -1017,7 +1045,10 @@
   function afterCorrect(idx, byPlayer) {
     flash(idx, 'pop');
     var units = completedUnits(idx);
-    if (units.cells.length && Settings.get('unitEffect')) wave(units.cells, idx);
+    if (units.cells.length && Settings.get('unitEffect')) {
+      wave(units.cells, idx);
+      S.Effects.unitDone($('board').parentNode, units.groups);
+    }
     if (!byPlayer || !Settings.get('cheer')) return;
 
     var remaining = 0;
@@ -1039,6 +1070,17 @@
     } else if (units.line) {
       toast('한 줄 완성! 👏');
     }
+  }
+
+  /* 틀렸을 때 : 붉은 고리, 판 흔들림, 겹치는 숫자 깜박임, 틀림 표시 톡 */
+  function wrongEffect(idx, d) {
+    var marks = $('game-marks').children;
+    if (marks[game.mistakes - 1]) S.Effects.restart(marks[game.mistakes - 1], 'pop');
+    if (!Settings.get('wrongEffect')) return;
+    var conflicts = [];
+    var p = Engine.peers(game, idx);
+    for (var i = 0; i < p.length; i++) if (game.cells[p[i]] === d) conflicts.push(cellEls[p[i]]);
+    S.Effects.wrong($('board').parentNode, $('board'), cellEls[idx], conflicts);
   }
 
   function flash(idx, name) {
@@ -1100,6 +1142,11 @@
 
   function pressDigit(d) {
     if (!playing() || d < 1 || d > game.size) return;
+    if (magnifyPick) {
+      magnifyPick = false;
+      return applyMagnify(d);
+    }
+    clearSpots();
     // 칸을 고르지 않았거나 바꿀 수 없는 칸이면 → 같은 숫자 강조만
     if (sel < 0 || !Game.isEditable(game, sel)) {
       hl = hl === d ? 0 : d;
@@ -1121,8 +1168,10 @@
     renderGame();
     if (result === 'wrong') {
       flash(sel, 'shake');
+      wrongEffect(sel, d);
       if (Settings.get('vibrate') && navigator.vibrate) navigator.vibrate(80);
       S.Sound.play('wrong');
+      if (game.status === 'playing') S.Hero.react(game.mistakes >= C.MAX_MISTAKES - 1 ? 'wrong2' : 'wrong1', 1800);
     } else {
       floatGain(sel, game.lastGain);
       if (game.status === 'playing') {
@@ -1132,6 +1181,10 @@
         else if (done.line) S.Sound.play('line');
         else S.Sound.play('correct', game.streak);
         afterCorrect(sel, true);
+        // 캐릭터 : 상자 > 줄 > 연속 5번 이상(자신만만) > 그냥 맞힘
+        if (done.box) S.Hero.react('box', 1800);
+        else if (done.line) S.Hero.react('unit', 1600);
+        else S.Hero.react(game.streak >= 5 ? 'combo' : 'correct', 1200);
       }
     }
     if (game.status !== 'playing') finishGame(sel);
@@ -1164,11 +1217,19 @@
     renderGame();
   }
 
+  /* 힌트 : 3번을 다 쓰면 힌트권(아이템)을 씁니다 */
   function pressHint() {
-    if (!playing() || game.hintsLeft <= 0) return;
-    var target = Game.hint(game, sel, Settings.get('autoNotes'));
+    if (!playing()) return;
+    var ticket = game.hintsLeft <= 0;
+    if (ticket && Progress.itemCount(data, 'hint') <= 0) return;
+    var target = Game.hint(game, sel, Settings.get('autoNotes'), ticket);
     if (target < 0) return;
+    if (ticket) {
+      Progress.useItem(data, 'hint');
+      toast('💡 힌트권 1장을 썼어요');
+    }
     S.Sound.play('hint');
+    if (game.status === 'playing') S.Hero.react('hint', 1400);
     sel = target;
     hl = game.cells[target];
     persist();
@@ -1183,10 +1244,44 @@
     ending = true;
     stopTimer();
     hideToast();
+    clearSpots();
+    magnifyPick = false;
     var won = game.status === 'won';
     S.Sound.play(won ? 'win' : 'lose');
+    if (!won && Settings.get('wrongEffect')) S.Effects.lose($('board').parentNode, $('board'));
+    S.Hero.react(won ? 'win' : 'lose', 0); // 이기면 기쁨, 지면 울음 (다음 판까지 그대로)
+    // 되살리기권이 있으면 이어서 할지 먼저 물어봅니다
+    var reviveLeft = won ? 0 : Progress.itemCount(data, 'revive');
+    if (reviveLeft > 0) {
+      window.setTimeout(function () {
+        showModal('틀린 숫자가 ' + C.MAX_MISTAKES + '번 나왔어요.\n💖 되살리기권을 쓰고\n이어서 할까요?\n(남은 되살리기권 ' + reviveLeft + '장)',
+          '이어 하기', '그만하기', reviveGame, function () {
+            settleGame(lastIdx, 150);
+          });
+      }, 1000);
+      return;
+    }
+    settleGame(lastIdx, won ? 450 : 1100);
+  }
+
+  /* 되살리기권으로 실패한 판을 이어서 합니다 */
+  function reviveGame() {
+    if (!game || !Progress.useItem(data, 'revive') || !Game.revive(game)) return;
+    ending = false;
+    S.Effects.clearBoard($('board'));
+    startTimer();
+    persist();
+    renderGame();
+    S.Sound.play('hint');
+    S.Effects.restart($('game-marks'), 'fx-heal');
+    toast('💖 되살아났어요! 틀림 1번을 지웠어요');
+    S.Hero.react('revive', 1800);
+  }
+
+  /* 한 판의 결과를 기록하고 결과 창을 띄웁니다 */
+  function settleGame(lastIdx, wait) {
+    var won = game.status === 'won';
     var fancy = won && Settings.get('winEffect');
-    var wait = won ? 450 : 900;
     if (fancy) {
       // 마지막에 넣은 칸에서부터 판 전체가 물결처럼 반짝입니다
       var all = [];
@@ -1239,7 +1334,8 @@
     $('result-time').textContent = formatTime(finished.elapsedMs);
     $('result-score').textContent = formatScore(finished.score);
 
-    var detail = '틀린 횟수 ' + finished.mistakes + '번 · 힌트 ' + (C.MAX_HINTS - finished.hintsLeft) + '번 사용';
+    var detail = '틀린 횟수 ' + finished.mistakes + '번 · 힌트 ' + (C.MAX_HINTS - finished.hintsLeft + (finished.extraHints || 0)) + '번 사용';
+    if (finished.itemsUsed) detail += '\n아이템 ' + finished.itemsUsed + '개 사용';
     if (won && finished.clearBonus > 0) detail += '\n완성 보너스 +' + formatScore(finished.clearBonus) + '점';
     if (won && res.newBestScore) detail += ' · 최고 점수!';
     if (won && res.newBest) detail += ' · 가장 빠른 기록!';
@@ -1248,7 +1344,7 @@
     var msg;
     if (finished.daily) {
       msg = won
-        ? '연속 ' + res.streak + '일째 풀었어요!\n내일 새 퍼즐이 나와요'
+        ? (res.guarded ? '🛡️ 보호권 ' + res.guarded + '장으로 연속 기록을 지켰어요\n' : '') + '연속 ' + res.streak + '일째 풀었어요!\n내일 새 퍼즐이 나와요'
         : '등급에는 영향이 없어요\n풀 때까지 다시 도전할 수 있어요';
       $('result-progress').textContent = msg;
       $('result-dots').innerHTML = '';
@@ -1276,6 +1372,7 @@
     if (paused) setPaused(false);
     S.Tutorial.open(function () {
       lastTick = Date.now();
+      window.setTimeout(maybeAttend, 300); // 처음 온 사람은 따라 하기를 마친 뒤 출석 창
     });
   }
 
@@ -1312,6 +1409,266 @@
     $('btn-promo-ok').focus();
   }
 
+  /* ---------------- 아이템 ---------------- */
+  function itemInfo(id) {
+    for (var i = 0; i < C.ITEMS.length; i++) if (C.ITEMS[i].id === id) return C.ITEMS[i];
+    return null;
+  }
+
+  /* 지금 이 아이템을 쓸 수 없는 까닭 (쓸 수 있으면 빈 글자) */
+  function itemBlock(id) {
+    if (screen !== 'game' || !game || game.status !== 'playing') return '게임 중에 쓸 수 있어요';
+    if (id === 'hint' && game.hintsLeft > 0) return '기본 힌트 ' + game.hintsLeft + '번을 먼저 써요';
+    if (id === 'time' && game.elapsedMs < 1000) return '아직 줄일 시간이 없어요';
+    if (id === 'shield' && game.mistakes <= 0) return '틀린 횟수가 없어요';
+    if (id === 'double' && game.double) return '이번 판에 이미 쓰고 있어요';
+    if (id === 'magnify' && magnifyPick) return '찾을 숫자를 누르세요';
+    return '';
+  }
+
+  function renderItems() {
+    var box = $('items-body');
+    box.innerHTML = '';
+    var inGame = screen === 'game' && game && game.status === 'playing';
+    C.ITEMS.forEach(function (it) {
+      var n = Progress.itemCount(data, it.id);
+      var row = document.createElement('div');
+      row.className = 'item-row' + (n ? '' : ' empty');
+      var icon = document.createElement('span');
+      icon.className = 'item-icon';
+      icon.textContent = it.icon;
+      icon.setAttribute('aria-hidden', 'true');
+      var text = document.createElement('span');
+      text.className = 'item-text';
+      var name = document.createElement('b');
+      name.textContent = it.name;
+      var cnt = document.createElement('em');
+      cnt.className = 'item-count';
+      cnt.textContent = '× ' + n;
+      name.appendChild(cnt);
+      var desc = document.createElement('span');
+      desc.textContent = it.id === 'time' ? '걸린 시간을 ' + C.TIME_ITEM_SEC + '초 줄여요' : it.desc;
+      text.appendChild(name);
+      text.appendChild(desc);
+      row.appendChild(icon);
+      row.appendChild(text);
+      if (it.auto) {
+        var tag = document.createElement('span');
+        tag.className = 'item-auto';
+        tag.textContent = it.autoText || '저절로';
+        row.appendChild(tag);
+      } else if (inGame) {
+        var why = n <= 0 ? '' : itemBlock(it.id);
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'item-use';
+        btn.setAttribute('data-item', it.id);
+        btn.disabled = n <= 0 || !!why;
+        btn.textContent = '쓰기';
+        row.appendChild(btn);
+        if (why) {
+          var w = document.createElement('small');
+          w.className = 'item-why';
+          w.textContent = why;
+          text.appendChild(w);
+        }
+      }
+      box.appendChild(row);
+    });
+    $('items-note').textContent = inGame
+      ? '출석 체크로 매일 아이템을 받을 수 있어요.'
+      : '아이템은 게임 화면의 🎒 단추를 눌러 쓸 수 있어요. 출석 체크로 매일 받을 수 있어요.';
+  }
+
+  function useItemPress(id) {
+    if (!game || game.status !== 'playing' || ending || itemBlock(id) || Progress.itemCount(data, id) <= 0) return;
+    closeSheets();
+    if (paused) setPaused(false);
+    if (id === 'hint') return pressHint();
+    if (id === 'magnify') {
+      // 숫자 단추를 눌러 둔 상태면 그 숫자를, 아니면 다음에 누르는 숫자를 찾습니다
+      if (hl > 0 && Game.placedCount(game, hl) < game.size) return applyMagnify(hl);
+      magnifyPick = true;
+      return toast('🔍 찾을 숫자 단추를 누르세요', 2200);
+    }
+    var ok = false;
+    if (id === 'time') {
+      var cut = Game.cutTime(game, C.TIME_ITEM_SEC * 1000);
+      ok = cut > 0;
+      if (ok) toast('⏱️ ' + Math.round(cut / 1000) + '초 줄었어요!');
+    } else if (id === 'shield') {
+      ok = Game.forgive(game);
+      if (ok) toast('🩹 틀린 횟수 1번을 지웠어요');
+    } else if (id === 'memo') {
+      var cnt = Game.autoMemo(game);
+      ok = cnt > 0;
+      toast(ok ? '✏️ 빈칸 ' + cnt + '곳에 메모했어요' : '이미 메모가 다 되어 있어요');
+    } else if (id === 'double') {
+      ok = Game.useDouble(game);
+      if (ok) toast('✨ 이번 판 점수 2배!');
+    }
+    if (!ok) return;
+    Progress.useItem(data, id);
+    S.Sound.play('hint');
+    S.Hero.react('item', 1400);
+    persist();
+    renderGame();
+    if (id === 'time') S.Effects.restart($('game-timer'), 'fx-timecut');
+    if (id === 'shield') S.Effects.restart($('game-marks'), 'fx-heal');
+    if (id === 'double') S.Effects.restart($('game-score-wrap'), 'fx-timecut');
+    if (id === 'memo') {
+      var all = [];
+      for (var i = 0; i < game.cells.length; i++) if (game.cells[i] === 0) all.push(i);
+      if (all.length) wave(all, sel >= 0 ? sel : all[0]);
+    }
+  }
+
+  /* 돋보기 : 숫자 d가 들어갈 수 있는 칸을 몇 초 동안 보여 줍니다 */
+  function applyMagnify(d) {
+    if (!playing() || Progress.itemCount(data, 'magnify') <= 0) return;
+    if (Game.placedCount(game, d) >= game.size) return toast(d + '은(는) 이미 다 채웠어요');
+    var list = Game.spots(game, d);
+    if (!list.length) return toast('들어갈 자리를 찾지 못했어요');
+    Progress.useItem(data, 'magnify');
+    game.itemsUsed++;
+    persist();
+    clearSpots();
+    for (var i = 0; i < list.length; i++) spotSet[list[i]] = true;
+    hl = d;
+    renderGame();
+    S.Sound.play('hint');
+    S.Hero.react('item', 1400);
+    toast('🔍 ' + d + '이(가) 들어갈 수 있는 곳 ' + list.length + '군데');
+    spotTimer = window.setTimeout(function () {
+      clearSpots();
+      renderGame();
+    }, 6000);
+  }
+  function clearSpots() {
+    window.clearTimeout(spotTimer);
+    spotSet = {};
+  }
+
+  /* ---------------- 출석 체크 ---------------- */
+  function rewardText(reward, sep) {
+    var parts = [];
+    for (var id in reward) {
+      var it = itemInfo(id);
+      if (it) parts.push(it.icon + ' ' + it.name + (reward[id] > 1 ? ' ' + reward[id] + '개' : ''));
+    }
+    return parts.join(sep || ' · ');
+  }
+  function rewardIcons(reward) {
+    var out = '';
+    for (var id in reward) {
+      var it = itemInfo(id);
+      if (it) out += it.icon;
+    }
+    return out;
+  }
+
+  /* 홈 위쪽 출석 줄 */
+  function renderAttendBar(today) {
+    var done = Progress.attendDone(data, today);
+    var streak = Progress.attendStreak(data, today);
+    var slot = Progress.attendSlot(streak);
+    $('home-attend').classList.toggle('done', done);
+    $('home-attend-sub').textContent = done ? '연속 ' + streak + '일째' : streak + '일째 선물 받기';
+    $('home-attend-go').textContent = done ? '완료 ✓' : '받기';
+    var days = $('home-attend-days');
+    days.innerHTML = '';
+    for (var i = 0; i < C.ATTEND_REWARDS.length; i++) {
+      var dot = document.createElement('i');
+      var got = i < slot || (i === slot && done);
+      dot.className = (got ? 'on' : '') + (i === slot && !done ? ' now' : '');
+      days.appendChild(dot);
+    }
+  }
+
+  /* 출석 창을 엽니다. 오늘 출석 전이면 "출석하고 선물 받기" 단추가 나옵니다 */
+  function openAttend() {
+    renderAttend(false);
+    $('attend').hidden = false;
+    $('attend-ok').focus();
+  }
+  function closeAttend() {
+    $('attend').hidden = true;
+    lastTick = Date.now();
+    if (screen === 'home') renderHome();
+    if (screen === 'game') renderGame();
+  }
+
+  function renderAttend(justGot) {
+    var today = Progress.dateKey();
+    var done = Progress.attendDone(data, today);
+    var streak = Progress.attendStreak(data, today);
+    var slot = Progress.attendSlot(streak);
+    var last = C.ATTEND_REWARDS.length - 1;
+    $('attend-kicker').textContent = done ? (justGot ? '출석 완료!' : '오늘은 출석했어요') : '오늘도 와 주셨네요!';
+    var guard = done ? 0 : Progress.attendGuardNeed(data, today);
+    $('attend-sub').textContent = done
+      ? '연속 ' + streak + '일째 출석 · 내일 또 만나요'
+      : guard
+        ? '🛡️ 보호권 ' + guard + '장으로 연속 ' + streak + '일째가 이어져요!'
+        : (streak > 1 ? '오늘 출석하면 연속 ' + streak + '일째!' : '매일 출석하고 아이템을 받아요');
+    var list = $('attend-days');
+    list.innerHTML = '';
+    C.ATTEND_REWARDS.forEach(function (rw, i) {
+      var li = document.createElement('li');
+      var got = i < slot || (i === slot && done);
+      li.className = 'attend-day' + (got ? ' got' : '') + (i === slot ? ' today' : '') +
+        (i === last ? ' big' : '') + (i === slot && justGot ? ' stamp' : '');
+      var d = document.createElement('span');
+      d.className = 'attend-day-n';
+      d.textContent = i === slot ? '오늘' : (i + 1) + '일';
+      var ic = document.createElement('span');
+      ic.className = 'attend-day-i';
+      ic.textContent = i === last ? '🎁' : rewardIcons(rw);
+      li.title = rewardText(rw);
+      li.setAttribute('aria-label', (i + 1) + '일째 ' + rewardText(rw) + (got ? ', 받음' : ''));
+      li.appendChild(d);
+      li.appendChild(ic);
+      if (got) {
+        var ck = document.createElement('span');
+        ck.className = 'attend-check';
+        ck.textContent = '✓';
+        ck.setAttribute('aria-hidden', 'true');
+        li.appendChild(ck);
+      }
+      list.appendChild(li);
+    });
+    var gotEl = $('attend-got');
+    gotEl.hidden = false;
+    gotEl.classList.toggle('fresh', !!justGot);
+    gotEl.textContent = (done ? '받은 선물 : ' : '오늘 선물 : ') + rewardText(C.ATTEND_REWARDS[slot]);
+    $('attend-ok').textContent = done ? (justGot ? '좋아요!' : '확인') : '출석하고 선물 받기';
+  }
+
+  function pressAttendOk() {
+    var today = Progress.dateKey();
+    if (Progress.attendDone(data, today)) return closeAttend();
+    var res = Progress.attend(data, today);
+    Progress.save(data);
+    renderAttend(true);
+    if (res && res.guarded) $('attend-kicker').textContent = '🛡️ 보호권 ' + res.guarded + '장으로 연속 출석을 지켰어요!';
+    S.Sound.play('line');
+    var box = document.querySelector('.attend-box');
+    var stamp = document.querySelector('.attend-day.today');
+    if (box && stamp) {
+      var b = box.getBoundingClientRect(), r = stamp.getBoundingClientRect();
+      S.Effects.sparks(box, r.left - b.left + r.width / 2, r.top - b.top + r.height / 2, 16, 70, 'box');
+    }
+    // 7일을 다 채운 날은 색종이
+    if (res && res.streak % C.ATTEND_REWARDS.length === 0) S.Effects.confetti(1500);
+    $('attend-ok').focus();
+  }
+
+  /* 그날 처음 열었으면 출석 창을 띄웁니다 (다른 창이 떠 있거나 게임 중이면 다음에) */
+  function maybeAttend() {
+    if (!splashDone || Progress.attendDone(data) || overlayOpen() || screen === 'game') return;
+    openAttend();
+  }
+
   /* ---------------- 버튼 연결 ---------------- */
   $('btn-new').addEventListener('click', pressNew);
   $('btn-again').addEventListener('click', pressAgain);
@@ -1339,6 +1696,15 @@
   $('btn-erase').addEventListener('click', pressErase);
   $('btn-memo').addEventListener('click', pressMemo);
   $('btn-hint').addEventListener('click', pressHint);
+  $('home-attend').addEventListener('click', openAttend);
+  $('attend-ok').addEventListener('click', pressAttendOk);
+  $('attend').addEventListener('click', function (e) {
+    if (e.target === $('attend')) closeAttend();
+  });
+  $('items-body').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-item]') : null;
+    if (b && !b.disabled) useItemPress(b.getAttribute('data-item'));
+  });
   $('btn-promo-ok').addEventListener('click', function () {
     $('promo').hidden = true;
     S.Effects.stop();
@@ -1443,6 +1809,10 @@
       if (e.key === 'Escape') closeModal(false);
       return;
     }
+    if (!$('attend').hidden) {
+      if (e.key === 'Escape') closeAttend();
+      return;
+    }
     if (sheetOpen()) {
       if (e.key === 'Escape') closeSheets();
       return;
@@ -1514,6 +1884,7 @@
   function closeTopOverlay() {
     if (S.Tutorial && S.Tutorial.isOpen()) { S.Tutorial.close(); return true; }
     if (!$('modal').hidden) { closeModal(false); return true; }
+    if (!$('attend').hidden) { closeAttend(); return true; }
     if (!$('promo').hidden) { $('btn-promo-ok').click(); return true; }
     if (sheetOpen()) { closeSheets(); return true; }
     if (!$('result').hidden) { $('btn-result-close').click(); return true; }
@@ -1543,6 +1914,11 @@
   document.addEventListener('visibilitychange', function () {
     if (document.hidden && game && game.status === 'playing') persist();
     lastTick = Date.now();
+    // 밤을 넘겨 다시 열었으면 출석 창을 띄웁니다
+    if (!document.hidden) {
+      if (screen === 'home') renderHome();
+      maybeAttend();
+    }
   });
   window.addEventListener('pagehide', function () {
     if (game && game.status === 'playing') persist();
@@ -1610,6 +1986,7 @@
     S.Sound.play('memoOn'); // 누를 때 짧은 소리 (설정에서 효과음을 끄면 안 남)
     /* 처음 켠 사람에게는 따라 하기를 먼저 보여 줍니다 (한 판이라도 해 본 사람은 건너뜀) */
     if (!Settings.get('tutorialDone') && data.totalGames === 0 && !data.daily.total) openTutorial();
+    else window.setTimeout(maybeAttend, 450);
   }
   $('splash-start').addEventListener('click', leaveSplash);
   $('splash-start').focus();

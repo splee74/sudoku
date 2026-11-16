@@ -64,8 +64,27 @@
       //              streak: 지금 연승, best: 최다 연승, bestSec: 가장 빠른 성공(초) } }
       gradeStats: {},
       // 받은 배지 : { 배지id: 받은 날짜 } (목록은 js/badges.js)
-      badges: {}
+      badges: {},
+      // 출석 체크 : 마지막 출석 날짜, 이어진 일수, 가장 길게 이어진 일수, 모두 출석한 날 수
+      attend: { last: '', streak: 0, best: 0, total: 0 },
+      // 가지고 있는 아이템 개수 : { 아이템id: 개수 } (목록은 js/config.js 의 ITEMS)
+      items: freshItems(),
+      starterGiven: false // 처음 시작 선물(START_ITEMS)을 받았는지
     };
+  }
+
+  /* 처음 시작 선물 : 아이템마다 C.START_ITEMS 개 (한 번만) */
+  function giveStarter(data) {
+    if (data.starterGiven) return;
+    data.starterGiven = true;
+    var n = num(C.START_ITEMS, 0);
+    if (n > 0) for (var i = 0; i < C.ITEMS.length; i++) addItem(data, C.ITEMS[i].id, n);
+  }
+
+  function freshItems() {
+    var out = {};
+    for (var i = 0; i < C.ITEMS.length; i++) out[C.ITEMS[i].id] = 0;
+    return out;
   }
 
   function freshStats() {
@@ -121,11 +140,23 @@
           }
           if (saved.gradeStats && typeof saved.gradeStats === 'object') data.gradeStats = saved.gradeStats;
           if (saved.badges && typeof saved.badges === 'object') data.badges = saved.badges;
+          var sa = saved.attend;
+          if (sa && typeof sa === 'object') {
+            data.attend.last = typeof sa.last === 'string' ? sa.last : '';
+            data.attend.streak = num(sa.streak, 0);
+            data.attend.best = num(sa.best, 0);
+            data.attend.total = num(sa.total, 0);
+          }
+          if (saved.items && typeof saved.items === 'object') {
+            for (var it in data.items) data.items[it] = num(saved.items[it], 0);
+          }
+          data.starterGiven = saved.starterGiven === true;
         }
       }
     } catch (e) {
       data = fresh();
     }
+    giveStarter(data);
     return data;
   }
 
@@ -141,7 +172,9 @@
 
   function reset() {
     Storage.remove(SAVE_KEY);
-    return fresh();
+    var d = fresh();
+    giveStarter(d);
+    return d;
   }
 
   /*
@@ -228,23 +261,46 @@
   function dailyDone(data, key) {
     return data.daily.last === key;
   }
-  /* 지금 이어지고 있는 연속 일수 (어제도 오늘도 안 풀었으면 0) */
+  /* '2026-11-13' → 날짜 */
+  function keyDate(key) {
+    var p = key.split('-');
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  }
+  /* last 다음 날부터 today 전날까지 빠진 날 수 */
+  function missedDays(last, today) {
+    if (!last) return -1;
+    return Math.round((keyDate(today) - keyDate(last)) / 86400000) - 1;
+  }
+  /*
+   * 연속 기록 보호권으로 끊긴 연속 일수를 이을 수 있으면 필요한 장 수 (못 이으면 0)
+   *   빠진 하루에 1장씩 필요합니다.
+   */
+  function guardNeed(data, last, streak, today) {
+    var m = missedDays(last, today);
+    return streak > 0 && m >= 1 && m <= itemCount(data, 'guard') ? m : 0;
+  }
+
+  /* 지금 이어지고 있는 연속 일수 (어제도 오늘도 안 풀었으면 0, 단 보호권으로 이을 수 있으면 그대로) */
   function dailyStreak(data, today) {
     var last = data.daily.last;
-    return last === today || last === dayBefore(today) ? data.daily.streak : 0;
+    if (last === today || last === dayBefore(today)) return data.daily.streak;
+    return guardNeed(data, last, data.daily.streak, today) ? data.daily.streak : 0;
   }
-  /* 오늘의 퍼즐 성공 처리. 반환 : { streak: 연속 일수 } */
+  /* 오늘의 퍼즐 성공 처리. 반환 : { streak: 연속 일수, guarded: 쓴 보호권 장 수 } */
   function recordDaily(data, key, seconds, score) {
     var d = data.daily;
-    if (d.last === key) return { streak: d.streak };
-    d.streak = d.last === dayBefore(key) ? d.streak + 1 : 1;
+    if (d.last === key) return { streak: d.streak, guarded: 0 };
+    var cont = d.last === dayBefore(key);
+    var guarded = cont ? 0 : guardNeed(data, d.last, d.streak, key);
+    if (guarded) data.items.guard -= guarded;
+    d.streak = cont || guarded ? d.streak + 1 : 1;
     if (d.streak > d.bestStreak) d.bestStreak = d.streak;
     d.last = key;
     d.total++;
     d.score = score || 0;
     d.seconds = seconds || 0;
     if (typeof score === 'number' && score > 0) data.totalScore += score;
-    return { streak: d.streak };
+    return { streak: d.streak, guarded: guarded };
   }
 
   /*
@@ -258,7 +314,7 @@
     var gs = data.gradeStats[id];
     if (!gs || typeof gs !== 'object') gs = data.gradeStats[id] = {};
     var seconds = Math.floor((g.elapsedMs || 0) / 1000);
-    var hints = C.MAX_HINTS - g.hintsLeft;
+    var hints = C.MAX_HINTS - g.hintsLeft + (g.extraHints || 0);
     gs.played = num(gs.played, 0) + 1;
     st.hintsUsed += Math.max(0, hints);
     st.playSec += seconds;
@@ -313,6 +369,18 @@
       m.best = Math.max(num(m.best, 0), num(o.best, 0));
       if (o.bestSec && (!m.bestSec || o.bestSec < m.bestSec)) m.bestSec = o.bestSec;
     }
+    // 출석은 더 최근에 출석한 쪽, 아이템은 개수가 많은 쪽을 남깁니다
+    var oa = other.attend || {};
+    if (!out.attend) out.attend = { last: '', streak: 0, best: 0, total: 0 };
+    if (typeof oa.last === 'string' && oa.last > (out.attend.last || '')) {
+      out.attend.last = oa.last;
+      out.attend.streak = num(oa.streak, 0);
+    }
+    out.attend.best = Math.max(num(out.attend.best, 0), num(oa.best, 0));
+    out.attend.total = Math.max(num(out.attend.total, 0), num(oa.total, 0));
+    if (!out.items) out.items = freshItems();
+    for (k in other.items || {}) out.items[k] = Math.max(num(out.items[k], 0), num(other.items[k], 0));
+    out.starterGiven = !!(out.starterGiven || other.starterGiven);
     // 하던 판은 이 기기 것을 남깁니다
     out.game = a.game || null;
     out.dailyGame = a.dailyGame || null;
@@ -327,6 +395,73 @@
     if (keep === null) Storage.remove(SAVE_KEY);
     else Storage.set(SAVE_KEY, keep);
     return d;
+  }
+
+  /* ---------- 출석 체크 ---------- */
+  /* 오늘 이미 출석했는가 */
+  function attendDone(data, today) {
+    return data.attend.last === (today || dateKey());
+  }
+  /*
+   * 오늘이 출석 몇 일째인지 (출석 전이면 "출석하면 몇 일째가 되는지")
+   *   반환 : 이어진 일수 (1부터). 7일 보상표의 자리는 (일수 - 1) % 7
+   */
+  function attendStreak(data, today) {
+    var a = data.attend;
+    today = today || dateKey();
+    if (a.last === today) return Math.max(1, a.streak);
+    if (a.last === dayBefore(today) || guardNeed(data, a.last, a.streak, today)) return a.streak + 1;
+    return 1;
+  }
+  /* 오늘 출석할 때 보호권이 몇 장 쓰일지 (0 이면 안 쓰임) */
+  function attendGuardNeed(data, today) {
+    var a = data.attend;
+    today = today || dateKey();
+    if (a.last === today || a.last === dayBefore(today)) return 0;
+    return guardNeed(data, a.last, a.streak, today);
+  }
+  /* 보상표에서 몇 번째 칸인지 (0 ~ 6) */
+  function attendSlot(streak) {
+    var n = C.ATTEND_REWARDS.length;
+    return (Math.max(1, streak) - 1) % n;
+  }
+  /*
+   * 출석하고 보상을 받습니다.
+   * 반환 : { streak: 이어진 일수, reward: { 아이템id: 개수 } } (이미 했으면 null)
+   */
+  function attend(data, today) {
+    today = today || dateKey();
+    if (attendDone(data, today)) return null;
+    var a = data.attend;
+    var guarded = attendGuardNeed(data, today);
+    a.streak = attendStreak(data, today);
+    if (guarded) data.items.guard -= guarded;
+    a.last = today;
+    a.total++;
+    if (a.streak > a.best) a.best = a.streak;
+    var reward = C.ATTEND_REWARDS[attendSlot(a.streak)];
+    for (var id in reward) addItem(data, id, reward[id]);
+    return { streak: a.streak, reward: reward, guarded: guarded };
+  }
+
+  /* ---------- 아이템 ---------- */
+  function itemCount(data, id) {
+    return num(data.items && data.items[id], 0);
+  }
+  function addItem(data, id, n) {
+    if (!data.items) data.items = freshItems();
+    data.items[id] = itemCount(data, id) + (n || 1);
+  }
+  /* 아이템 한 개를 씁니다. 없으면 false */
+  function useItem(data, id) {
+    if (itemCount(data, id) <= 0) return false;
+    data.items[id]--;
+    return true;
+  }
+  function itemTotal(data) {
+    var t = 0;
+    for (var i = 0; i < C.ITEMS.length; i++) t += itemCount(data, C.ITEMS[i].id);
+    return t;
   }
 
   /* 승급까지 남은 판 수 (가장 높은 등급이면 -1) */
@@ -353,6 +488,15 @@
     merge: merge,
     parse: parse,
     amount: amount,
+    attendDone: attendDone,
+    attendStreak: attendStreak,
+    attendSlot: attendSlot,
+    attendGuardNeed: attendGuardNeed,
+    attend: attend,
+    itemCount: itemCount,
+    addItem: addItem,
+    useItem: useItem,
+    itemTotal: itemTotal,
     onSave: null
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -288,3 +288,41 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 @media (min-width: 900px) {
   .tabbar { left: 50%; right: auto; width: 560px; transform: translateX(-50%); border: 1px solid var(--line); border-bottom: 0; border-radius: 18px 18px 0 0; }
 }
+
+/* ---------- 홈 위쪽 출석 체크 줄 ---------- */
+.pill-bag { cursor: pointer; font: inherit; font-size: 17px; color: var(--ink); }
+.pill-bag:active { background: var(--peer); }
+.attend-bar {
+  flex: none; width: 100%;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #f0c27a; border-radius: 16px;
+  background: linear-gradient(100deg, #fff4dc, #ffe2b8);
+  color: #2b2a26; text-align: left;
+  box-shadow: 0 3px 10px rgba(200, 120, 20, 0.15);
+}
+.attend-bar:active { transform: scale(0.99); }
+.attend-bar-i { font-size: 28px; line-height: 1; }
+.attend-bar-t { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.attend-bar-t b { font-size: 18px; }
+.attend-bar-t small { font-size: 14px; color: #7a5a2a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attend-bar-days { display: flex; gap: 4px; }
+.attend-bar-days i { width: 9px; height: 9px; border-radius: 50%; border: 2px solid #d99a3a; }
+.attend-bar-days i.on { background: #e8590c; border-color: #e8590c; }
+.attend-bar-days i.now { border-color: #e8590c; animation: attend-blink 1s ease-in-out infinite; }
+.attend-bar-go {
+  flex: none; padding: 6px 12px; border-radius: 999px;
+  background: #e8590c; color: #fff; font-size: 16px; font-weight: 800;
+  animation: attend-pulse 1.6s ease-in-out infinite;
+}
+.attend-bar.done { background: var(--surface); border-color: var(--line); box-shadow: none; color: var(--ink); }
+.attend-bar.done .attend-bar-t small { color: var(--ink-soft); }
+.attend-bar.done .attend-bar-go { background: transparent; color: #2f7a4f; animation: none; padding: 6px 4px; }
+@keyframes attend-blink { 50% { background: #f6b98f; } }
+@keyframes attend-pulse { 50% { transform: scale(1.07); } }
+/* 좁은 휴대폰 : 점 7개는 숨김 */
+@media (max-width: 370px) { .attend-bar-days { display: none; } }
+
+:root[data-theme="dark"] .attend-bar:not(.done) { background: linear-gradient(100deg, #3d2c14, #4a3013); border-color: #8a5a1e; color: #f3e6cf; }
+:root[data-theme="dark"] .attend-bar:not(.done) .attend-bar-t small { color: #e0bf8c; }
+:root[data-theme="dark"] .attend-bar.done .attend-bar-go { color: #6fcf97; }

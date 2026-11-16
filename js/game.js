@@ -49,6 +49,9 @@
       notes: notes, // 메모 (숫자별 비트)
       mistakes: 0,
       hintsLeft: C.MAX_HINTS,
+      extraHints: 0, // 힌트권(아이템)으로 쓴 힌트 수
+      itemsUsed: 0, // 이번 판에서 쓴 아이템 수
+      double: false, // 점수 2배권을 썼는지
       elapsedMs: 0,
       history: [],
       score: 0, // 이번 판 점수
@@ -67,6 +70,9 @@
     if (typeof st.lastGain !== 'number') st.lastGain = 0;
     if (typeof st.clearBonus !== 'number') st.clearBonus = 0;
     if (typeof st.daily !== 'string') st.daily = '';
+    if (typeof st.extraHints !== 'number') st.extraHints = 0;
+    if (typeof st.itemsUsed !== 'number') st.itemsUsed = 0;
+    st.double = st.double === true;
     if (!Array.isArray(st.scored) || st.scored.length !== st.cells.length) {
       st.scored = [];
       for (var i = 0; i < st.cells.length; i++) {
@@ -103,6 +109,7 @@
     var base = basePoints(st);
     var gain = base + Math.round(base * C.SCORE.COMBO_STEP * Math.min(st.streak - 1, C.SCORE.COMBO_MAX));
     gain += base * C.SCORE.UNIT_BONUS * unitsDone(st, idx);
+    if (st.double) gain *= 2; // 점수 2배권
     st.score += gain;
     return gain;
   }
@@ -112,6 +119,7 @@
     st.status = 'won';
     var base = basePoints(st);
     st.clearBonus = base * C.SCORE.CLEAR_BONUS + (st.mistakes === 0 ? base * C.SCORE.PERFECT_BONUS : 0);
+    if (st.double) st.clearBonus *= 2;
     st.score += st.clearBonus;
   }
 
@@ -221,10 +229,11 @@
   /*
    * 힌트 : 한 칸을 정답으로 채웁니다.
    * 고른 칸이 비어 있으면 그 칸을, 아니면 아무 빈칸 하나를 채웁니다.
+   * ticket 이 true 면 힌트권(아이템)으로 씁니다 (남은 힌트 수는 그대로)
    * 반환 : 채운 칸 번호 (못 채웠으면 -1)
    */
-  function hint(st, idx, autoNotes) {
-    if (st.status !== 'playing' || st.hintsLeft <= 0) return -1;
+  function hint(st, idx, autoNotes, ticket) {
+    if (st.status !== 'playing' || (!ticket && st.hintsLeft <= 0)) return -1;
     var target = -1;
     if (idx >= 0 && isEditable(st, idx)) {
       target = idx;
@@ -241,12 +250,100 @@
     st.hinted[target] = true;
     var affected = autoNotes === false ? [] : peersWithNote(st, target, d);
     for (var k = 0; k < affected.length; k++) st.notes[affected[k]] &= ~(1 << (d - 1));
-    st.hintsLeft--;
+    if (ticket) {
+      st.extraHints++;
+      st.itemsUsed++;
+    } else {
+      st.hintsLeft--;
+    }
     st.scored[target] = true; // 힌트로 채운 칸은 점수가 없습니다
     st.streak = 0;
     st.lastGain = 0;
     if (isComplete(st)) finishWin(st);
     return target;
+  }
+
+  /* ---------- 아이템 ---------- */
+  /* 시간 단축권 : 걸린 시간을 ms 만큼 줄입니다. 반환 : 실제로 줄어든 시간(ms) */
+  function cutTime(st, ms) {
+    if (st.status !== 'playing') return 0;
+    var cut = Math.min(st.elapsedMs, ms);
+    st.elapsedMs -= cut;
+    if (cut > 0) st.itemsUsed++;
+    return cut;
+  }
+
+  /* 실수 지우개 : 틀린 횟수 1번을 없애고, 판에 남은 틀린 숫자도 지웁니다. */
+  function forgive(st) {
+    if (st.status !== 'playing' || st.mistakes <= 0) return false;
+    st.mistakes--;
+    for (var i = 0; i < st.cells.length; i++) {
+      if (st.cells[i] !== 0 && st.cells[i] !== st.solution[i]) st.cells[i] = 0;
+    }
+    st.itemsUsed++;
+    return true;
+  }
+
+  /*
+   * 자동 메모 : 빈칸마다 들어갈 수 있는 숫자(같은 줄·상자에 아직 없는 숫자)를 메모합니다.
+   * 되돌리기 한 번으로 모두 되돌릴 수 있습니다. 반환 : 메모가 바뀐 칸 수
+   */
+  function autoMemo(st) {
+    if (st.status !== 'playing') return 0;
+    var changed = [], masks = [];
+    var full = (1 << st.size) - 1;
+    for (var i = 0; i < st.cells.length; i++) {
+      if (st.cells[i] !== 0 || !isEditable(st, i)) continue;
+      var mask = full;
+      var p = E.peers(st, i);
+      for (var k = 0; k < p.length; k++) {
+        var v = st.cells[p[k]];
+        if (v && v === st.solution[p[k]]) mask &= ~(1 << (v - 1));
+      }
+      if (mask !== st.notes[i]) {
+        changed.push(i);
+        masks.push(mask);
+      }
+    }
+    if (!changed.length) return 0;
+    snapshot(st, changed);
+    for (var j = 0; j < changed.length; j++) st.notes[changed[j]] = masks[j];
+    st.itemsUsed++;
+    return changed.length;
+  }
+
+  /* 점수 2배권 : 이번 판의 점수가 모두 2배 (이미 받은 점수는 그대로) */
+  function useDouble(st) {
+    if (st.status !== 'playing' || st.double) return false;
+    st.double = true;
+    st.itemsUsed++;
+    return true;
+  }
+
+  /* 되살리기권 : 3번 틀려 끝난 판을 틀림 1번 줄이고 이어서 합니다 */
+  function revive(st) {
+    if (st.status !== 'lost') return false;
+    st.status = 'playing';
+    st.mistakes = Math.max(0, st.mistakes - 1);
+    for (var i = 0; i < st.cells.length; i++) {
+      if (st.cells[i] !== 0 && st.cells[i] !== st.solution[i]) st.cells[i] = 0;
+    }
+    st.itemsUsed++;
+    return true;
+  }
+
+  /* 돋보기 : 숫자 d가 들어갈 수 있는 빈칸 목록 (같은 줄·상자에 d가 아직 없는 칸) */
+  function spots(st, d) {
+    var out = [];
+    for (var i = 0; i < st.cells.length; i++) {
+      if (st.cells[i] !== 0 || !isEditable(st, i)) continue;
+      var p = E.peers(st, i), ok = true;
+      for (var k = 0; k < p.length; k++) {
+        if (st.cells[p[k]] === d && st.solution[p[k]] === d) { ok = false; break; }
+      }
+      if (ok) out.push(i);
+    }
+    return out;
   }
 
   /* 숫자 d가 판에 올바르게 몇 개 놓였는지 */
@@ -270,6 +367,12 @@
     erase: erase,
     undo: undo,
     hint: hint,
+    cutTime: cutTime,
+    forgive: forgive,
+    autoMemo: autoMemo,
+    useDouble: useDouble,
+    revive: revive,
+    spots: spots,
     placedCount: placedCount
   };
 })(typeof window !== 'undefined' ? window : globalThis);

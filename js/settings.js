@@ -20,8 +20,10 @@
     { key: 'highlightArea', group: '강조 표시', title: '줄·상자 강조', desc: '고른 칸과 같은 가로줄, 세로줄, 상자를 연하게 표시합니다', on: true },
     { key: 'highlightDup', group: '강조 표시', title: '겹치는 숫자 표시', desc: '틀린 숫자와 겹치는 숫자가 어디 있는지 빨갛게 알려 줍니다', on: true },
 
-    { key: 'unitEffect', group: '효과', title: '줄·상자 완성 효과', desc: '한 줄이나 상자 하나를 다 채우면 반짝입니다', on: true },
+    { key: 'unitEffect', group: '효과', title: '줄·상자 완성 효과', desc: '한 줄이나 상자 하나를 다 채우면 둘레가 빛나고 반짝이가 튑니다', on: true },
+    { key: 'wrongEffect', group: '효과', title: '틀림·실패 효과', desc: '틀리면 판이 흔들리고 겹치는 숫자가 깜박입니다', on: true },
     { key: 'winEffect', group: '효과', title: '판 완성 효과', desc: '한 판을 깨면 판 전체가 반짝이고 색종이가 떨어집니다', on: true },
+    { key: 'hero', group: '효과', title: '캐릭터 표시', desc: '판 위에 내 등급 캐릭터가 나와 맞히고 틀릴 때마다 표정이 바뀝니다 (끄면 판이 조금 커집니다)', on: true },
     { key: 'cheer', group: '효과', title: '응원 메시지', desc: '절반을 채웠을 때, 줄을 완성했을 때 짧은 응원을 보여 줍니다', on: true },
 
     { key: 'sound', group: '소리와 진동', title: '효과음', desc: '숫자를 넣거나 버튼을 누를 때 소리가 납니다', on: true },
