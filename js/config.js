@@ -8,6 +8,10 @@
   var S = (root.SUDOKU = root.SUDOKU || {});
 
   S.Config = {
+    // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
+    // 고칠 때마다 sw.js 의 CACHE 숫자와 같이 올려 주세요 : sudoku-files-v11 → 'v11'
+    VERSION: 'v11',
+
     WINS_TO_PROMOTE: 5, // 같은 등급에서 이만큼 깨면 승급
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수

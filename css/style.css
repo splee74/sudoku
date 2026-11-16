@@ -947,3 +947,11 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
   .side { padding-top: calc(44px + var(--hero-h)); } /* 오른쪽 단추들이 판 위쪽 줄과 맞게 */
 }
 :root[data-theme="dark"] .hero-face { border-color: color-mix(in srgb, var(--grade) 55%, #fff); box-shadow: 0 0 0 2px var(--surface), 0 4px 12px rgba(0, 0, 0, 0.5); }
+
+/* 오른쪽 위 작은 버전 표시 (js/config.js 의 VERSION) */
+.app-ver {
+  position: fixed; z-index: 9999; pointer-events: none;
+  top: calc(env(safe-area-inset-top, 0px) + 2px); right: 6px;
+  font-size: 10px; line-height: 1; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--ink, #333); opacity: 0.45;
+}
