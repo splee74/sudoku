@@ -12,12 +12,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=14">
-  <link rel="stylesheet" href="css/skins.css?v=14">
-  <link rel="stylesheet" href="css/screens.css?v=14">
-  <link rel="stylesheet" href="css/about.css?v=14">
+  <link rel="stylesheet" href="css/style.css?v=15">
+  <link rel="stylesheet" href="css/skins.css?v=15">
+  <link rel="stylesheet" href="css/screens.css?v=15">
+  <link rel="stylesheet" href="css/about.css?v=15">
   <link rel="preload" as="image" href="img/splash.webp">
-  <link rel="stylesheet" href="css/dark.css?v=14">
+  <link rel="stylesheet" href="css/dark.css?v=15">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -128,7 +128,8 @@
       </div>
 
       <div class="home-hero">
-        <p class="home-title">스도쿠 승급전</p>
+        <!-- 제목은 그림 (길게 눌러도 글자가 선택되지 않게). 다시 만들기 : python tools/make_title.py -->
+        <div class="home-title"><img src="img/title.webp" alt="스도쿠 승급전" width="885" height="196" draggable="false"></div>
         <button type="button" class="pill-btn" data-open="rules">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01"/></svg>
           플레이 방법
@@ -726,18 +727,18 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=14"></script>
-  <script src="js/engine.js?v=14"></script>
-  <script src="js/game.js?v=14"></script>
-  <script src="js/progress.js?v=14"></script>
-  <script src="js/settings.js?v=14"></script>
-  <script src="js/skins.js?v=14"></script>
-  <script src="js/sound.js?v=14"></script>
-  <script src="js/effects.js?v=14"></script>
-  <script src="js/badges.js?v=14"></script>
-  <script src="js/account.js?v=14"></script>
-  <script src="js/tutorial.js?v=14"></script>
-  <script src="js/hero.js?v=14"></script>
-  <script src="js/ui.js?v=14"></script>
+  <script src="js/config.js?v=15"></script>
+  <script src="js/engine.js?v=15"></script>
+  <script src="js/game.js?v=15"></script>
+  <script src="js/progress.js?v=15"></script>
+  <script src="js/settings.js?v=15"></script>
+  <script src="js/skins.js?v=15"></script>
+  <script src="js/sound.js?v=15"></script>
+  <script src="js/effects.js?v=15"></script>
+  <script src="js/badges.js?v=15"></script>
+  <script src="js/account.js?v=15"></script>
+  <script src="js/tutorial.js?v=15"></script>
+  <script src="js/hero.js?v=15"></script>
+  <script src="js/ui.js?v=15"></script>
 </body>
 </html>

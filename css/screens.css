@@ -180,12 +180,14 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
   :root:not([data-theme="light"]) .home-bg img { filter: brightness(0.82); }
 }
 /* 판 그림 위에서도 잘 보이게 : 제목은 반투명 바탕 위에 */
-.screen-home .home-title {
-  padding: 2px 20px; border-radius: 16px;
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
-  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-  box-shadow: 0 4px 14px rgba(30, 30, 10, 0.22);
+/* 제목 그림 (img/title.webp, 하얀 테두리가 있어 판 그림 위에서도 잘 보임) */
+.screen-home .home-title { margin: 0; line-height: 0; }
+.home-title img {
+  display: block; width: auto; height: clamp(48px, 7.5dvh, 66px); max-width: 86vw;
+  pointer-events: none; -webkit-user-drag: none;
 }
+/* 홈 화면에서는 길게 눌러도 글자 · 그림이 선택되거나 메뉴가 뜨지 않게 */
+.screen-home { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .screen-home .pill-btn { box-shadow: 0 3px 10px rgba(30, 30, 10, 0.25); }
 .screen-home .top-row .pill, .screen-home .icon-btn { box-shadow: 0 2px 8px rgba(30, 30, 10, 0.18); }
 
@@ -194,7 +196,6 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 .cal-art .cal-done { display: none; }
 .hcard-daily.done .cal-art .cal-done { display: inline; }
 
-.home-title { margin: 0; font-size: 32px; font-weight: 900; letter-spacing: -1px; line-height: 1.2; }
 .pill-btn {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
@@ -381,7 +382,7 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 
 /* 세로가 짧은 휴대폰 홈 : 제목과 동그라미 단추를 조금 작게 */
 @media (max-height: 700px) {
-  .screen-home .home-title { font-size: 26px; }
+  .home-title img { height: 46px; }
   .screen-home .round-btn { --size: 100px; }
   .screen-home .round-btn b { font-size: 17px; }
   .screen-home .home-hero { gap: 6px; }
