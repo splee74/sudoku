@@ -69,6 +69,8 @@
 
     <!-- ================= 홈 화면 ================= -->
     <section class="screen screen-home" id="screen-home" aria-label="홈">
+      <!-- 배경 : 나무 스도쿠판 그림을 크게 깔고, 남는 곳은 같은 그림을 흐리게 (css/screens.css 의 .home-bg) -->
+      <div class="home-bg" aria-hidden="true"><img src="img/sudoku_img01.webp" alt="" width="900" height="926"></div>
       <div class="top-row">
         <span class="pill" id="home-streak" title="오늘의 퍼즐 연속 일수">🔥 <b>0</b></span>
         <span class="pill" id="home-score" title="모은 점수">⭐ <b>0</b></span>
@@ -88,7 +90,30 @@
         <button type="button" class="hcard hcard-daily" id="home-daily">
           <span class="hcard-label">오늘의 퍼즐</span>
           <span class="hcard-title" id="home-daily-date">11월 14일</span>
-          <span class="hcard-art" aria-hidden="true">🏆</span>
+          <!-- 달력 그림 (작은 스도쿠판이 그려진 오늘 날짜 장). 다 풀면 초록 도장이 찍힙니다 -->
+          <span class="hcard-art" aria-hidden="true">
+            <svg class="cal-art" viewBox="0 0 64 64">
+              <rect x="6" y="9" width="52" height="50" rx="8" fill="#fff" stroke="#d9cfbf" stroke-width="2"/>
+              <path d="M6 17a8 8 0 0 1 8-8h36a8 8 0 0 1 8 8v6H6Z" fill="#e5533d"/>
+              <rect x="18" y="4" width="5" height="11" rx="2.5" fill="#6b6257"/>
+              <rect x="41" y="4" width="5" height="11" rx="2.5" fill="#6b6257"/>
+              <g stroke="#cfc4b2" stroke-width="1.2">
+                <path d="M15 37h34M15 47h34M26 28v28M38 28v28"/>
+              </g>
+              <rect x="15" y="28" width="34" height="28" rx="2" fill="none" stroke="#8a7f70" stroke-width="2"/>
+              <g font-family="sans-serif" font-weight="800" font-size="8" text-anchor="middle">
+                <text x="20.5" y="35.5" fill="#2f7bd6">3</text>
+                <text x="43.5" y="35.5" fill="#33312c">1</text>
+                <text x="32" y="45" fill="#e5533d">7</text>
+                <text x="20.5" y="54.5" fill="#33312c">5</text>
+                <text x="43.5" y="54.5" fill="#35a66b">9</text>
+              </g>
+              <g class="cal-done">
+                <circle cx="50" cy="50" r="11" fill="#2f9e5b" stroke="#fff" stroke-width="2.5"/>
+                <path d="M44.5 50.5l4 4 7-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+            </svg>
+          </span>
           <span class="hcard-btn" id="home-daily-btn">플레이</span>
         </button>
         <button type="button" class="hcard hcard-grade" id="home-grade">
@@ -103,7 +128,6 @@
       </div>
 
       <div class="home-hero">
-        <img class="home-board" src="img/sudoku_img01.webp" alt="나무 스도쿠 판" width="900" height="926">
         <p class="home-title">스도쿠 승급전</p>
         <button type="button" class="pill-btn" data-open="rules">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01"/></svg>

@@ -107,7 +107,7 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 /* ---------- 홈 ---------- */
 /* 홈 화면은 스크롤 없이 한 화면에 꼭 맞게 (위 여백 8 + 아래 메뉴 76 + 여유) */
 .screen-home { height: calc(100dvh - 96px - env(safe-area-inset-bottom)); min-height: 520px; gap: 10px; }
-.screen-home .hcard { min-height: 0; height: clamp(150px, 24dvh, 190px); }
+.screen-home .hcard { min-height: 0; height: clamp(176px, 24dvh, 196px); }
 .screen-home .hcard-art { font-size: clamp(40px, 6dvh, 58px); }
 .screen-home .hcard-art.hcard-prog { font-size: 16px; }
 /* 화면이 낮으면 카드 안의 그림(트로피)이 줄어들고, 아래 단추는 늘 보이게 */
@@ -145,13 +145,55 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 .hcard-grade .dot { width: 15px; height: 15px; border-color: #fff; }
 .hcard-grade .dot.on { background: #fff; }
 
-/* 가운데 : 판 그림이 남는 높이만큼만 커지고, 화면이 낮으면 작아집니다 */
-.home-hero { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 6px 0; }
-.home-board {
-  flex: 1 1 0; min-height: 90px; max-height: 340px;
-  width: 100%; object-fit: contain;
-  filter: drop-shadow(0 8px 14px rgba(40, 30, 10, 0.25));
+/* 가운데 : 제목과 플레이 방법 (판 그림은 배경 .home-bg 에 깔려 있음) */
+.home-hero { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 6px 0; }
+
+/* 홈 배경 : 나무 스도쿠판을 화면 가운데에 크게, 둘레는 같은 그림을 흐리게 채움
+   카드 · 단추 · 제목은 모두 그 위에 올라옵니다 */
+.screen-home { position: relative; isolation: isolate; }
+.home-bg {
+  position: absolute; z-index: -1; pointer-events: none;
+  left: 50%; width: 100vw; margin-left: -50vw;
+  top: -8px; bottom: -12px;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
 }
+.home-bg::before {
+  content: ""; position: absolute; inset: -30px;
+  background: url("../img/sudoku_img01.webp") center / cover no-repeat;
+  filter: blur(18px) saturate(1.1);
+}
+.home-bg::after { content: ""; position: absolute; inset: 0; background: rgba(255, 252, 244, 0.18); }
+.home-bg img {
+  position: relative; z-index: 1;
+  width: min(104vw, calc(100dvh * 0.62), 720px); height: auto;
+  /* 그림 가장자리를 흐린 배경 속으로 부드럽게 녹입니다 */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 96%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 96%, transparent);
+  mask-composite: intersect;
+}
+:root[data-theme="dark"] .home-bg::after { background: rgba(10, 12, 20, 0.45); }
+:root[data-theme="dark"] .home-bg img { filter: brightness(0.82); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .home-bg::after { background: rgba(10, 12, 20, 0.45); }
+  :root:not([data-theme="light"]) .home-bg img { filter: brightness(0.82); }
+}
+/* 판 그림 위에서도 잘 보이게 : 제목은 반투명 바탕 위에 */
+.screen-home .home-title {
+  padding: 2px 20px; border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  box-shadow: 0 4px 14px rgba(30, 30, 10, 0.22);
+}
+.screen-home .pill-btn { box-shadow: 0 3px 10px rgba(30, 30, 10, 0.25); }
+.screen-home .top-row .pill, .screen-home .icon-btn { box-shadow: 0 2px 8px rgba(30, 30, 10, 0.18); }
+
+/* 오늘의 퍼즐 카드의 달력 그림 */
+.cal-art { width: 1.25em; height: 1.25em; filter: drop-shadow(0 3px 4px rgba(40, 30, 10, 0.2)); }
+.cal-art .cal-done { display: none; }
+.hcard-daily.done .cal-art .cal-done { display: inline; }
+
 .home-title { margin: 0; font-size: 32px; font-weight: 900; letter-spacing: -1px; line-height: 1.2; }
 .pill-btn {
   display: inline-flex; align-items: center; gap: 6px;
@@ -326,3 +368,21 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 :root[data-theme="dark"] .attend-bar:not(.done) { background: linear-gradient(100deg, #3d2c14, #4a3013); border-color: #8a5a1e; color: #f3e6cf; }
 :root[data-theme="dark"] .attend-bar:not(.done) .attend-bar-t small { color: #e0bf8c; }
 :root[data-theme="dark"] .attend-bar.done .attend-bar-go { color: #6fcf97; }
+
+/* 넓은 화면(PC · 태블릿) : 배경을 화면 전체가 아니라 가운데 큰 카드로 */
+@media (min-width: 640px) {
+  .home-bg {
+    left: -24px; right: -24px; width: auto; margin-left: 0;
+    top: 0; bottom: 0;
+    border-radius: 28px;
+    box-shadow: 0 10px 30px rgba(40, 30, 10, 0.18);
+  }
+}
+
+/* 세로가 짧은 휴대폰 홈 : 제목과 동그라미 단추를 조금 작게 */
+@media (max-height: 700px) {
+  .screen-home .home-title { font-size: 26px; }
+  .screen-home .round-btn { --size: 100px; }
+  .screen-home .round-btn b { font-size: 17px; }
+  .screen-home .home-hero { gap: 6px; }
+}

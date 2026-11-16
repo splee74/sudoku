@@ -9,7 +9,7 @@
  *
  * 새 파일(그림, js, css)을 추가했으면 아래 FILES 목록에도 한 줄 넣어 주세요.
  */
-var CACHE = 'sudoku-files-v12';
+var CACHE = 'sudoku-files-v13';
 var FILES = [
   './',
   'index.html',
