@@ -1907,6 +1907,15 @@
   }
 
   window.addEventListener('popstate', onBack);
+
+  /* 두 손가락으로 화면이 확대되지 않게 : 아이폰 사파리는 화면 설정(viewport)을 무시해서 따로 막습니다
+     (안드로이드 크롬 · 앱은 index.html 의 viewport 와 css 의 touch-action 으로 막힘) */
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (type) {
+    document.addEventListener(type, function (e) { e.preventDefault(); }, { passive: false });
+  });
+  document.addEventListener('touchmove', function (e) {
+    if (e.touches && e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
   // 화면을 만지면 다시 뒤로 가기를 받을 준비를 합니다
   document.addEventListener('pointerdown', armBack, true);
   document.addEventListener('keydown', armBack, true);

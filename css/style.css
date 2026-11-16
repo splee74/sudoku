@@ -38,6 +38,8 @@ html, body {
   -webkit-tap-highlight-color: transparent;
   /* 화면 맨 위에서 아래로 당겨도 새로 고침되지 않게 (휴대폰 크롬의 당겨서 새로 고침 끄기) */
   overscroll-behavior-y: none;
+  /* 손가락으로 위아래 · 옆으로 밀기만 되고, 두 손가락 확대 · 두 번 톡 확대는 막습니다 */
+  touch-action: pan-x pan-y;
 }
 
 button {
