@@ -955,3 +955,75 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
   font-size: 10px; line-height: 1; font-weight: 600; letter-spacing: 0.02em;
   color: var(--ink, #333); opacity: 0.45;
 }
+
+/* ============================================================
+   휴대폰 게임 화면 : 한 화면에 딱 맞추고 위아래로 움직이지 않게
+   - 화면 높이(100dvh)를 넘지 않게 고정하고 스크롤을 막습니다
+   - 맨 위 줄, 등급 줄, 캐릭터, 도구, 숫자 단추를 먼저 놓고
+     남는 공간(.board-fit)에 들어가는 가장 큰 정사각형으로 판을 그립니다
+   - 세로가 짧은 휴대폰에서는 단추와 캐릭터를 조금씩 줄입니다
+   (PC 화면 900px 이상은 그대로)
+   ============================================================ */
+.board-fit { width: 100%; display: flex; justify-content: center; }
+@media (max-width: 899px) {
+  html:has(body[data-screen="game"]) { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  body[data-screen="game"] {
+    height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: none;
+    display: flex; flex-direction: column;
+  }
+  body[data-screen="game"] .site-head { flex: none; }
+  body[data-screen="game"] .page {
+    flex: 1 1 auto; min-height: 0; width: 100%;
+    display: flex; flex-direction: column;
+    padding: 6px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+  html body[data-screen="game"] #screen-game { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  body[data-screen="game"] .gradebar { flex: none; margin-bottom: 6px; }
+  #screen-game .game { flex: 1 1 auto; min-height: 0; gap: 8px; }
+  #screen-game .board-col { flex: 1 1 auto; min-height: 0; gap: 6px; }
+  #screen-game .hero, #screen-game .info, #screen-game .side { flex: none; }
+  /* 판 : 남는 공간의 가로·세로 중 짧은 쪽에 맞춘 정사각형 */
+  #screen-game .board-fit { flex: 1 1 auto; min-height: 120px; container-type: size; align-items: center; }
+  #screen-game .board-wrap { width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); }
+  #screen-game .board, #screen-game .board.small-pad { width: 100%; }
+  #screen-game .side { gap: 8px; }
+  #screen-game #btn-new { min-height: 52px; padding: 6px 20px; font-size: 21px; }
+  /* 판 위에서 손가락을 움직여도 화면이 끌려가지 않게 */
+  #screen-game .game { touch-action: manipulation; }
+  /* 등급 줄은 한 줄로 : 동그라미 대신 "승급까지 N판" 글자만, 오늘의 퍼즐 단추는 작게 */
+  body[data-screen="game"] .gradebar { flex-wrap: nowrap; gap: 8px; min-height: 36px; font-size: 17px; }
+  body[data-screen="game"] .gradebar .dots { display: none; }
+  body[data-screen="game"] .gradebar .chip { font-size: 18px; padding: 2px 12px; min-height: 34px; }
+  body[data-screen="game"] .daily-btn { min-height: 34px; padding: 0 10px; font-size: 16px; }
+  body[data-screen="game"] .gradebar-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  /* 1~9 숫자 단추는 한 줄에 모두 */
+  #screen-game .numpad:not(.few) { flex-wrap: nowrap; gap: 5px; }
+  #screen-game .numpad:not(.few) .num { flex: 1 1 0; min-width: 0; height: 58px; font-size: 30px; border-radius: 12px; }
+}
+/* 세로가 조금 짧은 휴대폰 */
+@media (max-width: 899px) and (max-height: 780px) {
+  #screen-game .game { --hero-h: 60px; }
+  #screen-game .hero { height: 54px; }
+  #screen-game .hero-face { width: 54px; height: 54px; }
+  #screen-game .hero-bubble { font-size: 16px; padding: 4px 12px; }
+  #screen-game .tool { min-height: 52px; font-size: 15px; }
+  #screen-game .tool svg { width: 22px; height: 22px; }
+  #screen-game .num, #screen-game .numpad:not(.few) .num { height: 52px; font-size: 28px; }
+  #screen-game .numpad.few .num { height: 58px; }
+  #screen-game .numpad { gap: 6px; }
+  #screen-game #btn-new { min-height: 46px; font-size: 19px; }
+}
+/* 세로가 아주 짧은 휴대폰 */
+@media (max-width: 899px) and (max-height: 680px) {
+  body[data-screen="game"] .site-head-in { min-height: 46px; }
+  body[data-screen="game"] .nav-btn { min-height: 40px; }
+  #screen-game .hero { height: 44px; }
+  #screen-game .hero-face { width: 44px; height: 44px; border-width: 2px; }
+  #screen-game .hero-bubble { font-size: 15px; padding: 2px 10px; }
+  #screen-game .tool { min-height: 46px; gap: 0; font-size: 14px; line-height: 1.2; }
+  #screen-game .tool svg { width: 18px; height: 18px; }
+  #screen-game .num, #screen-game .numpad:not(.few) .num { height: 46px; font-size: 26px; }
+  #screen-game .numpad.few .num { height: 50px; }
+  #screen-game #btn-new { min-height: 42px; font-size: 18px; }
+  #screen-game .info { min-height: 32px; }
+}
