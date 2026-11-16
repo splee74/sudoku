@@ -1283,6 +1283,8 @@
     var won = game.status === 'won';
     var fancy = won && Settings.get('winEffect');
     if (fancy) {
+      // 빵빠레와 함께 화면이 번쩍이고 꽃이 휘날립니다
+      S.Effects.flowers(3200);
       // 마지막에 넣은 칸에서부터 판 전체가 물결처럼 반짝입니다
       var all = [];
       for (var i = 0; i < game.cells.length; i++) all.push(i);
@@ -1317,7 +1319,6 @@
       if (won && res.promoted) showPromo(res.grade);
       else {
         $('btn-again').focus();
-        if (fancy) S.Effects.confetti(1200);
       }
     }, wait);
   }

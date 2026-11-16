@@ -676,14 +676,14 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
   --fx: #3fbf6f;
   box-shadow: 0 0 0 3px var(--fx), 0 0 18px 4px var(--fx), inset 0 0 14px color-mix(in srgb, var(--fx) 55%, transparent);
   background: color-mix(in srgb, var(--fx) 14%, transparent);
-  animation: fx-unit 1s ease-out backwards;
+  opacity: 0; /* 효과가 끝난 뒤 지워질 때까지 다시 보이지 않게 */
+  animation: fx-unit 0.9s ease-in-out both;
 }
 .fx-unit-box { --fx: #f2b632; border-radius: 4px; }
 @keyframes fx-unit {
-  0% { opacity: 0; transform: scale(0.92); }
-  25% { opacity: 1; transform: scale(1.03); }
-  60% { opacity: 0.9; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.06); }
+  0% { opacity: 0; transform: scale(0.96); }
+  35% { opacity: 1; transform: scale(1.02); }
+  100% { opacity: 0; transform: scale(1.04); }
 }
 
 /* 반짝이 조각 */
@@ -692,7 +692,8 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
   border-radius: 50%;
   background: #4fd283;
   box-shadow: 0 0 6px #4fd283;
-  animation: fx-spark 0.8s cubic-bezier(.2, .7, .3, 1) backwards;
+  opacity: 0;
+  animation: fx-spark 0.8s cubic-bezier(.2, .7, .3, 1) both;
 }
 .fx-spark-box { background: #ffc93c; box-shadow: 0 0 6px #ffb300; }
 .fx-spark.star {
@@ -1026,4 +1027,17 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
   #screen-game .numpad.few .num { height: 50px; }
   #screen-game #btn-new { min-height: 42px; font-size: 18px; }
   #screen-game .info { min-height: 32px; }
+}
+
+/* 판을 깼을 때 화면 전체가 환하게 한 번 번쩍 (js/effects.js 의 flowers) */
+.fx-screenflash {
+  position: fixed; inset: 0; z-index: 19; pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 250, 225, 0.95), rgba(255, 236, 160, 0.55) 45%, rgba(255, 220, 120, 0) 75%);
+  opacity: 0;
+  animation: fx-screenflash 0.9s ease-out both;
+}
+@keyframes fx-screenflash {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  100% { opacity: 0; }
 }

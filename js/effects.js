@@ -70,6 +70,128 @@
     rafId = root.requestAnimationFrame(frame);
   }
 
+  /* ---------------- 판을 깼을 때 : 화면이 환하게 번쩍이고 꽃이 휘날립니다 ----------------
+   * 아래 양쪽 구석에서 꽃이 폭죽처럼 솟아오르고, 위에서는 꽃잎이 흔들리며 내려옵니다.
+   * 꽃 색은 FLOWER_COLORS 에서 바꿀 수 있습니다.
+   */
+  var FLOWER_COLORS = ['#ff8fb1', '#ffb3c7', '#ffffff', '#ffd54f', '#ff9e80', '#c5a3ff', '#f8bbd0'];
+
+  function drawFlower(ctx, p) {
+    ctx.fillStyle = p.color;
+    if (p.kind === 'petal') {
+      // 꽃잎 하나 : 뒤집히며 떨어지는 느낌으로 납작하게
+      ctx.scale(1, Math.abs(Math.cos(p.flip)) * 0.8 + 0.2);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, p.size * 0.32, p.size * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    // 다섯 장 꽃 + 꽃술
+    for (var i = 0; i < 5; i++) {
+      ctx.rotate((Math.PI * 2) / 5);
+      ctx.beginPath();
+      ctx.ellipse(0, -p.size * 0.32, p.size * 0.22, p.size * 0.34, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = p.color === '#ffd54f' ? '#ff8a3d' : '#ffd54f';
+    ctx.beginPath();
+    ctx.arc(0, 0, p.size * 0.16, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function screenFlash() {
+    var el = document.createElement('div');
+    el.className = 'fx-screenflash';
+    el.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(el);
+    root.setTimeout(function () {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 1000);
+  }
+
+  function flowers(durationMs) {
+    var canvas = document.getElementById('confetti');
+    if (!canvas || !canvas.getContext) return;
+    if (root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    stop();
+    screenFlash();
+
+    var ctx = canvas.getContext('2d');
+    var w = (canvas.width = root.innerWidth);
+    var h = (canvas.height = root.innerHeight);
+    canvas.hidden = false;
+    var unit = Math.max(1, Math.min(w, h) / 400); // 화면 크기에 맞춘 꽃 크기
+
+    function piece(burst, side) {
+      var p = {
+        kind: Math.random() < 0.55 ? 'petal' : 'flower',
+        size: (14 + Math.random() * 14) * unit,
+        rot: Math.random() * Math.PI * 2,
+        vr: -0.06 + Math.random() * 0.12,
+        flip: Math.random() * Math.PI,
+        vflip: 0.05 + Math.random() * 0.08,
+        sway: 0.6 + Math.random() * 1.4,
+        phase: Math.random() * Math.PI * 2,
+        color: FLOWER_COLORS[Math.floor(Math.random() * FLOWER_COLORS.length)]
+      };
+      if (burst) {
+        // 아래 구석에서 위로 솟아오름 (빵빠레 폭죽)
+        p.x = side < 0 ? -10 : w + 10;
+        p.y = h * (0.78 + Math.random() * 0.15);
+        var sp = (h / 55) * (0.75 + Math.random() * 0.5);
+        var ang = -Math.PI / 2 - side * (0.2 + Math.random() * 0.45);
+        p.vx = Math.cos(ang) * sp;
+        p.vy = Math.sin(ang) * sp;
+      } else {
+        p.x = Math.random() * w;
+        p.y = -30 - Math.random() * h * 0.5;
+        p.vx = 0;
+        p.vy = 1.2 + Math.random() * 1.6;
+      }
+      return p;
+    }
+
+    var pieces = [];
+    for (var i = 0; i < 70; i++) pieces.push(piece(true, i % 2 ? 1 : -1));
+    for (var j = 0; j < 60; j++) pieces.push(piece(false));
+
+    var start = Date.now(), tick = 0;
+    function frame() {
+      var t = Date.now() - start;
+      tick++;
+      ctx.clearRect(0, 0, w, h);
+      var alive = false;
+      for (var k = 0; k < pieces.length; k++) {
+        var p = pieces[k];
+        // 솟아오른 꽃은 공기에 막혀 느려지다가 천천히 떨어집니다
+        p.vx *= 0.985;
+        p.vy = Math.min(p.vy + 0.12, 2.6);
+        p.x += p.vx + Math.sin(tick * 0.04 + p.phase) * p.sway;
+        p.y += p.vy;
+        p.rot += p.vr;
+        p.flip += p.vflip;
+        if (p.y > h + 40) {
+          if (t < durationMs) {
+            p = pieces[k] = piece(false);
+            p.y = -30;
+          } else {
+            continue;
+          }
+        }
+        alive = true;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = 0.92;
+        drawFlower(ctx, p);
+        ctx.restore();
+      }
+      if (alive) rafId = root.requestAnimationFrame(frame);
+      else stop();
+    }
+    rafId = root.requestAnimationFrame(frame);
+  }
+
   /* ---------------- 판 위의 효과 (줄·상자 완성, 틀림, 실패) ----------------
    * 판을 감싼 상자(board-wrap) 위에 잠깐 그림 조각을 얹었다가 지웁니다.
    * 꾸밈(색, 움직임)은 css/style.css 의 "판 위의 효과" 에 있습니다.
@@ -112,7 +234,7 @@
   function sparks(wrap, x, y, count, spread, kind) {
     if (reduced()) return;
     for (var i = 0; i < count; i++) {
-      var el = addTemp(wrap, 'fx-spark fx-spark-' + kind + (i % 3 === 0 ? ' star' : ''), 900);
+      var el = addTemp(wrap, 'fx-spark fx-spark-' + kind + (i % 3 === 0 ? ' star' : ''), 1050);
       var ang = Math.random() * Math.PI * 2;
       var dist = spread * (0.45 + Math.random() * 0.75);
       el.style.left = x + 'px';
@@ -133,7 +255,7 @@
     for (var g = 0; g < groups.length; g++) {
       var rc = unionRect(wrap, groups[g].els);
       var kind = groups[g].kind;
-      var glow = addTemp(wrap, 'fx-unit fx-unit-' + kind, 1100);
+      var glow = addTemp(wrap, 'fx-unit fx-unit-' + kind, 1000 + g * 90 + 150);
       place(glow, rc);
       glow.style.animationDelay = g * 90 + 'ms';
       var cx = rc.left + rc.width / 2, cy = rc.top + rc.height / 2;
@@ -181,6 +303,7 @@
 
   S.Effects = {
     confetti: confetti,
+    flowers: flowers,
     stop: stop,
     unitDone: unitDone,
     wrong: wrong,

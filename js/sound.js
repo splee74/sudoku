@@ -84,15 +84,32 @@
       k.tone(N.A5, 0, 0.06, 'triangle', 0.2);
       k.tone(N.E5, 0.065, 0.11, 'triangle', 0.2);
     },
-    /* 판을 깼을 때 : 짧은 축하 음악 */
+    /* 판을 깼을 때 : 빵빠레 (북 두구두구 → 나팔 따따따 따~ 따다 따~~ → 심벌 쾅) */
     win: function (k) {
-      var seq = [N.C5, N.E5, N.G5, N.C6, N.G5, N.C6];
-      for (var i = 0; i < seq.length; i++) k.tone(seq[i], 0.15 + i * 0.11, 0.2, 'triangle', 0.22);
-      k.tone(N.C5, 0.85, 0.8, 'triangle', 0.14);
-      k.tone(N.E5, 0.85, 0.8, 'triangle', 0.14);
-      k.tone(N.G5, 0.85, 0.8, 'triangle', 0.14);
-      k.tone(N.C6, 0.85, 0.9, 'sine', 0.16);
-      k.tone(N.E6, 0.9, 0.8, 'sine', 0.08);
+      // 시작 북소리
+      for (var r = 0; r < 6; r++) k.noise(r * 0.045, 0.06, 0.22, 260, 120);
+      // 나팔 가락 : [음, 시작, 길이]
+      var tune = [
+        [N.G4, 0.3, 0.12], [N.G4, 0.44, 0.12], [N.G4, 0.58, 0.12], [N.C5, 0.72, 0.42],
+        [N.G4, 1.18, 0.14], [N.C5, 1.34, 0.16], [N.E5, 1.52, 1.1]
+      ];
+      for (var i = 0; i < tune.length; i++) {
+        var f = tune[i][0], t = tune[i][1], d = tune[i][2];
+        k.tone(f, t, d, 'sawtooth', 0.09); // 나팔의 거친 소리
+        k.tone(f, t, d, 'square', 0.05);
+        k.tone(f * 2, t, d, 'triangle', 0.06); // 밝은 윗소리
+      }
+      // 마지막 화음 (도 솔 도)
+      k.tone(N.C4, 1.52, 1.2, 'sawtooth', 0.06);
+      k.tone(N.G4, 1.52, 1.2, 'triangle', 0.12);
+      k.tone(N.C5, 1.52, 1.2, 'triangle', 0.12);
+      k.tone(N.C6, 1.56, 1.1, 'sine', 0.1);
+      // 심벌 쾅과 반짝이 종소리
+      k.noise(1.52, 0.9, 0.14, 7000, 3000);
+      k.noise(1.5, 0.18, 0.3, 200, 90);
+      k.tone(N.E6, 1.62, 0.6, 'sine', 0.07);
+      k.tone(N.G6, 1.72, 0.6, 'sine', 0.06);
+      k.tone(N.C7, 1.82, 0.7, 'sine', 0.05);
     },
     /* 판을 실패했을 때 : 힘없이 내려가는 소리 */
     lose: function (k) {
