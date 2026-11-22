@@ -72,16 +72,26 @@
       attend: { last: '', streak: 0, best: 0, total: 0 },
       // 가지고 있는 아이템 개수 : { 아이템id: 개수 } (목록은 js/config.js 의 ITEMS)
       items: freshItems(),
-      starterGiven: false // 처음 시작 선물(START_ITEMS)을 받았는지
+      starterGiven: false, // 처음 시작 선물(START_ITEMS)을 받았는지
+      itemsReset: 0, // 아이템을 START_ITEMS 로 되돌린 차례 (C.ITEM_RESET 보다 작으면 한 번 되돌림)
+      stars: 0 // 가진 별 (상점에서 아이템을 살 때 씀)
     };
   }
 
-  /* 처음 시작 선물 : 아이템마다 C.START_ITEMS 개 (한 번만) */
+  /*
+   * 처음 시작 선물 : C.START_ITEMS 의 아이템 (한 번만)
+   * C.ITEM_RESET 이 올라가면 이미 하던 사람도 아이템을 한 번 START_ITEMS 로 되돌립니다.
+   */
   function giveStarter(data) {
-    if (data.starterGiven) return;
+    var reset = num(C.ITEM_RESET, 0);
+    if (data.starterGiven && num(data.itemsReset, 0) >= reset) return;
+    var first = !data.starterGiven;
+    data.items = freshItems();
+    var start = C.START_ITEMS && typeof C.START_ITEMS === 'object' ? C.START_ITEMS : {};
+    for (var id in start) if (Object.prototype.hasOwnProperty.call(data.items, id)) addItem(data, id, num(start[id], 0));
+    if (first) data.stars = num(data.stars, 0) + num(C.START_STARS, 0);
     data.starterGiven = true;
-    var n = num(C.START_ITEMS, 0);
-    if (n > 0) for (var i = 0; i < C.ITEMS.length; i++) addItem(data, C.ITEMS[i].id, n);
+    data.itemsReset = reset;
   }
 
   /* 승급 미션 진행 : 지금 등급에서 무결점·힌트 없이·빨리 깬 판 수, 지금 연승, 가장 긴 연승 */
@@ -178,6 +188,8 @@
             for (var it in data.items) data.items[it] = num(saved.items[it], 0);
           }
           data.starterGiven = saved.starterGiven === true;
+          data.itemsReset = num(saved.itemsReset, 0);
+          data.stars = num(saved.stars, 0);
         }
       }
     } catch (e) {
@@ -436,6 +448,8 @@
     if (!out.items) out.items = freshItems();
     for (k in other.items || {}) out.items[k] = Math.max(num(out.items[k], 0), num(other.items[k], 0));
     out.starterGiven = !!(out.starterGiven || other.starterGiven);
+    out.itemsReset = Math.max(num(out.itemsReset, 0), num(other.itemsReset, 0));
+    out.stars = Math.max(num(out.stars, 0), num(other.stars, 0));
     // 하던 판은 이 기기 것을 남깁니다
     out.game = a.game || null;
     out.dailyGame = a.dailyGame || null;
@@ -513,6 +527,16 @@
     data.items[id]--;
     return true;
   }
+  /* ---------- 별 ---------- */
+  function stars(data) {
+    return num(data.stars, 0);
+  }
+  /* 별을 더하거나(+) 뺍니다(-). 0 밑으로는 내려가지 않습니다 */
+  function addStars(data, n) {
+    data.stars = Math.max(0, stars(data) + Math.round(n || 0));
+    return data.stars;
+  }
+
   function itemTotal(data) {
     var t = 0;
     for (var i = 0; i < C.ITEMS.length; i++) t += itemCount(data, C.ITEMS[i].id);
@@ -591,6 +615,8 @@
     addItem: addItem,
     useItem: useItem,
     itemTotal: itemTotal,
+    stars: stars,
+    addStars: addStars,
     onSave: null
   };
 })(typeof window !== 'undefined' ? window : globalThis);

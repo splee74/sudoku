@@ -99,6 +99,12 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
   padding: 4px 14px; font-size: 17px; white-space: nowrap;
 }
 .pill b { font-weight: 800; font-variant-numeric: tabular-nums; }
+/* 좁은 휴대폰 : 홈 맨 위 동그란 칸 4개(연속 · 점수 · 별 · 가방)와 설정 단추가 한 줄에 들어가게 */
+@media (max-width: 420px) {
+  .screen-home .top-row { gap: 5px; }
+  .screen-home .top-row .pill { padding: 4px 9px; font-size: 15px; gap: 3px; }
+  .screen-home .top-row .icon-btn { width: 40px; height: 40px; flex: none; }
+}
 .icon-btn {
   width: 46px; height: 46px; padding: 0;
   background: var(--surface); border: 1px solid var(--line); border-radius: 50%;

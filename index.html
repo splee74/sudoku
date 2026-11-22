@@ -13,12 +13,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=29">
-  <link rel="stylesheet" href="css/skins.css?v=29">
-  <link rel="stylesheet" href="css/screens.css?v=29">
-  <link rel="stylesheet" href="css/about.css?v=29">
+  <link rel="stylesheet" href="css/style.css?v=30">
+  <link rel="stylesheet" href="css/skins.css?v=30">
+  <link rel="stylesheet" href="css/screens.css?v=30">
+  <link rel="stylesheet" href="css/about.css?v=30">
   <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=29">
+  <link rel="stylesheet" href="css/dark.css?v=30">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -73,8 +73,9 @@
       <div class="home-bg" aria-hidden="true"><img src="img/sudoku_img01.webp" alt="" width="900" height="926"></div>
       <div class="top-row">
         <span class="pill" id="home-streak" title="오늘의 퍼즐 연속 일수">🔥 <b>0</b></span>
-        <span class="pill" id="home-score" title="모은 점수">⭐ <b>0</b></span>
-        <button type="button" class="pill pill-bag" data-open="items" id="home-bag" title="내 아이템">🎒 <b>0</b></button>
+        <span class="pill" id="home-score" title="모은 점수">🏆 <b>0</b></span>
+        <button type="button" class="pill pill-bag" data-open="stars" id="home-stars" title="내 별 (눌러서 충전)">⭐ <b>0</b></button>
+        <button type="button" class="pill pill-bag" data-open="items" id="home-bag" title="내 아이템 · 상점">🎒 <b>0</b></button>
         <button type="button" class="icon-btn" data-open="settings" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button>
       </div>
 
@@ -700,12 +701,35 @@
   <div class="overlay" id="sheet-items" hidden>
     <div class="sheet-box" role="dialog" aria-modal="true" aria-labelledby="items-title">
       <div class="sheet-head">
-        <h2 id="items-title">내 아이템</h2>
+        <h2 id="items-title">아이템 · 상점</h2>
         <button type="button" class="sheet-close" data-close aria-label="닫기">✕</button>
       </div>
       <div class="sheet-body">
+        <!-- 내 별과 충전 단추 (js/shop.js) -->
+        <div class="star-bar">
+          <span class="star-have">⭐ <b id="items-stars">0</b> <small>내 별</small></span>
+          <button type="button" class="star-charge" data-open="stars">별 충전</button>
+        </div>
         <div class="item-list" id="items-body"></div>
         <p class="sheet-note" id="items-note"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 별 충전 창 (js/shop.js, 묶음은 js/config.js 의 STAR_PACKS) -->
+  <div class="overlay" id="sheet-stars" hidden>
+    <div class="sheet-box" role="dialog" aria-modal="true" aria-labelledby="stars-title">
+      <div class="sheet-head">
+        <h2 id="stars-title">별 충전</h2>
+        <button type="button" class="sheet-close" data-close aria-label="닫기">✕</button>
+      </div>
+      <div class="sheet-body">
+        <div class="star-bar">
+          <span class="star-have">⭐ <b id="stars-have">0</b> <small>내 별</small></span>
+          <button type="button" class="star-charge" data-open="items">아이템 사기</button>
+        </div>
+        <div class="pack-list" id="stars-body"></div>
+        <p class="sheet-note">별로 상점에서 아이템을 살 수 있어요. 출석 체크 선물은 그대로 매일 받을 수 있어요.</p>
       </div>
     </div>
   </div>
@@ -739,18 +763,19 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=29"></script>
-  <script src="js/engine.js?v=29"></script>
-  <script src="js/game.js?v=29"></script>
-  <script src="js/progress.js?v=29"></script>
-  <script src="js/settings.js?v=29"></script>
-  <script src="js/skins.js?v=29"></script>
-  <script src="js/sound.js?v=29"></script>
-  <script src="js/effects.js?v=29"></script>
-  <script src="js/badges.js?v=29"></script>
-  <script src="js/account.js?v=29"></script>
-  <script src="js/tutorial.js?v=29"></script>
-  <script src="js/hero.js?v=29"></script>
-  <script src="js/ui.js?v=29"></script>
+  <script src="js/config.js?v=30"></script>
+  <script src="js/engine.js?v=30"></script>
+  <script src="js/game.js?v=30"></script>
+  <script src="js/progress.js?v=30"></script>
+  <script src="js/settings.js?v=30"></script>
+  <script src="js/skins.js?v=30"></script>
+  <script src="js/sound.js?v=30"></script>
+  <script src="js/effects.js?v=30"></script>
+  <script src="js/badges.js?v=30"></script>
+  <script src="js/shop.js?v=30"></script>
+  <script src="js/account.js?v=30"></script>
+  <script src="js/tutorial.js?v=30"></script>
+  <script src="js/hero.js?v=30"></script>
+  <script src="js/ui.js?v=30"></script>
 </body>
 </html>

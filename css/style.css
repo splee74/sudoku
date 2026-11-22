@@ -851,6 +851,44 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
 }
 .item-use:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-shadow, #1d4fa8); }
 .item-use:disabled { background: var(--line); color: var(--ink-soft); box-shadow: none; cursor: default; }
+/* 별로 사기 단추 */
+.item-buy {
+  flex: none; min-width: 58px; min-height: 44px; padding: 2px 8px;
+  border: 2px solid #f0b400; border-radius: 12px; background: #fff7d6; color: #8a5a00;
+  font-size: 16px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.item-buy small { font-size: 11px; font-weight: 700; opacity: 0.8; }
+.item-buy:active { transform: translateY(1px); background: #ffeeb0; }
+/* 내 별 줄 (아이템 · 별 충전 창 맨 위) */
+.star-bar {
+  display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 14px;
+  background: linear-gradient(90deg, #fff4c7, #fffbe9); border: 1px solid #f3d36b; border-radius: 16px;
+}
+.star-have { flex: 1; font-size: 20px; color: #6b4a00; }
+.star-have b { font-size: 24px; font-variant-numeric: tabular-nums; }
+.star-have small { font-size: 14px; color: #8a6a1a; margin-left: 4px; white-space: nowrap; }
+.star-have { white-space: nowrap; }
+.star-charge {
+  flex: none; min-height: 42px; padding: 0 14px; border: 0; border-radius: 12px;
+  background: var(--accent); color: var(--accent-ink); font-size: 16px; font-weight: 800;
+  box-shadow: 0 3px 0 var(--accent-shadow, #1d4fa8);
+}
+.star-charge:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-shadow, #1d4fa8); }
+/* 별 충전 묶음 */
+.pack-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.pack {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 8px;
+  background: var(--surface); border: 2px solid var(--line); border-radius: 18px; cursor: pointer;
+}
+.pack:active { background: var(--peer); }
+.pack-stars { font-size: 22px; font-weight: 900; color: #6b4a00; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pack-tag { font-style: normal; font-size: 13px; font-weight: 800; color: #fff; background: #e8590c; padding: 1px 8px; border-radius: 999px; }
+.pack-price { min-width: 90px; padding: 6px 12px; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font-size: 17px; font-weight: 800; }
+:root[data-theme="dark"] .item-buy { background: #3a3218; border-color: #b08a1e; color: #ffd76a; }
+:root[data-theme="dark"] .star-bar { background: #2f2a18; border-color: #6e5a1e; }
+:root[data-theme="dark"] .star-have, :root[data-theme="dark"] .pack-stars { color: #ffd76a; }
+:root[data-theme="dark"] .star-have small { color: #d8b75a; }
 
 /* ---------- 출석 체크 창 ---------- */
 .attend-box { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: rise 0.35s ease-out; }

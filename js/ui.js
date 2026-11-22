@@ -6,7 +6,7 @@
 (function () {
   var S = window.SUDOKU;
   var C = S.Config, Game = S.Game, Progress = S.Progress, Engine = S.Engine, Settings = S.Settings;
-  var SHEETS = ['rules', 'settings', 'grades', 'items'];
+  var SHEETS = ['rules', 'settings', 'grades', 'items', 'stars'];
 
   function $(id) {
     return document.getElementById(id);
@@ -198,6 +198,7 @@
       else renderMissionSheet();
     }
     if (name === 'items') renderItems();
+    if (name === 'stars') renderStars();
     var sheet = $('sheet-' + name);
     sheet.hidden = false;
     sheet.querySelector('.sheet-body').scrollTop = 0;
@@ -256,6 +257,7 @@
     $('home-streak').querySelector('b').textContent = Progress.dailyStreak(data, today) + '일';
     $('home-score').querySelector('b').textContent = formatScore(data.totalScore);
     $('home-bag').querySelector('b').textContent = Progress.itemTotal(data);
+    $('home-stars').querySelector('b').textContent = formatScore(Progress.stars(data));
     renderAttendBar(today);
 
     // 오늘의 퍼즐 카드
@@ -1570,7 +1572,7 @@
       name.textContent = it.name;
       var cnt = document.createElement('em');
       cnt.className = 'item-count';
-      cnt.textContent = '× ' + n;
+      cnt.textContent = '× ' + n; // 줄이 바뀌어도 × 와 숫자가 떨어지지 않게
       name.appendChild(cnt);
       var desc = document.createElement('span');
       desc.textContent = it.id === 'time' ? '걸린 시간을 ' + C.TIME_ITEM_SEC + '초 줄여요' : it.desc;
@@ -1583,7 +1585,19 @@
         tag.className = 'item-auto';
         tag.textContent = it.autoText || '저절로';
         row.appendChild(tag);
-      } else if (inGame) {
+      }
+      // 별로 사기 (값이 정해진 아이템만)
+      var cost = S.Shop.price(it.id);
+      if (cost) {
+        var buy = document.createElement('button');
+        buy.type = 'button';
+        buy.className = 'item-buy';
+        buy.setAttribute('data-buy', it.id);
+        buy.setAttribute('aria-label', it.name + ' 사기, 별 ' + cost + '개');
+        buy.innerHTML = '<small>사기</small>⭐' + cost;
+        row.appendChild(buy);
+      }
+      if (!it.auto && inGame) {
         var why = n <= 0 ? '' : itemBlock(it.id);
         var btn = document.createElement('button');
         btn.type = 'button';
@@ -1601,9 +1615,70 @@
       }
       box.appendChild(row);
     });
+    $('items-stars').textContent = formatScore(Progress.stars(data));
     $('items-note').textContent = inGame
-      ? '출석 체크로 매일 아이템을 받을 수 있어요.'
-      : '아이템은 게임 화면의 🎒 단추를 눌러 쓸 수 있어요. 출석 체크로 매일 받을 수 있어요.';
+      ? '별로 아이템을 살 수 있어요. 출석 체크로도 매일 아이템을 받을 수 있어요.'
+      : '아이템은 게임 화면의 🎒 단추를 눌러 쓸 수 있어요. 별로 사거나, 출석 체크로 매일 받을 수 있어요.';
+  }
+
+  /* 별로 아이템 한 개 사기 */
+  function buyItemPress(id) {
+    var it = itemInfo(id);
+    var res = S.Shop.buyItem(data, id);
+    if (!res.ok) {
+      if (res.reason === 'stars') {
+        showModal('별이 ' + res.need + '개 모자라요.\n별을 충전할까요?', '별 충전', '아니요', function () {
+          openSheet('stars');
+        });
+      }
+      return;
+    }
+    persist();
+    S.Sound.play('memoOn');
+    renderItems();
+    renderHome();
+    appToast(it.icon + ' ' + it.name + ' 1개를 샀어요 (⭐' + res.price + ')');
+  }
+
+  /* 별 충전 창 */
+  function renderStars() {
+    $('stars-have').textContent = formatScore(Progress.stars(data));
+    var box = $('stars-body');
+    box.innerHTML = '';
+    (C.STAR_PACKS || []).forEach(function (p) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pack';
+      b.setAttribute('data-pack', p.id);
+      var amt = document.createElement('span');
+      amt.className = 'pack-stars';
+      amt.textContent = '⭐ ' + formatScore(p.stars);
+      if (p.tag) {
+        var tag = document.createElement('em');
+        tag.className = 'pack-tag';
+        tag.textContent = p.tag;
+        amt.appendChild(tag);
+      }
+      var price = document.createElement('span');
+      price.className = 'pack-price';
+      price.textContent = p.price;
+      b.appendChild(amt);
+      b.appendChild(price);
+      box.appendChild(b);
+    });
+  }
+  function buyStarsPress(id) {
+    if (!S.Shop.billingReady()) {
+      showModal('별 충전은 준비 중이에요.\n곧 플레이스토어 결제로 살 수 있게 할게요!', '확인', '');
+      return;
+    }
+    S.Shop.buyStars(id).then(function () {
+      persist();
+      renderStars();
+      renderHome();
+    }).catch(function () {
+      appToast('결제를 마치지 못했어요');
+    });
   }
 
   function useItemPress(id) {
@@ -1830,6 +1905,8 @@
   $('items-body').addEventListener('click', function (e) {
     var b = e.target.closest ? e.target.closest('[data-item]') : null;
     if (b && !b.disabled) useItemPress(b.getAttribute('data-item'));
+    var buy = e.target.closest ? e.target.closest('[data-buy]') : null;
+    if (buy) buyItemPress(buy.getAttribute('data-buy'));
   });
   $('btn-promo-ok').addEventListener('click', function () {
     $('promo').hidden = true;
@@ -1886,6 +1963,8 @@
     }
     var login = t.closest('[data-login]');
     if (login) return pressLogin(login.getAttribute('data-login'));
+    var pack = t.closest('[data-pack]');
+    if (pack) return buyStarsPress(pack.getAttribute('data-pack'));
     var opener = t.closest('[data-open]');
     if (opener) return openSheet(opener.getAttribute('data-open'));
     if (t.closest('[data-close]')) return closeSheets();

@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v29 → 'v29'
-    VERSION: 'v29',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v30 → 'v30'
+    VERSION: 'v30',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -88,9 +88,26 @@
     ],
     TIME_ITEM_SEC: 30, // 시간 단축권 한 장이 줄여 주는 시간(초)
 
-    // 처음 시작할 때 아이템마다 이만큼씩 줍니다 (0 으로 바꾸면 아이템 없이 시작)
-    //   이미 하던 사람도 이 선물을 아직 안 받았으면 한 번 받습니다.
-    START_ITEMS: 3,
+    // 처음 시작할 때 주는 아이템 : { 아이템id: 개수 } (빈 {} 로 바꾸면 아이템 없이 시작)
+    START_ITEMS: { hint: 3, time: 3, shield: 3 },
+    // 이 숫자를 1 올리면, 이미 하던 사람도 가진 아이템이 한 번 START_ITEMS 로 되돌아갑니다 (모은 별은 그대로)
+    ITEM_RESET: 1,
+
+    /*
+     * 상점 (js/shop.js) : 별(⭐)로 아이템을 삽니다.
+     *   ITEM_PRICES : 아이템 한 개 값 (별 개수). 목록에 없거나 0 이면 팔지 않습니다.
+     *   STAR_PACKS  : 별 충전 묶음 (진짜 돈 결제). id 는 나중에 Play Console 에 만들 인앱 상품 ID 와 같게.
+     *                 price 는 화면에 보여 줄 값입니다. (실제 결제 금액은 Play Console 에서 정함)
+     *   START_STARS : 처음 시작할 때 주는 별
+     */
+    ITEM_PRICES: { hint: 30, time: 20, shield: 30, memo: 50, double: 40, magnify: 30, revive: 80, guard: 60 },
+    STAR_PACKS: [
+      { id: 'stars_100', stars: 100, price: '₩1,200' },
+      { id: 'stars_550', stars: 550, price: '₩5,900', tag: '10% 더' },
+      { id: 'stars_1200', stars: 1200, price: '₩11,000', tag: '20% 더' },
+      { id: 'stars_3300', stars: 3300, price: '₩25,000', tag: '30% 더' }
+    ],
+    START_STARS: 0,
 
     /*
      * 출석 체크 : 하루에 한 번, 7일을 한 바퀴로 보상을 받습니다.
