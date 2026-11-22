@@ -1,0 +1,389 @@
+<!doctype html>
+<!--
+  새 효과음 샘플 : 지금 소리와 새 소리 두 가지(A 마림바·벨, B 버블·팝)를 나란히 비교해 듣습니다.
+  게임에는 아직 들어가지 않았습니다. 마음에 드는 쪽을 고르면 js/sound.js 로 옮깁니다.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>새 효과음 샘플</title>
+<style>
+  :root { --bg: #f6f1e7; --card: #fff; --ink: #2b2418; --soft: #7a6d58; --line: #e4dccb;
+    --old: #b9ad98; --a: #f5a623; --b: #3fa9f5; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1c1a16; --card: #2a2620; --ink: #f1ead9; --soft: #b3a68c; --line: #3d372d; --old: #6d6556; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { margin: 0 0 6px; font-size: 26px; }
+  .sub { margin: 0 0 16px; color: var(--soft); font-size: 15px; line-height: 1.5; }
+  .legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+  .legend div { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+  .legend b { display: block; font-size: 17px; margin-bottom: 4px; }
+  .legend span { font-size: 13px; color: var(--soft); line-height: 1.4; }
+  .legend button { margin-top: 10px; width: 100%; }
+  .list { display: grid; gap: 10px; }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .row.on { outline: 3px solid var(--a); }
+  .name { font-size: 18px; font-weight: 800; }
+  .when { font-size: 14px; color: var(--soft); margin-top: 3px; }
+  .btns { display: flex; gap: 6px; }
+  button { font: inherit; font-weight: 800; padding: 10px 14px; border: 0; border-radius: 12px; cursor: pointer; }
+  button:active { transform: scale(0.96); }
+  .old { background: var(--old); color: #fff; }
+  .a { background: var(--a); color: #4a2a00; }
+  .b { background: var(--b); color: #fff; }
+  .combo { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--soft); }
+  .combo button { padding: 5px 9px; font-size: 13px; border-radius: 8px; }
+  @media (max-width: 560px) {
+    .legend { grid-template-columns: 1fr; }
+    .row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>🎧 새 효과음 샘플</h1>
+  <p class="sub">같은 상황의 소리를 <b>지금</b> · <b>A</b> · <b>B</b> 로 나란히 눌러 비교해 보세요.
+    새 소리도 소리 파일 없이 브라우저가 직접 만들어서, 저작권 걱정 없고 인터넷 없이도 납니다.</p>
+
+  <div class="legend">
+    <div><b>지금 소리</b><span>네모·세모 파형 그대로. 삑삑거리는 옛날 게임기 느낌</span>
+      <button type="button" class="old" data-all="old">▶ 전부 듣기</button></div>
+    <div><b>A · 마림바 & 벨</b><span>나무 실로폰과 맑은 종소리, 은은한 울림. 차분하고 고급스러운 퍼즐 게임 느낌</span>
+      <button type="button" class="a" data-all="A">▶ 전부 듣기</button></div>
+    <div><b>B · 버블 & 팝</b><span>톡톡 터지는 방울 소리와 신스 소리. 밝고 통통 튀는 캐주얼 모바일 게임 느낌</span>
+      <button type="button" class="b" data-all="B">▶ 전부 듣기</button></div>
+  </div>
+
+  <div class="list" id="list"></div>
+</main>
+
+<script src="../js/sound.js"></script>
+<script>
+(function () {
+  /* ================= 새 소리 만드는 도구 ================= */
+  var N = {
+    A3: 220, C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392, A4: 440, B4: 493.88,
+    C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880, B5: 987.77,
+    C6: 1046.5, D6: 1174.66, E6: 1318.51, G6: 1567.98, A6: 1760, C7: 2093, D7: 2349.32, E7: 2637.02
+  };
+  var COMBO = [N.C5, N.D5, N.E5, N.G5, N.A5];
+
+  var ctx = null, bus = null, noiseBuf = null;
+
+  function device() {
+    if (!ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      ctx = new AC();
+      // 소리 크기를 고르게 맞추는 압축기 → 스피커
+      var comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.ratio.value = 3; comp.attack.value = 0.003; comp.release.value = 0.2;
+      var master = ctx.createGain(); master.gain.value = 0.9;
+      comp.connect(master); master.connect(ctx.destination);
+      // 은은한 방 울림 (잔향)
+      var len = Math.floor(ctx.sampleRate * 1.6);
+      var ir = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (var ch = 0; ch < 2; ch++) {
+        var d = ir.getChannelData(ch);
+        for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
+      }
+      var conv = ctx.createConvolver(); conv.buffer = ir;
+      var wet = ctx.createGain(); wet.gain.value = 0.22;
+      bus = ctx.createGain();
+      bus.connect(comp); bus.connect(conv); conv.connect(wet); wet.connect(comp);
+      // 바람 소리용 잡음
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      var nd = noiseBuf.getChannelData(0);
+      for (var j = 0; j < nd.length; j++) nd[j] = Math.random() * 2 - 1;
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function kit(c, out, t0) {
+    function env(g, t, a, vol, dur) {
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + a);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + a + dur);
+    }
+    function panned(node, pan) {
+      if (!pan || !c.createStereoPanner) { node.connect(out); return; }
+      var p = c.createStereoPanner(); p.pan.value = pan; node.connect(p); p.connect(out);
+    }
+    /* 기본 음 하나 : 거르개(lp)와 음 미끄러짐(slide) 선택 */
+    function voice(o) {
+      var t = t0 + o.t, osc = c.createOscillator(), node = osc;
+      osc.type = o.type || 'sine';
+      osc.frequency.setValueAtTime(o.f, t);
+      if (o.slide) osc.frequency.exponentialRampToValueAtTime(o.slide, t + (o.slideT || o.dur));
+      if (o.detune) osc.detune.value = o.detune;
+      if (o.lp) {
+        var fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.Q.value = o.q || 0.8;
+        fl.frequency.setValueAtTime(o.lp, t);
+        if (o.lpEnd) fl.frequency.exponentialRampToValueAtTime(o.lpEnd, t + (o.lpT || o.dur * 0.6));
+        osc.connect(fl); node = fl;
+      }
+      var g = c.createGain(), a = o.a || 0.004;
+      env(g, t, a, o.vol, o.dur);
+      node.connect(g); panned(g, o.pan);
+      osc.start(t); osc.stop(t + a + o.dur + 0.05);
+    }
+    var k = {
+      /* 마림바 : 나무 실로폰 "통" */
+      marimba: function (f, t, vol, dur, pan) {
+        dur = dur || 0.45;
+        voice({ f: f, t: t, vol: vol, dur: dur, pan: pan });
+        voice({ f: f * 3.93, t: t, vol: vol * 0.22, dur: dur * 0.18, pan: pan });
+        voice({ f: f * 9.2, t: t, vol: vol * 0.06, dur: dur * 0.06, pan: pan });
+      },
+      /* 종 : 맑게 울리는 "띵" (FM) */
+      bell: function (f, t, vol, dur, ratio, pan) {
+        dur = dur || 0.9;
+        var tt = t0 + t, car = c.createOscillator(), mod = c.createOscillator(), mg = c.createGain(), g = c.createGain();
+        car.frequency.value = f; mod.frequency.value = f * (ratio || 3.5);
+        mg.gain.setValueAtTime(f * 1.6, tt); mg.gain.exponentialRampToValueAtTime(f * 0.02, tt + dur * 0.6);
+        mod.connect(mg); mg.connect(car.frequency);
+        env(g, tt, 0.003, vol, dur);
+        car.connect(g); panned(g, pan);
+        car.start(tt); mod.start(tt); car.stop(tt + dur + 0.05); mod.stop(tt + dur + 0.05);
+      },
+      /* 방울 : "뽁" 하고 위로 튀는 소리 */
+      pop: function (f, t, vol, up) {
+        voice({ f: up === false ? f * 1.5 : f * 0.55, slide: f, slideT: 0.05, t: t, vol: vol, dur: 0.12 });
+        voice({ f: f * 2, t: t + 0.01, vol: vol * 0.15, dur: 0.06 });
+      },
+      /* 신스 뜯는 소리 : 밝게 시작해서 금방 부드러워짐 */
+      pluck: function (f, t, vol, dur, pan) {
+        dur = dur || 0.35;
+        voice({ f: f, t: t, type: 'sawtooth', vol: vol, dur: dur, lp: f * 8, lpEnd: f * 1.2, lpT: dur * 0.5, q: 2, detune: -6, pan: pan });
+        voice({ f: f, t: t, type: 'sawtooth', vol: vol * 0.7, dur: dur, lp: f * 8, lpEnd: f * 1.2, lpT: dur * 0.5, q: 2, detune: 7, pan: pan });
+      },
+      /* 깔리는 화음 : 천천히 커졌다 사라짐 */
+      pad: function (fs, t, dur, vol) {
+        for (var i = 0; i < fs.length; i++) {
+          voice({ f: fs[i], t: t, type: 'triangle', vol: vol, a: 0.06, dur: dur, lp: 2200, detune: -8 });
+          voice({ f: fs[i], t: t, type: 'triangle', vol: vol, a: 0.06, dur: dur, lp: 2200, detune: 8 });
+        }
+      },
+      /* 바람 : "쓱" */
+      swoosh: function (t, dur, vol, f0, f1, pan) {
+        var tt = t0 + t, src = c.createBufferSource(); src.buffer = noiseBuf;
+        var fl = c.createBiquadFilter(); fl.type = 'bandpass'; fl.Q.value = 1.4;
+        fl.frequency.setValueAtTime(f0, tt); fl.frequency.exponentialRampToValueAtTime(f1, tt + dur);
+        var g = c.createGain(); env(g, tt, dur * 0.35, vol, dur * 0.65);
+        src.connect(fl); fl.connect(g); panned(g, pan);
+        src.start(tt, Math.random()); src.stop(tt + dur + 0.05);
+      },
+      /* 아주 짧은 "틱" */
+      click: function (t, vol, f) {
+        var tt = t0 + t, src = c.createBufferSource(); src.buffer = noiseBuf;
+        var fl = c.createBiquadFilter(); fl.type = 'highpass'; fl.frequency.value = f || 3500;
+        var g = c.createGain(); env(g, tt, 0.001, vol, 0.018);
+        src.connect(fl); fl.connect(g); g.connect(out);
+        src.start(tt, Math.random()); src.stop(tt + 0.05);
+      },
+      /* 낮고 둥근 "둥" */
+      thud: function (t, vol, f0, f1) {
+        voice({ f: f0 || 140, slide: f1 || 55, slideT: 0.18, t: t, vol: vol, dur: 0.25 });
+      },
+      /* 반짝반짝 : 높은 종소리 여러 개 */
+      sparkle: function (t, notes, vol, gap) {
+        for (var i = 0; i < notes.length; i++) k.bell(notes[i], t + i * (gap || 0.05), vol, 0.5, 4.1, i % 2 ? 0.4 : -0.4);
+      }
+    };
+    return k;
+  }
+
+  /* ================= A : 마림바 & 벨 ================= */
+  var A = {
+    note: function (k) { k.marimba(N.G6, 0, 0.12, 0.12); k.click(0, 0.05); },
+    correct: function (k, s) {
+      var f = COMBO[Math.max(0, Math.min((s || 1) - 1, 4))];
+      k.marimba(f, 0, 0.32); k.marimba(f * 1.5, 0.06, 0.24);
+      k.bell(f * 2, 0.06, 0.05, 0.6);
+    },
+    wrong: function (k) {
+      k.marimba(N.E4, 0, 0.3, 0.3); k.marimba(N.C4 * 1.06, 0.1, 0.3, 0.4);
+      k.thud(0, 0.25, 120, 60);
+    },
+    line: function (k) {
+      [N.C5, N.E5, N.G5, N.C6].forEach(function (f, i) { k.marimba(f, i * 0.06, 0.26, 0.4, (i - 1.5) * 0.25); });
+      k.bell(N.E6, 0.22, 0.08, 0.9);
+    },
+    box: function (k) {
+      [N.C5, N.E5, N.G5, N.C6, N.E6].forEach(function (f, i) { k.marimba(f, i * 0.055, 0.24, 0.45, (i - 2) * 0.2); });
+      k.pad([N.C4, N.E4, N.G4, N.B4], 0.2, 0.7, 0.03);
+      k.sparkle(0.3, [N.G6, N.C7, N.E7], 0.05);
+    },
+    erase: function (k) { k.swoosh(0, 0.2, 0.22, 3000, 900); k.click(0.02, 0.04, 6000); },
+    hint: function (k) {
+      k.bell(N.G6, 0, 0.12, 1.1, 3.5, -0.3); k.bell(N.D7, 0.1, 0.09, 1.2, 3.5, 0.3);
+      k.sparkle(0.22, [N.E7, N.G6 * 2], 0.04, 0.07);
+    },
+    undo: function (k) { k.marimba(N.G5, 0, 0.22, 0.25); k.marimba(N.D5, 0.07, 0.22, 0.35); k.swoosh(0, 0.12, 0.06, 1500, 3000); },
+    memoOn: function (k) { k.marimba(N.E6, 0, 0.16, 0.15); k.marimba(N.A6, 0.06, 0.16, 0.25); },
+    memoOff: function (k) { k.marimba(N.A6, 0, 0.16, 0.15); k.marimba(N.E6, 0.06, 0.16, 0.25); },
+    win: function (k) {
+      var run = [N.C5, N.D5, N.E5, N.G5, N.A5, N.C6, N.D6, N.E6, N.G6];
+      run.forEach(function (f, i) { k.marimba(f, i * 0.045, 0.2, 0.35, (i / 8 - 0.5) * 0.8); });
+      var hit = 0.5;
+      k.thud(hit, 0.35, 160, 50);
+      k.pad([N.C4, N.E4, N.G4, N.B4, N.D5], hit, 2.0, 0.045);
+      [N.C5, N.E5, N.G5].forEach(function (f) { k.marimba(f, hit, 0.22, 0.9); });
+      k.bell(N.C6, hit, 0.12, 1.6); k.bell(N.G6, hit + 0.15, 0.07, 1.4);
+      k.sparkle(hit + 0.3, [N.E7, N.C7, N.G6 * 2, N.E7, N.D7 * 2], 0.04, 0.09);
+    },
+    lose: function (k) {
+      [N.G4, N.E4, N.D4, N.C4].forEach(function (f, i) { k.marimba(f, i * 0.2, 0.26, 0.6); });
+      k.pad([N.A3, N.C4, N.E4], 0.4, 1.2, 0.03);
+    },
+    promo: function (k) {
+      var up = [N.C5, N.E5, N.G5, N.C6, N.E6, N.G6];
+      up.forEach(function (f, i) { k.marimba(f, i * 0.07, 0.22, 0.4, (i / 5 - 0.5) * 0.8); });
+      var hit = 0.5;
+      k.thud(hit, 0.35, 160, 50);
+      k.pad([N.C4, N.G4, N.B4, N.E5], hit, 1.4, 0.04);
+      [N.G5, N.C6, N.E6, N.G6].forEach(function (f, i) { k.bell(f, hit + i * 0.16, 0.1, 1.1); });
+      var hit2 = hit + 0.75;
+      k.pad([N.F4, N.A4, N.C5, N.E5], hit2, 1.8, 0.04);
+      k.marimba(N.C6, hit2, 0.24, 1.0); k.bell(N.C7, hit2 + 0.05, 0.08, 1.6);
+      k.sparkle(hit2 + 0.2, [N.E7, N.G6 * 2, N.C7 * 2, N.E7], 0.035, 0.1);
+    }
+  };
+
+  /* ================= B : 버블 & 팝 ================= */
+  var B = {
+    note: function (k) { k.pop(N.C7, 0, 0.12); },
+    correct: function (k, s) {
+      var f = COMBO[Math.max(0, Math.min((s || 1) - 1, 4))];
+      k.pop(f * 2, 0, 0.3); k.pluck(f * 2, 0.04, 0.06, 0.25); k.bell(f * 4, 0.05, 0.03, 0.4);
+    },
+    wrong: function (k) {
+      k.pluck(N.E4, 0, 0.08, 0.2); k.pluck(N.C4, 0.12, 0.08, 0.35);
+      k.thud(0, 0.3, 220, 70);
+    },
+    line: function (k) {
+      [N.C6, N.E6, N.G6].forEach(function (f, i) { k.pop(f, i * 0.07, 0.26); });
+      k.pluck(N.C6, 0.21, 0.07, 0.4); k.bell(N.C7, 0.22, 0.04, 0.6);
+    },
+    box: function (k) {
+      [N.C6, N.D6, N.E6, N.G6, N.A6].forEach(function (f, i) { k.pop(f, i * 0.055, 0.24); });
+      k.pluck(N.C5, 0.28, 0.07, 0.5); k.pluck(N.G5, 0.28, 0.05, 0.5);
+      k.sparkle(0.3, [N.C7, N.E7, N.G6 * 2], 0.04, 0.04);
+    },
+    erase: function (k) { k.swoosh(0, 0.14, 0.2, 1200, 5000); k.pop(N.G5, 0.1, 0.1, false); },
+    hint: function (k) {
+      k.sparkle(0, [N.C6, N.E6, N.G6, N.C7, N.E7, N.G6 * 2], 0.05, 0.035);
+      k.pop(N.C7, 0.22, 0.1);
+    },
+    undo: function (k) { k.pop(N.C6, 0, 0.22, false); k.pop(N.G5, 0.07, 0.18, false); },
+    memoOn: function (k) { k.pop(N.E6, 0, 0.2); },
+    memoOff: function (k) { k.pop(N.A5, 0, 0.2, false); },
+    win: function (k) {
+      [N.C6, N.E6, N.G6, N.C7].forEach(function (f, i) { k.pop(f, i * 0.06, 0.2); });
+      var stab = [[0.32, [N.C5, N.E5, N.G5]], [0.5, [N.C5, N.E5, N.G5]], [0.68, [N.D5, N.F5, N.A5]], [0.92, [N.E5, N.G5, N.C6]]];
+      stab.forEach(function (s) { s[1].forEach(function (f) { k.pluck(f, s[0], 0.05, s[0] > 0.9 ? 1.2 : 0.2); }); k.click(s[0], 0.06, 2500); });
+      k.thud(0.92, 0.35, 160, 50);
+      k.pad([N.C4, N.G4, N.E5], 0.92, 1.6, 0.03);
+      k.sparkle(1.0, [N.E7, N.C7, N.G6 * 2, N.E7, N.C7 * 2], 0.04, 0.08);
+    },
+    lose: function (k) {
+      k.pluck(N.G4, 0, 0.07, 0.4); k.pluck(N.E4, 0.25, 0.07, 0.4);
+      k.pluck(N.C4, 0.5, 0.07, 0.9);
+      k.pop(N.C5, 0.5, 0.12, false);
+    },
+    promo: function (k) {
+      [N.C5, N.E5, N.G5, N.C6, N.E6, N.G6, N.C7].forEach(function (f, i) { k.pluck(f, i * 0.06, 0.05, 0.3); k.pop(f, i * 0.06, 0.08); });
+      var hit = 0.5;
+      k.thud(hit, 0.35, 160, 50); k.click(hit, 0.08, 2500);
+      [N.C5, N.E5, N.G5, N.C6].forEach(function (f) { k.pluck(f, hit, 0.05, 1.4); });
+      k.pad([N.C4, N.G4, N.E5], hit, 1.8, 0.035);
+      k.sparkle(hit + 0.15, [N.C7, N.E7, N.G6 * 2, N.C7 * 2, N.E7, N.G6 * 2], 0.035, 0.08);
+    }
+  };
+
+  var STYLES = { A: A, B: B };
+  function playNew(style, name, arg) {
+    var c = device();
+    STYLES[style][name](kit(c, bus, c.currentTime + 0.02), arg);
+  }
+  function playOld(name, arg) { window.SUDOKU.Sound.play(name, arg); }
+
+  /* ================= 화면 ================= */
+  var ROWS = [
+    ['correct', '맞힘', '숫자를 맞혔을 때 (연속으로 맞힐수록 음이 올라감)'],
+    ['wrong', '틀림', '틀린 숫자를 넣었을 때'],
+    ['note', '메모 숫자', '메모 모드에서 작은 숫자를 적을 때'],
+    ['line', '한 줄 완성', '가로·세로 한 줄을 다 채웠을 때 · 출석 도장'],
+    ['box', '상자 완성', '굵은 선 상자 하나를 다 채웠을 때'],
+    ['hint', '힌트 · 아이템', '힌트 · 아이템 사용 · 되살아나기'],
+    ['erase', '지우개', '지우기 단추'],
+    ['undo', '되돌리기', '되돌리기 단추'],
+    ['memoOn', '메모 켜기', '메모 단추를 켤 때 · 시작 화면에서 시작할 때'],
+    ['memoOff', '메모 끄기', '메모 단추를 끌 때'],
+    ['win', '판 깸', '퍼즐을 다 풀었을 때'],
+    ['lose', '판 실패', '3번 틀려서 졌을 때'],
+    ['promo', '승급', '다음 등급으로 올라갔을 때']
+  ];
+  var list = document.getElementById('list');
+  var timers = [];
+
+  function mark(row) {
+    var on = list.querySelector('.on'); if (on) on.classList.remove('on');
+    if (row) row.classList.add('on');
+  }
+  function btn(cls, text, fn) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = text;
+    b.addEventListener('click', fn); return b;
+  }
+  function play(who, name, arg) { if (who === 'old') playOld(name, arg); else playNew(who, name, arg); }
+
+  ROWS.forEach(function (r) {
+    var name = r[0], row = document.createElement('div');
+    row.className = 'row'; row.dataset.name = name;
+    var left = document.createElement('div');
+    left.innerHTML = '<div class="name"></div><div class="when"></div>';
+    left.querySelector('.name').textContent = r[1];
+    left.querySelector('.when').textContent = r[2];
+    var btns = document.createElement('div'); btns.className = 'btns';
+    [['old', '지금'], ['A', 'A'], ['B', 'B']].forEach(function (w) {
+      btns.appendChild(btn(w[0] === 'old' ? 'old' : w[0].toLowerCase(), '▶ ' + w[1], function () { mark(row); play(w[0], name, 1); }));
+    });
+    if (name === 'correct') {
+      // 연속으로 맞힐 때 (1 → 5)
+      var combo = document.createElement('div'); combo.className = 'combo';
+      combo.appendChild(document.createTextNode('연속 1→5 : '));
+      [['old', '지금'], ['A', 'A'], ['B', 'B']].forEach(function (w) {
+        combo.appendChild(btn(w[0] === 'old' ? 'old' : w[0].toLowerCase(), w[1] + ' 연속', function () {
+          stopAll(); mark(row);
+          for (var s = 1; s <= 5; s++) (function (s) { timers.push(setTimeout(function () { play(w[0], 'correct', s); }, (s - 1) * 380)); })(s);
+        }));
+      });
+      left.appendChild(combo);
+    }
+    row.appendChild(left); row.appendChild(btns);
+    list.appendChild(row);
+  });
+
+  function stopAll() { timers.forEach(clearTimeout); timers = []; mark(null); }
+  document.querySelectorAll('[data-all]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      stopAll();
+      var who = b.getAttribute('data-all'), t = 0;
+      Array.prototype.forEach.call(list.children, function (row) {
+        var name = row.dataset.name;
+        timers.push(setTimeout(function () { mark(row); play(who, name, 1); }, t));
+        t += name === 'win' || name === 'promo' ? 3200 : name === 'lose' ? 2000 : 1100;
+      });
+      timers.push(setTimeout(function () { mark(null); }, t));
+    });
+  });
+})();
+</script>
+</body>
+</html>
