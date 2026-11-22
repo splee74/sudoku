@@ -249,12 +249,13 @@
     window.scrollTo(0, 0);
   }
 
-  /* 배경 음악 (js/music.js) : 게임 화면은 잔잔한 곡, 나머지 화면은 대문 곡.
-     시작 그림을 누르기 전에는 틀지 않습니다 (브라우저는 화면을 한 번 눌러야 소리를 내 줌) */
+  /* 배경 음악 (js/music.js) : 게임 화면은 잔잔한 곡, 나머지 화면(시작 그림 포함)은 대문 곡.
+     시작 그림이 뜰 때부터 틀어 봅니다. 설치한 앱은 크롬이 바로 소리를 내 주고,
+     인터넷 창처럼 막혀 있으면 화면을 처음 만지는 순간 이어서 나옵니다 (music.js 가 깨움) */
   function playMusic() {
-    if (!S.Music || !splashDone) return;
+    if (!S.Music) return;
     if (!Settings.get('music')) return S.Music.stop();
-    S.Music.play(screen === 'game' ? 'game' : 'title');
+    S.Music.play(splashDone && screen === 'game' ? 'game' : 'title');
   }
 
   /* 이어서 할 수 있는 판 (지금 판이 끝났으면 저장해 둔 승급전 판) */
