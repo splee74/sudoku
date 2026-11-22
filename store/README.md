@@ -162,18 +162,14 @@ Google로 로그인하면 휴대폰을 바꿔도 등급과 기록이 그대로 �
 ### 3. 기록 저장소 만들기 (Firestore)
 
 1. 왼쪽 **빌드 → Firestore Database → 데이터베이스 만들기** → 위치 `asia-northeast3 (서울)` → **프로덕션 모드**
-2. **규칙** 탭에 아래를 그대로 붙여 넣고 **게시** (자기 기록만 읽고 쓸 수 있게 막는 규칙)
-
-```text
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
+2. **규칙** 탭에 저장소의 [`firestore.rules`](../firestore.rules) 내용을 그대로 붙여 넣고 **게시**
+   - 내 기록(`users`)은 나만 읽고 쓸 수 있어요.
+   - 랭킹(`players` 닉네임, `boards` 순위, `hall` 명예의 전당)은 누구나 볼 수 있고, 자기 줄만 쓸 수 있어요.
+   - 말이 안 되는 기록은 규칙이 막아요 : 오늘의 퍼즐 1분 미만, 점수가 10초 안에 6만 점 넘게 오르는 것 등.
+   - **규칙을 게시하기 전에는 랭킹 화면에 "랭킹은 준비 중이에요"가 나와요.**
+3. 랭킹은 따로 색인(index)을 만들 필요가 없어요. (한 칸으로만 줄을 세우기 때문에 Firestore 가 저절로 만들어 둠)
+4. 무료 요금제(Spark)로 충분해요. 랭킹 화면을 한 번 열면 읽기가 50~60번쯤 쓰이고, 하루 무료 읽기는 5만 번이에요.
+   같은 랭킹은 1분 안에 다시 열면 새로 받지 않아요.
 
 ### 4. 카카오 로그인 (쓰지 않음)
 

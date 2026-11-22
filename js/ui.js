@@ -1,7 +1,7 @@
 /*
  * 화면 : 판을 그리고, 버튼 누름을 처리합니다.
  * 시작 그림(1.5초) → 홈 화면 → "계속하기"나 "새 게임"을 누르면 게임 화면으로 갑니다.
- * 아래쪽 메뉴로 홈 · 배지 · 내 기록 화면을 오가고, 결과·규칙·설정은 창으로 뜹니다.
+ * 아래쪽 메뉴로 홈 · 배지 · 랭킹 · 내 기록 화면을 오가고, 결과·규칙·설정은 창으로 뜹니다.
  */
 (function () {
   var S = window.SUDOKU;
@@ -187,7 +187,7 @@
   }
   /* 무언가 창이 떠 있으면 시간이 멈추고 키보드 입력도 받지 않습니다 */
   function overlayOpen() {
-    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || !$('login-ask').hidden || S.Tutorial.isOpen();
+    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || !$('login-ask').hidden || !$('nick').hidden || S.Tutorial.isOpen();
   }
   function openSheet(name) {
     if (name === 'stars' && !C.SHOP_ENABLED) return; // 상점을 껐으면 별 충전 창도 열지 않음
@@ -234,6 +234,11 @@
     if (name === 'home') renderHome();
     if (name === 'badges') renderBadges();
     if (name === 'record') renderRecord();
+    if (name === 'ranking') {
+      S.Ranking.render();
+      S.Ranking.checkRewards();
+    }
+    playMusic();
     if (name === 'game') {
       renderGradeBar();
       renderGame();
@@ -242,6 +247,14 @@
     }
     lastTick = Date.now();
     window.scrollTo(0, 0);
+  }
+
+  /* 배경 음악 (js/music.js) : 게임 화면은 잔잔한 곡, 나머지 화면은 대문 곡.
+     시작 그림을 누르기 전에는 틀지 않습니다 (브라우저는 화면을 한 번 눌러야 소리를 내 줌) */
+  function playMusic() {
+    if (!S.Music || !splashDone) return;
+    if (!Settings.get('music')) return S.Music.stop();
+    S.Music.play(screen === 'game' ? 'game' : 'title');
   }
 
   /* 이어서 할 수 있는 판 (지금 판이 끝났으면 저장해 둔 승급전 판) */
@@ -321,7 +334,9 @@
   /* 하던 승급전 판을 실패로 기록하고 next 를 부릅니다 (연속 실패로 강등되면 먼저 알려 줌) */
   function abandon(cur, next) {
     if (cur === game) stopTimer();
+    var before = data.totalScore;
     var res = Progress.recordLoss(data, cur.score);
+    S.Ranking.addScore(data, data.totalScore - before);
     Progress.recordStats(data, cur, false);
     cur.status = 'lost';
     data.game = null;
@@ -579,6 +594,7 @@
     if (status === 'in' && user && splashDone) appToast(user.name + '님, 반가워요!');
     if (status === 'deleted') appToast('계정을 지웠어요');
     if (screen === 'record') renderProfile();
+    if (screen === 'ranking' && (status === 'in' || status === 'out' || status === 'deleted')) S.Ranking.render();
   });
 
   /* 배지 화면 : 받기 어려운 정도(브론즈 → 전설)로 묶어서 보여 줍니다 (받은 것은 색, 아직인 것은 흐리게) */
@@ -736,6 +752,7 @@
     var value = !Settings.get(key);
     Settings.set(key, value);
     row.setAttribute('aria-checked', value ? 'true' : 'false');
+    if (key === 'music') playMusic();
     if (game) renderGame(); // 바꾼 설정을 판에 바로 반영
   }
 
@@ -858,7 +875,9 @@
     if (!game || game.status !== 'playing' || untouched()) return launch();
     showModal('하던 판은 실패로 기록됩니다.\n새 게임을 시작할까요?', '새 게임', '아니요', function () {
       stopTimer();
+      var before = data.totalScore;
       var res = Progress.recordLoss(data, game.score);
+      S.Ranking.addScore(data, data.totalScore - before);
       Progress.recordStats(data, game, false);
       data.game = null;
       game.status = 'lost';
@@ -1405,15 +1424,18 @@
     var finished = game;
     var seconds = Math.floor(finished.elapsedMs / 1000);
     var before = C.GRADES[data.gradeIndex];
-    var res;
+    var res, scoreBefore = data.totalScore;
     if (finished.daily) {
       // 오늘의 퍼즐은 등급에 영향을 주지 않습니다
+      var firstToday = !Progress.dailyDone(data, finished.daily);
       res = won ? Progress.recordDaily(data, finished.daily, seconds, finished.score) : {};
+      if (won && firstToday) S.Ranking.addDaily(data, finished.daily, seconds); // 오늘의 날쌘냥 (처음 푼 기록만)
       data.dailyGame = null;
     } else {
       res = won ? Progress.recordWin(data, seconds, finished.score, finished) : Progress.recordLoss(data, finished.score);
       data.game = null;
     }
+    S.Ranking.addScore(data, data.totalScore - scoreBefore); // 이번 주 부지런냥 · 이달의 왕냥이
     Progress.recordStats(data, finished, won);
     var newBadges = S.Badges.check(data);
     Progress.save(data);
@@ -2118,6 +2140,7 @@
     if (!$('attend').hidden) { closeAttend(); return true; }
     if (!$('promo').hidden) { $('btn-promo-ok').click(); return true; }
     if (!$('login-ask').hidden) { closeLoginAsk(); return true; }
+    if (!$('nick').hidden) { S.Ranking.closeNick(); return true; }
     if (sheetOpen()) { closeSheets(); return true; }
     if (!$('result').hidden) { $('btn-result-close').click(); return true; }
     return false;
@@ -2220,6 +2243,21 @@
     }
   );
 
+  /* 랭킹 (js/ranking.js) : 지금 기록 · 저장 · 알림 창을 이어 줍니다 */
+  S.Ranking.start({
+    data: function () { return data; },
+    save: function () { Progress.save(data); },
+    modal: function (text) {
+      if (overlayOpen() || screen === 'game') return appToast(text.split('\n')[0]);
+      showModal(text, '좋아요', '', function () { if (screen === 'ranking') S.Ranking.render(); });
+      S.Sound.play('hint');
+    },
+    toast: appToast,
+    loginButton: function (p) { return loginButton(p, loginText(p)); },
+    playDaily: homeDaily,
+    refresh: function () { if (screen === 'ranking') S.Ranking.render(); }
+  });
+
   /* 시작 : 하던 판이 있으면 준비만 해 두고(시간은 멈춤) 홈 화면을 보여 줍니다 */
   if (Game.isValidSaved(data.game)) beginGame(data.game);
   else data.game = null;
@@ -2236,6 +2274,7 @@
       sp.hidden = true;
     }, 400);
     S.Sound.play('memoOn'); // 누를 때 짧은 소리 (설정에서 효과음을 끄면 안 남)
+    playMusic(); // 대문 음악
     /* 처음 켠 사람에게는 따라 하기를 먼저 보여 줍니다 (한 판이라도 해 본 사람은 건너뜀) */
     if (!Settings.get('tutorialDone') && data.totalGames === 0 && !data.daily.total) openTutorial();
     else window.setTimeout(maybeAttend, 450);

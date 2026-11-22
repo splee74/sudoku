@@ -74,8 +74,30 @@
       items: freshItems(),
       starterGiven: false, // 처음 시작 선물(START_ITEMS)을 받았는지
       itemsReset: 0, // 아이템을 START_ITEMS 로 되돌린 차례 (C.ITEM_RESET 보다 작으면 한 번 되돌림)
-      stars: 0 // 가진 별 (상점에서 아이템을 살 때 씀)
+      stars: 0, // 가진 별 (상점에서 아이템을 살 때 씀)
+      rank: freshRank() // 랭킹 (js/ranking.js)
     };
+  }
+
+  /*
+   * 랭킹에 올릴 기록 (js/ranking.js 가 씀)
+   *   wk/ws : 이번 주(월요일 날짜)와 이번 주에 모은 점수,  mk/ms : 이번 달과 이번 달 점수
+   *   dk/dv : 오늘의 퍼즐을 푼 날과 걸린 시간(초)
+   *   nick : 랭킹에 보일 닉네임,  checked : 상을 확인한 지난 기간,  crowns : 월간 1~3위 횟수,  tops : 주간 상위 10% 횟수
+   *   hall : 가장 높은 등급 달성을 명예의 전당에 올렸는지,  g : 마지막으로 기록을 올린 등급 묶음
+   */
+  function freshRank() {
+    return { wk: '', ws: 0, mk: '', ms: 0, dk: '', dv: 0, nick: '', g: -1, checked: {}, crowns: 0, tops: 0, hall: false };
+  }
+  function cleanRank(r) {
+    var out = freshRank();
+    if (!r || typeof r !== 'object') return out;
+    ['wk', 'mk', 'dk', 'nick'].forEach(function (k) { if (typeof r[k] === 'string') out[k] = r[k]; });
+    ['ws', 'ms', 'dv', 'crowns', 'tops'].forEach(function (k) { out[k] = num(r[k], 0); });
+    if (r.checked && typeof r.checked === 'object') for (var k in r.checked) out.checked[k] = 1;
+    out.hall = r.hall === true;
+    out.g = typeof r.g === 'number' && r.g >= 0 ? Math.floor(r.g) : -1;
+    return out;
   }
 
   /*
@@ -190,6 +212,7 @@
           data.starterGiven = saved.starterGiven === true;
           data.itemsReset = num(saved.itemsReset, 0);
           data.stars = num(saved.stars, 0);
+          data.rank = cleanRank(saved.rank);
         }
       }
     } catch (e) {
@@ -450,6 +473,19 @@
     out.starterGiven = !!(out.starterGiven || other.starterGiven);
     out.itemsReset = Math.max(num(out.itemsReset, 0), num(other.itemsReset, 0));
     out.stars = Math.max(num(out.stars, 0), num(other.stars, 0));
+    // 랭킹 : 같은 기간이면 점수가 큰 쪽, 다른 기간이면 더 최근 기간
+    var ra = cleanRank(out.rank), rb = cleanRank(other.rank);
+    [['wk', 'ws'], ['mk', 'ms']].forEach(function (f) {
+      if (rb[f[0]] > ra[f[0]]) { ra[f[0]] = rb[f[0]]; ra[f[1]] = rb[f[1]]; }
+      else if (rb[f[0]] === ra[f[0]]) ra[f[1]] = Math.max(ra[f[1]], rb[f[1]]);
+    });
+    if (rb.dk > ra.dk || (rb.dk === ra.dk && rb.dv && (!ra.dv || rb.dv < ra.dv))) { ra.dk = rb.dk; ra.dv = rb.dv; }
+    if (!ra.nick) ra.nick = rb.nick;
+    for (k in rb.checked) ra.checked[k] = 1;
+    ra.crowns = Math.max(ra.crowns, rb.crowns);
+    ra.tops = Math.max(ra.tops, rb.tops);
+    ra.hall = ra.hall || rb.hall;
+    out.rank = ra;
     // 하던 판은 이 기기 것을 남깁니다
     out.game = a.game || null;
     out.dailyGame = a.dailyGame || null;

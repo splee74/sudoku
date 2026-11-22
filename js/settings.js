@@ -26,6 +26,7 @@
     { key: 'hero', group: '효과', title: '캐릭터 표시', desc: '판 위에 내 등급 캐릭터가 나와 맞히고 틀릴 때마다 표정이 바뀝니다 (끄면 판이 조금 커집니다)', on: true },
     { key: 'cheer', group: '효과', title: '응원 메시지', desc: '절반을 채웠을 때, 줄을 완성했을 때 짧은 응원을 보여 줍니다', on: true },
 
+    { key: 'music', group: '소리와 진동', title: '배경 음악', desc: '처음 화면과 게임 화면에서 고양이 음악이 흘러나옵니다', on: true },
     { key: 'sound', group: '소리와 진동', title: '효과음', desc: '숫자를 넣거나 버튼을 누를 때 소리가 납니다', on: true },
     { key: 'vibrate', group: '소리와 진동', title: '틀렸을 때 진동', desc: '틀린 숫자를 넣으면 휴대폰이 짧게 떨립니다', on: true },
 

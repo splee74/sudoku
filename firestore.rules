@@ -1,0 +1,69 @@
+rules_version = '2';
+// Firestore 보안 규칙 : Firebase 콘솔 → Firestore Database → 규칙 탭에 이 파일 내용을 그대로 붙여 넣고 "게시"
+// (자세한 설명은 store/README.md 의 "기록 저장소 만들기")
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedAs(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function goodNick(n) {
+      return n is string && n.size() >= 2 && n.size() <= 10;
+    }
+    function isDaily(board) {
+      return board.matches('d_.*');
+    }
+    // 랭킹 한 줄의 모양 : { nick, grade, v, crown, at }
+    function goodRow(board) {
+      return board.matches('[dwm]_[0-9]{4}-[0-9]{2}(-[0-9]{2})?(_g[0-9]{1,2})?')
+        && request.resource.data.keys().hasOnly(['nick', 'grade', 'v', 'crown', 'at'])
+        && goodNick(request.resource.data.nick)
+        && request.resource.data.grade is int && request.resource.data.grade >= 0 && request.resource.data.grade <= 20
+        && request.resource.data.v is int && request.resource.data.v >= 0
+        && request.resource.data.crown is bool
+        && request.resource.data.at == request.time
+        // 오늘의 퍼즐 시간 : 1분 ~ 하루
+        && (!isDaily(board) || (request.resource.data.v >= 60 && request.resource.data.v <= 86400));
+    }
+
+    // 내 기록 (계정에 저장) : 나만 읽고 쓰기
+    match /users/{userId} {
+      allow read, write: if signedAs(userId);
+    }
+
+    // 랭킹 닉네임 : 누구나 보기, 나만 쓰기
+    match /players/{uid} {
+      allow read: if true;
+      allow create, update: if signedAs(uid)
+        && request.resource.data.keys().hasOnly(['nick', 'at'])
+        && goodNick(request.resource.data.nick)
+        && request.resource.data.at == request.time;
+      allow delete: if signedAs(uid);
+    }
+
+    // 랭킹 : 누구나 보기, 내 줄만 쓰기
+    //   점수는 처음에 30만 점까지, 그 뒤로는 10초에 한 번, 한 번에 6만 점까지만 오를 수 있음 (말이 안 되는 기록 막기)
+    //   오늘의 퍼즐 시간은 더 빨라지는 쪽으로만 바꿀 수 있음
+    match /boards/{board}/rows/{uid} {
+      allow read: if true;
+      allow delete: if signedAs(uid);
+      allow create: if signedAs(uid) && goodRow(board)
+        && (isDaily(board) || request.resource.data.v <= 300000);
+      allow update: if signedAs(uid) && goodRow(board)
+        && request.time > resource.data.at + duration.value(10, 's')
+        && (isDaily(board)
+          ? request.resource.data.v <= resource.data.v
+          : (request.resource.data.v >= resource.data.v && request.resource.data.v - resource.data.v <= 60000));
+    }
+
+    // 명예의 전당 (가장 높은 등급을 처음 찍은 사람) : 누구나 보기, 한 번 올리면 못 고침
+    match /hall/{grade}/rows/{uid} {
+      allow read: if true;
+      allow create: if signedAs(uid)
+        && request.resource.data.keys().hasOnly(['nick', 'at'])
+        && goodNick(request.resource.data.nick)
+        && request.resource.data.at == request.time;
+      allow delete: if signedAs(uid);
+    }
+  }
+}

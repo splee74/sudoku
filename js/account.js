@@ -249,7 +249,12 @@
     var u = fb.auth.currentUser;
     var provider = makeProvider(user && (user.provider === 'facebook' || user.provider === 'kakao') ? user.provider : 'google');
     emit('busy');
-    return fb.db.collection('users').doc(u.uid).delete()
+    // 랭킹에 올린 닉네임과 기록도 함께 지웁니다 (js/ranking.js)
+    var forget = S.Ranking && S.Ranking.forget ? S.Ranking.forget(u.uid).catch(function () {}) : Promise.resolve();
+    return forget
+      .then(function () {
+        return fb.db.collection('users').doc(u.uid).delete();
+      })
       .then(function () {
         return u.delete().catch(function (e) {
           if (e && e.code === 'auth/requires-recent-login') {
@@ -323,6 +328,13 @@
     user: function () {
       return user;
     },
+    /* 로그인해 있으면 Firebase 를 돌려줍니다 (랭킹에 씀) → Promise<{ auth, db, firebase }> */
+    firebase: function () {
+      if (!user) return Promise.reject(new Error('not-signed-in'));
+      return ready();
+    },
+    /* 로그인하지 않아도 랭킹은 볼 수 있게 Firebase 를 불러옵니다 */
+    open: ready,
     lastName: lastName
   };
 })(typeof window !== 'undefined' ? window : globalThis);

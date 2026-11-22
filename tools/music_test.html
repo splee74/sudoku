@@ -1,0 +1,101 @@
+<!doctype html>
+<!--
+  배경 음악 들어 보기 : 이 파일을 더블클릭해서 브라우저로 여세요.
+  게임과 똑같은 js/music.js 를 그대로 불러 쓰므로, music.js 를 고친 뒤 새로고침하면 바뀐 음악이 바로 들립니다.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>배경 음악 들어 보기</title>
+<style>
+  :root { --bg: #f6f1e7; --card: #fff; --ink: #2b2418; --soft: #7a6d58; --line: #e4dccb; --key: #f5a623; --track: #efe6d3; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1c1a16; --card: #2a2620; --ink: #f1ead9; --soft: #b3a68c; --line: #3d372d; --track: #3a342a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  main { max-width: 680px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { margin: 0 0 4px; font-size: 26px; }
+  .sub { margin: 0 0 20px; color: var(--soft); font-size: 15px; line-height: 1.5; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .card.on { outline: 3px solid var(--key); }
+  .name { font-size: 20px; font-weight: 800; }
+  .name small { font-size: 14px; font-weight: 600; color: var(--soft); margin-left: 6px; }
+  .when { font-size: 14px; color: var(--soft); margin: 4px 0 12px; line-height: 1.5; }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { font: inherit; font-weight: 800; padding: 10px 16px; border-radius: 12px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  button.play { border: 0; background: var(--key); color: #4a2a00; }
+  button:active { transform: scale(0.97); }
+  .bar { height: 8px; border-radius: 4px; background: var(--track); margin-top: 14px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--key); }
+  .time { font-size: 13px; color: var(--soft); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .stopall { margin-top: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🎵 배경 음악 들어 보기</h1>
+  <p class="sub">고양이가 스도쿠를 푸는 게임에 어울리게 만든 음악입니다. 두 곡 모두 끝나면 처음으로 이어져 계속 반복됩니다.
+    <b>이음새 듣기</b>를 누르면 끝나기 6초 전부터 틀어서, 처음으로 넘어가는 부분이 자연스러운지 바로 확인할 수 있습니다.</p>
+
+  <div class="card" id="c-title">
+    <div class="name">🐾 대문 음악 <small>30초 반복</small></div>
+    <div class="when">처음 화면에서 나옵니다. 통통 튀는 마림바 멜로디 + 우쿨렐레 + 손가락 '딱', 가운데는 오르골이 앞으로 나오고, 8마디마다 고양이가 "야옹~" 합니다.</div>
+    <div class="btns">
+      <button type="button" class="play" data-song="title">▶ 처음부터</button>
+      <button type="button" data-song="title" data-seam="1">↻ 이음새 듣기</button>
+    </div>
+    <div class="bar"><i></i></div>
+    <div class="time">0:00 / 0:30</div>
+  </div>
+
+  <div class="card" id="c-game">
+    <div class="name">🧶 게임 음악 <small>1분 반복</small></div>
+    <div class="when">스도쿠를 푸는 동안 나옵니다. 생각을 방해하지 않게 잔잔한 일렉 피아노 + 부드러운 마림바로 시작해서, 가운데는 오르골 멜로디, 끝 4마디는 북 없이 숨을 고르고 다시 처음으로.</div>
+    <div class="btns">
+      <button type="button" class="play" data-song="game">▶ 처음부터</button>
+      <button type="button" data-song="game" data-seam="1">↻ 이음새 듣기</button>
+    </div>
+    <div class="bar"><i></i></div>
+    <div class="time">0:00 / 1:00</div>
+  </div>
+
+  <button type="button" class="stopall" id="stop">■ 멈춤</button>
+</main>
+
+<script src="../js/music.js"></script>
+<script>
+  var M = window.SUDOKU.Music;
+  var LEN = { title: 30, game: 60 };
+  function mmss(s) { s = Math.floor(s); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+
+  document.querySelectorAll('button[data-song]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var name = b.dataset.song, card = document.getElementById('c-' + name);
+      card.querySelector('.time').textContent = '음악을 만드는 중…';
+      M.play(name, { from: b.dataset.seam ? LEN[name] - 6 : 0 });
+    });
+  });
+  document.getElementById('stop').addEventListener('click', function () { M.stop(); });
+
+  (function tick() {
+    var p = M.position();
+    ['title', 'game'].forEach(function (name) {
+      var card = document.getElementById('c-' + name), on = p && p.name === name;
+      card.classList.toggle('on', !!on);
+      if (on) {
+        card.querySelector('.bar i').style.width = (p.time / p.length * 100) + '%';
+        card.querySelector('.time').textContent = mmss(p.time) + ' / ' + mmss(p.length) + (p.loops ? '   (' + p.loops + '번 반복함)' : '');
+      } else if (card.querySelector('.time').textContent.indexOf('만드는') < 0) {
+        card.querySelector('.bar i').style.width = '0';
+        card.querySelector('.time').textContent = '0:00 / ' + mmss(LEN[name]);
+      }
+    });
+    requestAnimationFrame(tick);
+  })();
+</script>
+</body>
+</html>

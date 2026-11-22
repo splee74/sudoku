@@ -98,6 +98,7 @@
     { tier: 'gold', id: 'score-100k', icon: '💰', name: '점수 부자', desc: '모은 점수가 10만 점을 넘어요', test: function (d) { return d.totalScore >= 100000; } },
     { tier: 'gold', id: 'daily-30', icon: '📆', name: '한 달 개근', desc: '오늘의 퍼즐을 30일 연속으로 풀어요', test: function (d) { return d.daily.bestStreak >= 30; } },
     { tier: 'gold', id: 'attend-30', icon: '🏠', name: '출석 한 달', desc: '30일 연속으로 출석해요', test: function (d) { return attendBest(d) >= 30; } },
+    { tier: 'gold', id: 'rank-week', icon: '🐾', name: '부지런냥', desc: '주간 랭킹에서 상위 10% 안에 들어요', test: function (d) { return !!(d.rank && d.rank.tops >= 1); } },
     { tier: 'gold', id: 'play-10h', icon: '🕰️', name: '스도쿠 사랑', desc: '게임한 시간이 모두 10시간을 넘어요', test: function (d) { return d.stats.playSec >= 36000; } },
 
     // ---------- 다이아 : 아주 어려움 ----------
@@ -115,6 +116,7 @@
     { tier: 'legend', id: 'perfect-all', icon: '🌈', name: '모든 등급 정복', desc: '모든 등급에서 한 번도 안 틀리고 한 판씩 깨요', test: perfectEveryGrade },
     { tier: 'legend', id: 'wins-1000', icon: '🏛️', name: '천 판의 전설', desc: '모두 1000판을 깨요', test: function (d) { return d.totalWins >= 1000; } },
     { tier: 'legend', id: 'fast-9-2m', icon: '⚜️', name: '신의 손', desc: '9×9 판을 2분 안에 깨요', test: fast9(120) },
+    { tier: 'legend', id: 'rank-month', icon: '😼', name: '이달의 왕냥이', desc: '월간 랭킹에서 1~3위에 들어요 (랭킹에 👑 가 붙어요)', test: function (d) { return !!(d.rank && d.rank.crowns >= 1); } },
     { tier: 'legend', id: 'daily-365', icon: '☀️', name: '일 년 개근', desc: '오늘의 퍼즐을 365일 연속으로 풀어요', test: function (d) { return d.daily.bestStreak >= 365; } }
   ];
 

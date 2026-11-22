@@ -13,12 +13,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=34">
-  <link rel="stylesheet" href="css/skins.css?v=34">
-  <link rel="stylesheet" href="css/screens.css?v=34">
-  <link rel="stylesheet" href="css/about.css?v=34">
+  <link rel="stylesheet" href="css/style.css?v=35">
+  <link rel="stylesheet" href="css/skins.css?v=35">
+  <link rel="stylesheet" href="css/screens.css?v=35">
+  <link rel="stylesheet" href="css/about.css?v=35">
   <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=34">
+  <link rel="stylesheet" href="css/dark.css?v=35">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -60,7 +60,7 @@
       <nav class="site-nav" aria-label="메뉴">
         <button type="button" class="nav-btn" data-open="rules">규칙</button>
         <button type="button" class="nav-btn" data-open="settings">설정</button>
-        <!-- [다음 버전 자리] 랭킹 메뉴가 들어갈 곳 -->
+        <button type="button" class="nav-btn" data-tab="ranking">랭킹</button>
       </nav>
     </div>
   </header>
@@ -160,6 +160,27 @@
       </div>
       <p class="screen-note">목표를 이루면 배지를 받아요. 브론즈 → 실버 → 골드 → 다이아 → 전설 순으로 어려워요.</p>
       <div class="badge-tiers" id="record-badges"></div>
+    </section>
+
+    <!-- ================= 랭킹 화면 (js/ranking.js) ================= -->
+    <section class="screen screen-ranking" id="screen-ranking" aria-label="랭킹">
+      <div class="top-row">
+        <h2 class="screen-title">랭킹</h2>
+        <button type="button" class="icon-btn" data-open="settings" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button>
+      </div>
+      <div class="rank-tabs" role="tablist" aria-label="랭킹 종류">
+        <button type="button" class="rank-tab" role="tab" data-rank-tab="day" aria-selected="true">오늘</button>
+        <button type="button" class="rank-tab" role="tab" data-rank-tab="week" aria-selected="false">주간</button>
+        <button type="button" class="rank-tab" role="tab" data-rank-tab="month" aria-selected="false">월간</button>
+        <button type="button" class="rank-tab" role="tab" data-rank-tab="hall" aria-selected="false">명예의 전당</button>
+      </div>
+      <div class="rank-head">
+        <h3 class="rank-title" id="rank-title"></h3>
+        <p class="rank-note" id="rank-note"></p>
+      </div>
+      <div class="grade-chips" id="rank-scope"></div>
+      <div id="rank-me"></div>
+      <ol class="rk-list" id="rank-list"></ol>
     </section>
 
     <!-- ================= 내 기록 화면 ================= -->
@@ -434,7 +455,7 @@
     <p>© 2026 스도쿠 승급전</p>
   </footer>
 
-  <!-- ================= 아래쪽 메뉴 (홈 · 배지 · 내 기록) ================= -->
+  <!-- ================= 아래쪽 메뉴 (홈 · 배지 · 랭킹 · 내 기록) ================= -->
   <nav class="tabbar" aria-label="메뉴">
     <button type="button" class="tab" data-tab="home">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1h-5v-6h-5v6h-5a1 1 0 0 1-1-1Z"/></svg>
@@ -443,6 +464,10 @@
     <button type="button" class="tab" data-tab="badges">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="m8.5 13.8-1.5 7.2 5-2.6 5 2.6-1.5-7.2"/></svg>
       <span>배지</span>
+    </button>
+    <button type="button" class="tab" data-tab="ranking">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V13h4v8M10 21V8h4v13M15 21v-6h4v6"/><path d="m12 2.6.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 4.7l2-.3Z"/></svg>
+      <span>랭킹</span>
     </button>
     <button type="button" class="tab" data-tab="record">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
@@ -501,6 +526,21 @@
   </div>
 
   <!-- 승급할 때 로그인 권하기 (로그인하지 않았으면 승급 축하 창을 닫은 뒤에 뜹니다, js/ui.js 의 maybeAskLogin) -->
+  <!-- 닉네임 정하기 (랭킹에 보일 이름, js/ranking.js) -->
+  <div class="overlay overlay-top" id="nick" hidden>
+    <div class="modal-box login-ask-box" role="dialog" aria-modal="true" aria-labelledby="nick-title">
+      <div class="login-ask-art" aria-hidden="true">🐱</div>
+      <h2 class="login-ask-title" id="nick-title">닉네임 정하기</h2>
+      <p class="login-ask-text">랭킹에 보일 이름이에요. 2~10글자로, 한글 · 영어 · 숫자를 쓸 수 있어요. 구글 계정의 실제 이름은 보이지 않아요.</p>
+      <input class="nick-input" id="nick-input" type="text" maxlength="10" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="예) 날쌘고양이" aria-label="닉네임">
+      <p class="nick-err" id="nick-err" role="status"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="nick-cancel">나중에</button>
+        <button type="button" class="btn btn-primary" id="nick-ok">정하기</button>
+      </div>
+    </div>
+  </div>
+
   <div class="overlay overlay-top" id="login-ask" hidden>
     <div class="modal-box login-ask-box" role="dialog" aria-modal="true" aria-labelledby="login-ask-title">
       <div class="login-ask-art" aria-hidden="true">🛡️</div>
@@ -763,19 +803,21 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=34"></script>
-  <script src="js/engine.js?v=34"></script>
-  <script src="js/game.js?v=34"></script>
-  <script src="js/progress.js?v=34"></script>
-  <script src="js/settings.js?v=34"></script>
-  <script src="js/skins.js?v=34"></script>
-  <script src="js/sound.js?v=34"></script>
-  <script src="js/effects.js?v=34"></script>
-  <script src="js/badges.js?v=34"></script>
-  <script src="js/shop.js?v=34"></script>
-  <script src="js/account.js?v=34"></script>
-  <script src="js/tutorial.js?v=34"></script>
-  <script src="js/hero.js?v=34"></script>
-  <script src="js/ui.js?v=34"></script>
+  <script src="js/config.js?v=35"></script>
+  <script src="js/engine.js?v=35"></script>
+  <script src="js/game.js?v=35"></script>
+  <script src="js/progress.js?v=35"></script>
+  <script src="js/settings.js?v=35"></script>
+  <script src="js/skins.js?v=35"></script>
+  <script src="js/sound.js?v=35"></script>
+  <script src="js/music.js?v=35"></script>
+  <script src="js/effects.js?v=35"></script>
+  <script src="js/badges.js?v=35"></script>
+  <script src="js/shop.js?v=35"></script>
+  <script src="js/account.js?v=35"></script>
+  <script src="js/ranking.js?v=35"></script>
+  <script src="js/tutorial.js?v=35"></script>
+  <script src="js/hero.js?v=35"></script>
+  <script src="js/ui.js?v=35"></script>
 </body>
 </html>
