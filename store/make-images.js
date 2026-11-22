@@ -17,19 +17,24 @@ const BASE = 'http://127.0.0.1:8765/';
 const SHOTS = path.join(__dirname, 'screenshots');
 fs.mkdirSync(SHOTS, { recursive: true });
 
-/* 스크린샷에 쓸 기록 : 고수 등급, 배지 몇 개 받은 상태 */
+/* 스크린샷에 쓸 기록 : 고수 등급, 승급 미션 일부 완료, 배지 몇 개 받은 상태 */
 const SAVE = {
-  version: 1, gradeIndex: 3, wins: 2, failStreak: 0, totalWins: 27, totalGames: 31,
+  version: 1, gradeIndex: 3, wins: 3, failStreak: 0, totalWins: 27, totalGames: 31,
+  mission: { perfect: 2, nohint: 1, fast: 0, streak: 3, best: 3 },
   bestTimes: { hasu: 41, pyeongmin: 118, jungsu: 402, gosu: 515 },
   bestScores: { hasu: 980, pyeongmin: 2650, jungsu: 6120, gosu: 8840 },
   totalScore: 61230, game: null, dailyGame: null,
   daily: { last: '', streak: 0, bestStreak: 8, total: 12, score: 0, seconds: 0 },
-  stats: { perfectWins: 11, noHintWins: 19, hintsUsed: 14, winStreak: 6, bestWinStreak: 9, maxPromoted: 3, wins9: 9, best9: 402 },
-  gradeStats: { gosu: { played: 4, won: 2, sec: 1090 } },
+  stats: { perfectWins: 11, noHintWins: 19, hintsUsed: 14, winStreak: 6, bestWinStreak: 9, maxPromoted: 3, wins9: 9, best9: 402, playSec: 9800 },
+  gradeStats: { gosu: { played: 4, won: 3, sec: 1600, perfect: 2 } },
+  // 오늘 이미 출석한 것으로 (출석 창이 화면을 가리지 않게)
+  attend: { last: new Date().toLocaleDateString('sv-SE'), streak: 3, best: 8, total: 15 },
   badges: {
-    'first-win': '2026-11-01', 'first-promo': '2026-11-02', 'first-9': '2026-11-04', perfect: '2026-11-02',
-    'perfect-10': '2026-11-12', 'no-hint-10': '2026-11-10', 'streak-5': '2026-11-06', 'wins-10': '2026-11-05',
-    'daily-1': '2026-11-03', 'daily-7': '2026-11-10', 'grade-gosu': '2026-11-13'
+    'first-win': '2026-11-01', 'first-promo': '2026-11-02', perfect: '2026-11-02', 'games-10': '2026-11-04',
+    'wins-10': '2026-11-05', 'hint-1': '2026-11-02', 'score-1k': '2026-11-02', 'daily-1': '2026-11-03', 'attend-3': '2026-11-04',
+    'first-9': '2026-11-04', 'grade-gosu': '2026-11-13', 'streak-5': '2026-11-06', 'no-hint-10': '2026-11-10',
+    'perfect-5': '2026-11-09', 'fast-9-10m': '2026-11-11', 'score-10k': '2026-11-08', 'daily-7': '2026-11-10',
+    'attend-7': '2026-11-10', 'play-1h': '2026-11-07', 'perfect-10': '2026-11-12'
   }
 };
 
@@ -47,7 +52,7 @@ async function open(browser, opts, settings, save) {
   const page = await ctx.newPage();
   await page.goto(BASE + 'index.html');
   await page.waitForTimeout(400);
-  await page.click('#splash-start', { force: true }); // 시작 그림의 "지금 시작하기"
+  await page.click('#splash-start', { force: true }); // 시작 그림의 "터치해서 시작하기"
   await page.waitForTimeout(600);
   return { ctx, page };
 }
@@ -130,13 +135,11 @@ async function fillSome(page, ratio) {
   await page.screenshot({ path: path.join(SHOTS, '7-badges.png') });
   await ctx.close();
 
-  // 8. 따라 하기
-  ({ ctx, page } = await open(browser, phone, { tutorialDone: false }, {}));
-  await page.click('#tut-next');
-  await page.click('#tut-next');
-  await page.click('#tut-board .cell[data-idx="2"]');
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: path.join(SHOTS, '8-tutorial.png') });
+  // 8. 승급 미션 창
+  ({ ctx, page } = await open(browser, phone));
+  await page.click('#home-grade');
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: path.join(SHOTS, '8-missions.png') });
   await ctx.close();
 
   // 대표 그림 1024×500
