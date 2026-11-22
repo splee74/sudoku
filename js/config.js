@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v30 → 'v30'
-    VERSION: 'v30',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v31 → 'v31'
+    VERSION: 'v31',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -100,6 +100,9 @@
      *                 price 는 화면에 보여 줄 값입니다. (실제 결제 금액은 Play Console 에서 정함)
      *   START_STARS : 처음 시작할 때 주는 별
      */
+    // 상점 켜기 : false 면 별(⭐) 칸, 아이템 "사기" 단추, 별 충전 창을 모두 숨깁니다.
+    //   (별 판매 = 인앱 결제를 붙인 뒤에 true 로. 아이템은 시작 선물과 출석 선물로만 얻음)
+    SHOP_ENABLED: false,
     ITEM_PRICES: { hint: 30, time: 20, shield: 30, memo: 50, double: 40, magnify: 30, revive: 80, guard: 60 },
     STAR_PACKS: [
       { id: 'stars_100', stars: 100, price: '₩1,200' },

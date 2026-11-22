@@ -190,6 +190,7 @@
     return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || !$('login-ask').hidden || S.Tutorial.isOpen();
   }
   function openSheet(name) {
+    if (name === 'stars' && !C.SHOP_ENABLED) return; // 상점을 껐으면 별 충전 창도 열지 않음
     closeSheets();
     if (name === 'settings') renderSettings();
     if (name === 'rules') renderRules();
@@ -258,6 +259,7 @@
     $('home-score').querySelector('b').textContent = formatScore(data.totalScore);
     $('home-bag').querySelector('b').textContent = Progress.itemTotal(data);
     $('home-stars').querySelector('b').textContent = formatScore(Progress.stars(data));
+    $('home-stars').hidden = !C.SHOP_ENABLED;
     renderAttendBar(today);
 
     // 오늘의 퍼즐 카드
@@ -1587,7 +1589,7 @@
         row.appendChild(tag);
       }
       // 별로 사기 (값이 정해진 아이템만)
-      var cost = S.Shop.price(it.id);
+      var cost = C.SHOP_ENABLED ? S.Shop.price(it.id) : 0;
       if (cost) {
         var buy = document.createElement('button');
         buy.type = 'button';
@@ -1616,13 +1618,17 @@
       box.appendChild(row);
     });
     $('items-stars').textContent = formatScore(Progress.stars(data));
+    $('items-starbar').hidden = !C.SHOP_ENABLED;
+    $('items-title').textContent = C.SHOP_ENABLED ? '아이템 · 상점' : '내 아이템';
+    var shop = C.SHOP_ENABLED;
     $('items-note').textContent = inGame
-      ? '별로 아이템을 살 수 있어요. 출석 체크로도 매일 아이템을 받을 수 있어요.'
-      : '아이템은 게임 화면의 🎒 단추를 눌러 쓸 수 있어요. 별로 사거나, 출석 체크로 매일 받을 수 있어요.';
+      ? (shop ? '별로 아이템을 살 수 있어요. ' : '') + '출석 체크로 매일 아이템을 받을 수 있어요.'
+      : '아이템은 게임 화면의 🎒 단추를 눌러 쓸 수 있어요. ' + (shop ? '별로 사거나, ' : '') + '출석 체크로 매일 받을 수 있어요.';
   }
 
   /* 별로 아이템 한 개 사기 */
   function buyItemPress(id) {
+    if (!C.SHOP_ENABLED) return;
     var it = itemInfo(id);
     var res = S.Shop.buyItem(data, id);
     if (!res.ok) {
