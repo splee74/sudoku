@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v27 → 'v27'
-    VERSION: 'v27',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v28 → 'v28'
+    VERSION: 'v28',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -57,9 +57,10 @@
       messagingSenderId: '45758241016',
       appId: '1:45758241016:web:4340f526b720273eb3830d'
     },
-    // 보여 줄 로그인 단추 : 'google', 'kakao' ('facebook' 도 쓸 수 있음)
-    //   카카오는 Firebase 에 OpenID Connect 제공업체(이름 oidc.kakao)를 만든 뒤에 켜집니다 (store/README.md 의 "로그인 설정")
-    LOGIN_PROVIDERS: ['google', 'kakao'],
+    // 보여 줄 로그인 단추 : 지금은 Google 만 씁니다.
+    //   'kakao', 'facebook' 도 코드는 들어 있지만 쓰지 않습니다
+    //   (카카오는 Firebase Identity Platform 업그레이드가 필요하고, 한 달 50명이 넘으면 요금이 붙어서 뺐습니다)
+    LOGIN_PROVIDERS: ['google'],
 
     /*
      * 오늘의 퍼즐 : 하루에 한 판, 같은 날에는 모든 사람에게 같은 퍼즐이 나옵니다.
