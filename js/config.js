@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v26 → 'v26'
-    VERSION: 'v26',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v27 → 'v27'
+    VERSION: 'v27',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -50,10 +50,12 @@
      *   이 값들은 숨길 필요가 없는 공개 값입니다. (기록은 Firestore 보안 규칙으로 본인만 볼 수 있게 막습니다)
      */
     FIREBASE: {
-      apiKey: '',
-      authDomain: '',
-      projectId: '',
-      appId: ''
+      apiKey: 'AIzaSyC4_gBErdd5Sjl0cCVFl3jimFKkicFlOX0',
+      authDomain: 'sudoku-seunggeupjeon.firebaseapp.com',
+      projectId: 'sudoku-seunggeupjeon',
+      storageBucket: 'sudoku-seunggeupjeon.firebasestorage.app',
+      messagingSenderId: '45758241016',
+      appId: '1:45758241016:web:4340f526b720273eb3830d'
     },
     // 보여 줄 로그인 단추 : 'google', 'kakao' ('facebook' 도 쓸 수 있음)
     //   카카오는 Firebase 에 OpenID Connect 제공업체(이름 oidc.kakao)를 만든 뒤에 켜집니다 (store/README.md 의 "로그인 설정")
