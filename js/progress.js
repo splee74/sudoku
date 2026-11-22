@@ -41,6 +41,8 @@
       gradeIndex: 0, // 지금 등급 (0 = 하수)
       wins: 0, // 지금 등급에서 깬 판 수
       mission: freshMission(), // 지금 등급의 승급 미션 진행 (js/config.js 의 MISSIONS)
+      reach: 0, // 열린 가장 높은 등급 (이 등급까지는 골라서 할 수 있음. 승급하면 올라가고, 이 등급에서 강등되면 내려감)
+      parked: {}, // 다른 등급에 다녀오는 동안 맡겨 둔 등급별 미션 진행 : { 등급id: { wins, mission } }
       failStreak: 0, // 연속 실패 횟수
       totalWins: 0,
       totalGames: 0,
@@ -153,6 +155,16 @@
             data.wins = 0;
             data.mission = freshMission();
           }
+          data.reach = Math.max(data.gradeIndex, Math.min(num(saved.reach, 0), data.stats.maxPromoted, C.GRADES.length - 1));
+          if (saved.parked && typeof saved.parked === 'object') {
+            for (var pk in saved.parked) {
+              var pv = saved.parked[pk];
+              if (!pv || typeof pv !== 'object') continue;
+              var pm = freshMission();
+              for (var pf in pm) pm[pf] = num(pv.mission && pv.mission[pf], 0);
+              data.parked[pk] = { wins: num(pv.wins, 0), mission: pm };
+            }
+          }
           if (saved.gradeStats && typeof saved.gradeStats === 'object') data.gradeStats = saved.gradeStats;
           if (saved.badges && typeof saved.badges === 'object') data.badges = saved.badges;
           var sa = saved.attend;
@@ -235,7 +247,9 @@
       data.gradeIndex++;
       data.wins = 0;
       data.mission = freshMission();
+      delete data.parked[C.GRADES[data.gradeIndex].id];
       promoted = true;
+      if (data.gradeIndex > data.reach) data.reach = data.gradeIndex;
       if (data.gradeIndex > data.stats.maxPromoted) data.stats.maxPromoted = data.gradeIndex;
     }
     return { promoted: promoted, grade: C.GRADES[data.gradeIndex], newBest: newBest, newBestScore: newBestScore };
@@ -253,10 +267,14 @@
     var demoted = false;
     if (data.failStreak >= C.FAILS_TO_DEMOTE) {
       data.failStreak = 0;
-      if (data.gradeIndex > 0) {
+      // 낮은 등급을 골라서 하는 중에는 내려가지 않습니다 (열린 가장 높은 등급에서만 강등)
+      if (data.gradeIndex > 0 && data.gradeIndex === data.reach) {
         data.gradeIndex--;
+        data.reach = data.gradeIndex;
         data.wins = 0;
         data.mission = freshMission();
+        delete data.parked[C.GRADES[data.gradeIndex].id];
+        delete data.parked[C.GRADES[data.gradeIndex + 1].id];
         demoted = true;
       }
     }
@@ -266,9 +284,14 @@
   /* 등급을 직접 고릅니다. 승급까지 남은 판 수는 처음부터 다시 셉니다. */
   function setGrade(data, index) {
     if (index < 0 || index >= C.GRADES.length || index === data.gradeIndex) return false;
+    if (!C.FREE_GRADE_SELECT && index > data.reach) return false; // 잠긴 등급
+    // 지금 등급의 미션 진행은 맡겨 두고, 고른 등급에 맡겨 둔 진행이 있으면 되찾습니다
+    data.parked[C.GRADES[data.gradeIndex].id] = { wins: data.wins, mission: data.mission };
+    var back = data.parked[C.GRADES[index].id];
+    delete data.parked[C.GRADES[index].id];
     data.gradeIndex = index;
-    data.wins = 0;
-    data.mission = freshMission();
+    data.wins = back ? back.wins : 0;
+    data.mission = back ? back.mission : freshMission();
     data.failStreak = 0;
     return true;
   }
@@ -524,6 +547,11 @@
     for (var i = 0; i < list.length; i++) if (!list[i].done) return false;
     return true;
   }
+  /* 골라서 할 수 있는 등급인지 (열린 가장 높은 등급까지) */
+  function isUnlocked(data, index) {
+    return C.FREE_GRADE_SELECT || index <= data.reach;
+  }
+
   /* { done: 깬 미션 수, total: 전체 미션 수 } */
   function missionCount(data) {
     var list = missions(data), done = 0;
@@ -541,6 +569,7 @@
     recordLoss: recordLoss,
     missions: missions,
     missionCount: missionCount,
+    isUnlocked: isUnlocked,
     setGrade: setGrade,
     dateKey: dateKey,
     dailyDone: dailyDone,

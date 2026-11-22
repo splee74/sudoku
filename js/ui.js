@@ -87,7 +87,7 @@
     var next = C.GRADES[data.gradeIndex + 1];
     $('grades-title').textContent = '승급 미션';
     $('grades-note').textContent = next
-      ? grade.name + '에서 아래 미션을 모두 깨면 ' + next.name + '(으)로 올라가요. 등급이 바뀌면 미션은 처음부터 다시 세요.'
+      ? grade.name + '에서 아래 미션을 모두 깨면 ' + next.name + '(으)로 올라가요.'
       : '가장 높은 등급 ' + grade.name + '에 올랐어요! 🎉';
     if (next) {
       var ul = document.createElement('ul');
@@ -111,10 +111,14 @@
       });
       box.appendChild(ul);
     }
+    var tip = document.createElement('p');
+    tip.className = 'sheet-note';
+    tip.textContent = '열린 등급은 눌러서 해 볼 수 있어요. 🔒 위 등급은 승급해야 열려요.';
+    box.appendChild(tip);
     var ladder = document.createElement('div');
     ladder.className = 'grade-list';
     box.appendChild(ladder);
-    renderGradeList(ladder, false, false);
+    renderGradeList(ladder, false, true);
   }
 
   /*
@@ -130,14 +134,15 @@
         row.type = 'button';
         row.setAttribute('data-grade', i);
       }
-      var locked = !C.FREE_GRADE_SELECT && i > data.gradeIndex;
+      var locked = !Progress.isUnlocked(data, i);
       row.className = 'grade-row' + (pick ? ' grade-pick' : '') + (i === data.gradeIndex ? ' now' : '') + (locked ? ' locked' : '');
       var name = document.createElement('b');
       name.textContent = g.name;
       name.style.background = g.color;
       var info = document.createElement('span');
       // 9×9 등급이 여러 개라서 빈칸 수로 어려운 정도를 구분해 보여 줍니다
-      info.textContent = (locked ? '🔒 ' : '') + g.size + '×' + g.size + ' · 빈칸 ' + (g.size * g.size - g.givens) + '칸' + (!withBest && i === data.gradeIndex ? ' · 지금 내 등급' : '');
+      info.textContent = (locked ? '🔒 ' : '') + g.size + '×' + g.size + ' · 빈칸 ' + (g.size * g.size - g.givens) + '칸' +
+        (!withBest && i === data.gradeIndex ? ' · 지금 하는 등급' : !withBest && pick && !locked ? ' · 눌러서 하기' : '');
       row.appendChild(name);
       row.appendChild(info);
       if (withBest) {
@@ -836,7 +841,11 @@
   /* ---------------- 등급 고르기 ---------------- */
   function pickGrade(index) {
     closeSheets();
-    if (ending || !C.FREE_GRADE_SELECT || index === data.gradeIndex) return;
+    if (ending || index === data.gradeIndex) return;
+    if (!Progress.isUnlocked(data, index)) {
+      var top = C.GRADES[data.reach];
+      return showModal('🔒 ' + C.GRADES[index].name + ' 등급은 아직 잠겨 있어요.\n먼저 ' + top.name + ' 등급의 승급 미션을 깨서\n승급해야 할 수 있어요.', '확인', '');
+    }
     persist();
     var cur = Game.isValidSaved(data.game) ? data.game : null;
     if (game && !game.daily && game.status === 'playing') cur = game;
@@ -848,7 +857,7 @@
       showScreen('game');
     }
     if (!cur || untouched(cur)) return go();
-    showModal('하던 판은 실패로 기록됩니다.\n' + C.GRADES[index].name + ' 등급으로 바꿀까요?', '바꾸기', '아니요', function () {
+    showModal('하던 판은 실패로 기록됩니다.\n' + C.GRADES[index].name + ' 등급으로 바꿀까요?\n(승급 미션 진행은 등급마다 그대로 남아요)', '바꾸기', '아니요', function () {
       abandon(cur, go);
     });
   }
@@ -1430,6 +1439,8 @@
       msg = '연속 ' + C.FAILS_TO_DEMOTE + '번 실패해서\n' + grade.name + '(으)로 내려왔어요.\n다시 올라가 봐요!';
     } else if (data.gradeIndex === 0) {
       msg = '괜찮아요, ' + grade.name + ' 밑으로는 내려가지 않아요';
+    } else if (data.gradeIndex < data.reach) {
+      msg = '골라서 하는 낮은 등급이라 내려가지 않아요';
     } else {
       msg = '연속 실패 ' + data.failStreak + '번\n' + C.FAILS_TO_DEMOTE + '번이면 한 단계 내려가요';
       if (Progress.missions(data).some(function (m) { return m.type === 'streak' && !m.done; })) msg += '\n연달아 깨기 미션은 처음부터 다시 세요';
