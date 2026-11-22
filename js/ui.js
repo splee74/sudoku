@@ -2063,22 +2063,21 @@
 
   /* ---------------- 휴대폰 '뒤로 가기' 버튼 ----------------
    * 앱으로 설치했을 때와 휴대폰 크롬 같은 인터넷 창에서 열었을 때 모두 똑같이 동작합니다.
-   *   창이 떠 있으면        → 그 창을 닫습니다
-   *   게임 중이면           → 잠시 멈추고 "한 번 더 누르면 나가요"를 알려 줍니다
-   *   그 밖에는             → "한 번 더 누르면 나가요"를 알려 줍니다
-   * 안내가 뜬 뒤 화면을 만지지 않고 한 번 더 누르면 앱이 닫힙니다. (인터넷 창이면 이전 페이지로)
+   *   창이 떠 있으면              → 그 창을 닫습니다
+   *   게임 · 배지 · 내 기록 화면  → 홈으로 (하던 판은 저장되고 시간이 멈춤)
+   *   홈이면                      → "한 번 더 누르면 나가요"를 알려 주고, 한 번 더 누르면 앱이 닫힙니다
    *
-   * 방법 : 화면을 만질 때 "가짜 페이지"를 하나 쌓아 둡니다. 뒤로 가기를 누르면
-   * 가짜 페이지가 빠지면서 popstate 가 오고, 쌓인 것이 없으면 앱이 닫힙니다.
+   * 방법 : 브라우저 기록에 "가짜 페이지"를 지금 화면의 깊이만큼 쌓아 둡니다.
+   *   홈 = 1칸, 다른 화면 = 2칸, 그 위에 창이 떠 있으면 +1칸
+   *   뒤로 가기를 누르면 한 칸씩 빠지면서 popstate 가 오고, 0칸에서 누르면 앱이 닫힙니다.
    *
-   * 주의 (크롬 규칙) : 사용자가 화면을 "만진 것으로 인정되기" 전에 쌓은 페이지가 있으면,
-   *   크롬은 뒤로 가기를 누를 때 그 아래 페이지까지 건너뛰어 앱을 닫아 버립니다.
-   *   휴대폰 터치는 손가락이 닿을 때(pointerdown)가 아니라 뗄 때(pointerup · touchend · click)부터 인정되므로
-   *   그때 쌓고, 뒤로 가기를 처리한 직후(popstate 안)에는 쌓지 않고 다음에 만질 때 쌓습니다.
-   *   그래서 화면을 만지지 않고 뒤로 가기를 두 번 누르면 두 번째에는 앱이 닫힐 수 있습니다.
+   * 주의 (크롬 규칙) : 사용자가 화면을 "만진 것으로 인정되기" 전에 쌓은 칸이 있으면,
+   *   크롬은 뒤로 가기를 누를 때 그 아래까지 건너뛰어 앱을 닫아 버립니다.
+   *   휴대폰 터치는 손가락을 뗄 때(pointerup · touchend · click)부터 인정되므로, 그 직후에만 칸을 쌓습니다.
+   *   (popstate 안에서는 쌓지 않음. 그래서 칸은 미리, 화면 깊이만큼 넉넉히 쌓아 둡니다)
    */
-  var BACK_STATE = { sudokuBack: true };
-  var backReady = false; // 가짜 페이지가 쌓여 있는가
+  var backDepth = 0; // 지금 서 있는 칸 (0 = 맨 아래, 쌓인 것 없음)
+  var backTimer = 0;
 
   function isAppMode() {
     if (/[?&]app=1/.test(location.search)) return true; // 시험용 : 주소 뒤에 ?app=1
@@ -2088,14 +2087,28 @@
       navigator.standalone === true;
   }
 
-  function armBack() {
-    if (backReady) return;
+  /* 지금 화면에 필요한 칸 수 */
+  function wantDepth() {
+    if (!splashDone) return 0;
+    return 1 + (screen !== 'home' ? 1 : 0) + (overlayOpen() ? 1 : 0);
+  }
+
+  /* 모자란 칸을 쌓습니다 (화면을 만진 직후에만 부름) */
+  function fillBack() {
+    var want = wantDepth();
     try {
-      history.pushState(BACK_STATE, '');
-      backReady = true;
+      while (backDepth < want) {
+        backDepth++;
+        history.pushState({ sudokuBack: true, depth: backDepth }, '');
+      }
     } catch (e) {
       /* 막혀 있으면 보통의 뒤로 가기 */
     }
+  }
+  /* 누른 단추가 화면을 바꾼 뒤에 칸 수를 맞추도록 잠깐 뒤에 (만진 것으로 인정되는 시간은 몇 초 이어짐) */
+  function armBack() {
+    window.clearTimeout(backTimer);
+    backTimer = window.setTimeout(fillBack, 30);
   }
 
   /* 가장 위에 떠 있는 창 하나를 닫습니다. 닫은 게 있으면 true */
@@ -2110,8 +2123,9 @@
     return false;
   }
 
-  function onBack() {
-    backReady = false; // 다시 쌓는 것은 다음에 화면을 만질 때 (위 "주의" 참고)
+  function onBack(e) {
+    var st = e && e.state;
+    backDepth = st && st.sudokuBack ? st.depth || 0 : 0;
     if (!splashDone) return;
     if (closeTopOverlay()) return; // 창만 닫음
     if (screen !== 'home') {
@@ -2119,8 +2133,13 @@
       if (!ending) showScreen('home');
       return;
     }
+    // 홈인데 칸이 남아 있으면 (창을 ✕ 로 닫는 등) 맨 아래 칸으로 내려가서 거기서 안내
+    if (backDepth > 0) {
+      history.go(-backDepth);
+      return;
+    }
     if (game && game.status === 'playing') persist();
-    // 여기서는 다시 쌓지 않습니다 : 한 번 더 누르면 앱이 닫힙니다
+    // 0칸 : 한 번 더 누르면 앱이 닫힙니다
     appToast('한 번 더 누르면 나가요');
   }
 
