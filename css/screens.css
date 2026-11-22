@@ -140,7 +140,7 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
   border: 1px solid var(--line);
 }
 .hcard-daily .hcard-btn { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }
-.hcard-daily.done .hcard-btn { color: #2f7a4f; }
+.hcard-daily.done .hcard-btn { color: var(--accent); }
 .hcard-grade { background: linear-gradient(165deg, var(--grade), color-mix(in srgb, var(--grade) 70%, #000)); color: #fff; }
 .hcard-grade .hcard-btn { background: rgba(255, 255, 255, 0.22); color: #fff; }
 .hcard-prog { flex-direction: column; gap: 8px; font-size: 16px; font-weight: 700; }
@@ -222,10 +222,10 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 .round-btn:active { transform: translateY(3px); }
 .round-continue {
   background: var(--accent); color: var(--accent-ink);
-  box-shadow: 0 5px 0 var(--accent-shadow, #1f4a36), 0 10px 20px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 5px 0 var(--accent-shadow, #1d4fa8), 0 10px 20px rgba(0, 0, 0, 0.18);
 }
 .round-continue svg { fill: currentColor; }
-.round-continue:active { box-shadow: 0 2px 0 var(--accent-shadow, #1f4a36); }
+.round-continue:active { box-shadow: 0 2px 0 var(--accent-shadow, #1d4fa8); }
 .round-new {
   background: var(--surface); color: var(--ink);
   border: 3px solid var(--accent);
@@ -234,7 +234,7 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 .round-new svg { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
 .round-new:active { box-shadow: 0 2px 0 var(--line); }
 /* 이어서 할 판이 없을 때 : 새 게임이 꽉 찬 색 단추 */
-.round-new.solo { background: var(--accent); color: var(--accent-ink); border: 0; box-shadow: 0 5px 0 var(--accent-shadow, #1f4a36), 0 10px 20px rgba(0, 0, 0, 0.18); }
+.round-new.solo { background: var(--accent); color: var(--accent-ink); border: 0; box-shadow: 0 5px 0 var(--accent-shadow, #1d4fa8), 0 10px 20px rgba(0, 0, 0, 0.18); }
 .round-new.solo svg { stroke: currentColor; }
 
 /* ---------- 아래 메뉴 ---------- */
@@ -371,7 +371,7 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 }
 .attend-bar.done { background: var(--surface); border-color: var(--line); box-shadow: none; color: var(--ink); }
 .attend-bar.done .attend-bar-t small { color: var(--ink-soft); }
-.attend-bar.done .attend-bar-go { background: transparent; color: #2f7a4f; animation: none; padding: 6px 4px; }
+.attend-bar.done .attend-bar-go { background: transparent; color: var(--accent); animation: none; padding: 6px 4px; }
 @keyframes attend-blink { 50% { background: #f6b98f; } }
 @keyframes attend-pulse { 50% { transform: scale(1.07); } }
 /* 좁은 휴대폰 : 점 7개는 숨김 */

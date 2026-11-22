@@ -23,12 +23,12 @@
   --sel: #6e5c1c;
   --same: #4a4224;
   --peer: #34312a;
-  --wave: #2f5c3e;
+  --wave: #2a4a72;
 }
 :root[data-theme="dark"]:not([data-skin]),
 :root[data-theme="dark"][data-skin="default"] {
-  --accent: #368260;
-  --accent-shadow: #1f4d38;
+  --accent: #3f82e6;
+  --accent-shadow: #234f96;
 }
 
 :root[data-theme="dark"] .overlay { background: rgba(0, 0, 0, 0.66); }

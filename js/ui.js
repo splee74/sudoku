@@ -1519,8 +1519,15 @@
     });
   }
 
+  /* 승급 축하 창 : 맨 위 감탄 한마디(그때그때 하나), 동그라미에는 올라간 등급의 고양이 */
+  var CHEERS = ['대단해요!', '멋져요!', '최고예요!', '해냈어요!', '와아, 굉장해요!', '훌륭해요!', '브라보!', '놀라워요!'];
   function showPromo(grade) {
-    $('promo-grade').textContent = grade.name;
+    $('promo-cheer').textContent = CHEERS[Math.floor(Math.random() * CHEERS.length)];
+    var col = typeof grade.char === 'number' ? grade.char : C.GRADES.indexOf(grade);
+    var face = $('promo-face');
+    face.style.backgroundPosition = (col / 13) * 100 + '% 20%'; // 14칸 중 col 번째, 6줄 중 2번째(기쁨)
+    face.setAttribute('aria-label', grade.name + ' 고양이');
+    $('promo-badge').style.setProperty('--grade', grade.color);
     $('promo-text').textContent = grade.name + ' 승급!';
     $('promo').hidden = false;
     S.Sound.play('promo');

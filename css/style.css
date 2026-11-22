@@ -6,20 +6,22 @@
    휴대폰에서는 위아래로, PC(너비 900 이상)에서는 판 왼쪽 · 버튼 오른쪽으로 놓입니다.
    ============================================================ */
 :root {
-  --bg: #f3eee3;          /* 바탕 */
-  --surface: #fffdf8;     /* 카드, 판 */
-  --ink: #2b2a26;         /* 기본 글자 */
-  --ink-soft: #645f55;    /* 흐린 글자 */
-  --line: #cfc6b4;        /* 가는 선 */
-  --line-strong: #4a463d; /* 굵은 선 */
-  --accent: #2f6b4f;      /* 주요 버튼 */
+  /* 하늘색 계열 (시작 그림 img/gate.webp 의 하늘 · 제목 파랑에 맞춤) */
+  --bg: #eaf4fd;          /* 바탕 */
+  --surface: #ffffff;     /* 카드, 판 */
+  --ink: #1f2d47;         /* 기본 글자 (짙은 남색) */
+  --ink-soft: #586a86;    /* 흐린 글자 */
+  --line: #c6d8ec;        /* 가는 선 */
+  --line-strong: #2c4568; /* 굵은 선 */
+  --accent: #2d6fe0;      /* 주요 버튼 (제목 파랑) */
+  --accent-shadow: #1d4fa8;
   --accent-ink: #ffffff;
   --user: #1b5aa6;        /* 내가 넣은 숫자 */
   --wrong: #c0362a;       /* 틀린 숫자 */
   --wrong-bg: #fbe1dc;
   --sel: #ffd35c;         /* 고른 칸 */
   --same: #ffe9a6;        /* 같은 숫자 */
-  --peer: #ece5d3;        /* 같은 줄·칸·상자 */
+  --peer: #dfecfa;        /* 같은 줄·칸·상자 */
   --grade: #6f7f8c;       /* 등급 색 (등급마다 바뀜) */
   --radius: 16px;
 }
@@ -331,8 +333,8 @@ button.chip:disabled { cursor: default; }
   font-size: 23px;
   font-weight: 700;
 }
-.btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 3px 0 var(--accent-shadow, #1f4a36); }
-.btn-primary:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-shadow, #1f4a36); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 3px 0 var(--accent-shadow, #1d4fa8); }
+.btn-primary:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-shadow, #1d4fa8); }
 .btn-secondary { background: var(--surface); color: var(--ink); border: 2px solid var(--line); }
 .btn-secondary:active { background: var(--peer); }
 
@@ -433,7 +435,12 @@ button.chip:disabled { cursor: default; }
 .grade-info { margin: 0; color: var(--ink-soft); font-size: 18px; }
 
 .promo-box { display: flex; flex-direction: column; align-items: center; gap: 12px; animation: rise 0.45s ease-out; }
-.promo-cheer { margin: 0; font-size: 56px; font-weight: 800; color: var(--wrong); line-height: 1; }
+.promo-cheer { margin: 0; font-size: 50px; font-weight: 900; color: var(--accent); line-height: 1.1; letter-spacing: -1px; }
+/* 승급 창 동그라미 : 올라간 등급의 고양이 (img/chars.webp, 기쁨 표정 줄) */
+.promo-face {
+  width: 100%; height: 100%; border-radius: 50%;
+  background: #fff url("../img/chars.webp") 0 20% / 1400% 600% no-repeat;
+}
 .promo-text { margin: 0 0 6px; font-size: 38px; font-weight: 800; }
 .badge-big { width: 168px; height: 168px; animation: stamp 0.6s ease-out; }
 .badge-big .badge-name { font-size: 52px; }
@@ -840,9 +847,9 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
   border: 0; border-radius: 12px;
   background: var(--accent); color: var(--accent-ink);
   font-size: 17px; font-weight: 800;
-  box-shadow: 0 3px 0 var(--accent-shadow, #1f4a36);
+  box-shadow: 0 3px 0 var(--accent-shadow, #1d4fa8);
 }
-.item-use:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-shadow, #1f4a36); }
+.item-use:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-shadow, #1d4fa8); }
 .item-use:disabled { background: var(--line); color: var(--ink-soft); box-shadow: none; cursor: default; }
 
 /* ---------- 출석 체크 창 ---------- */

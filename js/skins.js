@@ -18,7 +18,7 @@
   }
 
   var LIST = [
-    { id: 'default', name: '기본', tile: false, swatch: { bg: '#4a463d', cells: ['#fffdf8', '#ece5d3', '#fffdf8', '#ece5d3', '#ffd35c', '#ece5d3', '#fffdf8', '#ece5d3', '#ffe9a6'] } },
+    { id: 'default', name: '기본', tile: false, swatch: { bg: '#2c4568', cells: ['#ffffff', '#dfecfa', '#ffffff', '#dfecfa', '#ffd35c', '#dfecfa', '#ffffff', '#dfecfa', '#ffe9a6'] } },
     { id: 'pastel-green', name: '파스텔 초록', tile: false, swatch: { bg: '#8a9a88', cells: pastel('#c9e8c4') } },
     { id: 'pastel-yellow', name: '파스텔 노랑', tile: false, swatch: { bg: '#9a947a', cells: pastel('#f5e793') } },
     { id: 'pastel-purple', name: '파스텔 보라', tile: false, swatch: { bg: '#8c88a6', cells: pastel('#c5bdef') } },
@@ -81,7 +81,7 @@
     else el.removeAttribute('data-theme');
     // 휴대폰 맨 위 알림줄 색도 바탕색에 맞춥니다
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', getComputedStyle(el).getPropertyValue('--bg').trim() || (dark ? '#1b1a17' : '#f3eee3'));
+    if (meta) meta.setAttribute('content', getComputedStyle(el).getPropertyValue('--bg').trim() || (dark ? '#1b1a17' : '#eaf4fd'));
     return dark;
   }
 

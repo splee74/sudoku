@@ -111,7 +111,8 @@ async function fillSome(page, ratio) {
   ({ ctx, page } = await open(browser, phone, { skin: 'pastel-purple' }));
   await page.click('#home-new');
   await page.evaluate(() => {
-    document.getElementById('promo-grade').textContent = '영웅';
+    document.getElementById('promo-cheer').textContent = '대단해요!';
+    document.getElementById('promo-face').style.backgroundPosition = (6 / 13) * 100 + '% 20%';
     document.getElementById('promo-text').textContent = '영웅 승급!';
     document.getElementById('promo-badge').style.setProperty('--grade', '#a3477f');
     document.getElementById('promo').hidden = false;
