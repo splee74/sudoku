@@ -191,6 +191,46 @@
       thud: function (t, vol, f0, f1) {
         voice({ f: f0 || 140, slide: f1 || 55, slideT: 0.18, t: t, vol: vol, dur: 0.25 });
       },
+      /* 심벌 "촤아앙" */
+      crash: function (t, vol, dur) {
+        var tt = t0 + t, src = c.createBufferSource(); src.buffer = noiseBuf;
+        var fl = c.createBiquadFilter(); fl.type = 'highpass'; fl.frequency.value = 5000;
+        var g = c.createGain(); env(g, tt, 0.004, vol, dur || 1.6);
+        src.connect(fl); fl.connect(g); g.connect(out);
+        src.start(tt, Math.random()); src.stop(tt + (dur || 1.6) + 0.05);
+      },
+      /* 작은북 "탁" */
+      snare: function (t, vol, pan) {
+        var tt = t0 + t, src = c.createBufferSource(); src.buffer = noiseBuf;
+        var fl = c.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = 1800; fl.Q.value = 0.7;
+        var g = c.createGain(); env(g, tt, 0.002, vol, 0.09);
+        src.connect(fl); fl.connect(g); panned(g, pan);
+        src.start(tt, Math.random()); src.stop(tt + 0.12);
+        voice({ f: 210, slide: 150, t: t, vol: vol * 0.5, dur: 0.07 });
+      },
+      /* 박수 "짝" */
+      clap: function (t, vol) {
+        for (var i = 0; i < 3; i++) k.snare(t + i * 0.012, vol * (i === 2 ? 1 : 0.6), (i - 1) * 0.3);
+      },
+      /* 두구두구 : 점점 빨라지고 커지는 북 */
+      roll: function (t, dur, vol) {
+        var n = 14;
+        for (var i = 0; i < n; i++) {
+          var p = i / (n - 1);
+          k.snare(t + dur * (1 - Math.pow(1 - p, 1.6)), vol * (0.3 + 0.7 * p), (i % 2 ? 0.25 : -0.25));
+        }
+      },
+      /* 솟아오르는 "슈우웅" */
+      riser: function (t, dur, vol) {
+        k.swoosh(t, dur, vol, 300, 7000);
+        voice({ f: 200, slide: 1200, t: t, vol: vol * 0.25, a: dur * 0.8, dur: dur * 0.2, type: 'sawtooth', lp: 900, lpEnd: 5000, lpT: dur });
+      },
+      /* 나팔 : 두툼한 신스 금관 */
+      brass: function (f, t, dur, vol, pan) {
+        voice({ f: f, t: t, type: 'sawtooth', vol: vol, a: 0.02, dur: dur, lp: f * 2, lpEnd: f * 5, lpT: 0.06, q: 1, detune: -7, pan: pan });
+        voice({ f: f, t: t, type: 'sawtooth', vol: vol, a: 0.02, dur: dur, lp: f * 2, lpEnd: f * 5, lpT: 0.06, q: 1, detune: 7, pan: -(pan || 0) });
+        voice({ f: f / 2, t: t, type: 'triangle', vol: vol * 0.8, a: 0.02, dur: dur });
+      },
       /* 반짝반짝 : 높은 종소리 여러 개 */
       sparkle: function (t, notes, vol, gap) {
         for (var i = 0; i < notes.length; i++) k.bell(notes[i], t + i * (gap || 0.05), vol, 0.5, 4.1, i % 2 ? 0.4 : -0.4);
@@ -229,14 +269,34 @@
     memoOn: function (k) { k.marimba(N.E6, 0, 0.16, 0.15); k.marimba(N.A6, 0.06, 0.16, 0.25); },
     memoOff: function (k) { k.marimba(N.A6, 0, 0.16, 0.15); k.marimba(N.E6, 0.06, 0.16, 0.25); },
     win: function (k) {
-      var run = [N.C5, N.D5, N.E5, N.G5, N.A5, N.C6, N.D6, N.E6, N.G6];
-      run.forEach(function (f, i) { k.marimba(f, i * 0.045, 0.2, 0.35, (i / 8 - 0.5) * 0.8); });
-      var hit = 0.5;
-      k.thud(hit, 0.35, 160, 50);
-      k.pad([N.C4, N.E4, N.G4, N.B4, N.D5], hit, 2.0, 0.045);
-      [N.C5, N.E5, N.G5].forEach(function (f) { k.marimba(f, hit, 0.22, 0.9); });
-      k.bell(N.C6, hit, 0.12, 1.6); k.bell(N.G6, hit + 0.15, 0.07, 1.4);
-      k.sparkle(hit + 0.3, [N.E7, N.C7, N.G6 * 2, N.E7, N.D7 * 2], 0.04, 0.09);
+      // 1) 두구두구 + 슈우웅 + 마림바가 위로 촤르르
+      k.roll(0, 0.6, 0.16);
+      k.riser(0, 0.65, 0.16);
+      [N.C5, N.D5, N.E5, N.G5, N.A5, N.C6, N.D6, N.E6, N.G6].forEach(function (f, i) {
+        k.marimba(f, 0.2 + i * 0.045, 0.16, 0.3, (i / 8 - 0.5) * 0.8);
+      });
+      // 2) 쾅! 첫 화음 + 나팔 "따따따 따~ 따다 따~~"
+      var h = 0.65;
+      k.thud(h, 0.4, 170, 45); k.crash(h, 0.12, 1.4);
+      k.pad([N.C4, N.E4, N.G4, N.B4, N.D5], h, 1.0, 0.04);
+      var tune = [[N.G5, 0, 0.1], [N.G5, 0.13, 0.1], [N.G5, 0.26, 0.1], [N.C6, 0.39, 0.32],
+                  [N.G5, 0.8, 0.12], [N.C6, 0.95, 0.14]];
+      tune.forEach(function (n) {
+        k.brass(n[0], h + n[1], n[2], 0.05); k.marimba(n[0], h + n[1], 0.18, 0.3); k.bell(n[0] * 2, h + n[1], 0.03, 0.4);
+      });
+      // 3) 마지막 큰 화음 : 북·심벌 쾅 + 길게 울리는 화음
+      var f2 = h + 1.12;
+      k.roll(f2 - 0.25, 0.22, 0.12);
+      k.thud(f2, 0.45, 180, 40); k.crash(f2, 0.16, 2.4);
+      k.brass(N.E6, f2, 1.4, 0.05); k.brass(N.C6, f2, 1.4, 0.04, 0.3); k.brass(N.G5, f2, 1.4, 0.04, -0.3);
+      k.pad([N.C4, N.G4, N.C5, N.E5, N.G5, N.B5], f2, 2.6, 0.04);
+      [N.C5, N.E5, N.G5, N.C6].forEach(function (f) { k.marimba(f, f2, 0.18, 1.2); });
+      k.bell(N.C6, f2, 0.12, 2.2); k.bell(N.G6, f2 + 0.1, 0.07, 2.0);
+      // 4) 반짝이가 쏟아짐 (위에서 아래로) → 마지막에 위로 한 번 더
+      var fall = [N.E7 * 2, N.C7 * 2, N.G6 * 2, N.E7, N.D7, N.C7, N.A6, N.G6, N.E6, N.D6, N.C6];
+      k.sparkle(f2 + 0.15, fall, 0.04, 0.07);
+      [N.C6, N.E6, N.G6, N.C7].forEach(function (f, i) { k.marimba(f, f2 + 1.0 + i * 0.06, 0.12, 0.5, (i - 1.5) * 0.3); });
+      k.bell(N.C7, f2 + 1.24, 0.08, 1.6);
     },
     lose: function (k) {
       [N.G4, N.E4, N.D4, N.C4].forEach(function (f, i) { k.marimba(f, i * 0.2, 0.26, 0.6); });
@@ -285,12 +345,32 @@
     memoOn: function (k) { k.pop(N.E6, 0, 0.2); },
     memoOff: function (k) { k.pop(N.A5, 0, 0.2, false); },
     win: function (k) {
-      [N.C6, N.E6, N.G6, N.C7].forEach(function (f, i) { k.pop(f, i * 0.06, 0.2); });
-      var stab = [[0.32, [N.C5, N.E5, N.G5]], [0.5, [N.C5, N.E5, N.G5]], [0.68, [N.D5, N.F5, N.A5]], [0.92, [N.E5, N.G5, N.C6]]];
-      stab.forEach(function (s) { s[1].forEach(function (f) { k.pluck(f, s[0], 0.05, s[0] > 0.9 ? 1.2 : 0.2); }); k.click(s[0], 0.06, 2500); });
-      k.thud(0.92, 0.35, 160, 50);
-      k.pad([N.C4, N.G4, N.E5], 0.92, 1.6, 0.03);
-      k.sparkle(1.0, [N.E7, N.C7, N.G6 * 2, N.E7, N.C7 * 2], 0.04, 0.08);
+      // 1) 방울이 뽁뽁뽁 올라가며 슈우웅 + 두구두구
+      k.riser(0, 0.6, 0.18);
+      k.roll(0.1, 0.5, 0.14);
+      [N.C6, N.D6, N.E6, N.G6, N.A6, N.C7].forEach(function (f, i) { k.pop(f, i * 0.09, 0.16); });
+      // 2) 쾅! 신스 화음이 박자에 맞춰 "짠 짠 짠 짜잔"  + 박수
+      var h = 0.62;
+      k.thud(h, 0.4, 170, 45); k.crash(h, 0.12, 1.2);
+      var stab = [[0, [N.C5, N.E5, N.G5], 0.16], [0.18, [N.C5, N.E5, N.G5], 0.16], [0.36, [N.D5, N.F5, N.A5], 0.16],
+                  [0.54, [N.E5, N.G5, N.B5], 0.3]];
+      stab.forEach(function (s) {
+        s[1].forEach(function (f, j) { k.pluck(f, h + s[0], 0.05, s[2], (j - 1) * 0.3); });
+        k.pop(s[1][2] * 2, h + s[0], 0.1);
+        k.clap(h + s[0], 0.12);
+        k.thud(h + s[0], 0.2, 150, 60);
+      });
+      // 3) 마지막 큰 화음 + 심벌 + 위로 솟는 반짝이
+      var f2 = h + 0.96;
+      k.roll(f2 - 0.22, 0.2, 0.12);
+      k.thud(f2, 0.45, 180, 40); k.crash(f2, 0.16, 2.4); k.clap(f2, 0.16);
+      [N.C5, N.E5, N.G5, N.C6, N.E6].forEach(function (f, j) { k.pluck(f, f2, 0.05, 1.6, (j - 2) * 0.25); });
+      k.brass(N.C6, f2, 1.2, 0.035);
+      k.pad([N.C4, N.G4, N.C5, N.E5, N.G5], f2, 2.6, 0.04);
+      k.sparkle(f2 + 0.1, [N.C6, N.E6, N.G6, N.C7, N.E7, N.G6 * 2, N.C7 * 2, N.E7 * 2], 0.045, 0.06);
+      // 4) 끝에 방울 톡톡 (팡파르 여운)
+      [N.G6, N.E6, N.C7, N.G6 * 2].forEach(function (f, i) { k.pop(f, f2 + 0.75 + i * 0.12, 0.12); });
+      k.bell(N.C7, f2 + 1.2, 0.07, 1.4);
     },
     lose: function (k) {
       k.pluck(N.G4, 0, 0.07, 0.4); k.pluck(N.E4, 0.25, 0.07, 0.4);
@@ -378,7 +458,7 @@
       Array.prototype.forEach.call(list.children, function (row) {
         var name = row.dataset.name;
         timers.push(setTimeout(function () { mark(row); play(who, name, 1); }, t));
-        t += name === 'win' || name === 'promo' ? 3200 : name === 'lose' ? 2000 : 1100;
+        t += name === 'win' ? 4600 : name === 'promo' ? 3200 : name === 'lose' ? 2000 : 1100;
       });
       timers.push(setTimeout(function () { mark(null); }, t));
     });
