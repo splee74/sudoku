@@ -1,6 +1,6 @@
 {
   "name": "스도쿠 승급전",
-  "short_name": "스도쿠",
+  "short_name": "스도쿠 승급전",
   "description": "하수에서 시작해 한 단계씩 올라가는 스도쿠. 4×4부터 9×9까지 10단계 등급, 오늘의 퍼즐, 46가지 배지 모으기.",
   "lang": "ko",
   "id": "./",
@@ -29,6 +29,12 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "screenshots": [
+    { "src": "store/screenshots/1-home.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "홈 화면" },
+    { "src": "store/screenshots/2-game.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "게임 화면" },
+    { "src": "store/screenshots/5-promo.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "승급 축하" },
+    { "src": "store/screenshots/8-missions.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "승급 미션" }
   ],
   "categories": [
     "games",
