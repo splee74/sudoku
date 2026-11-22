@@ -2070,7 +2070,12 @@
    *
    * 방법 : 화면을 만질 때 "가짜 페이지"를 하나 쌓아 둡니다. 뒤로 가기를 누르면
    * 가짜 페이지가 빠지면서 popstate 가 오고, 쌓인 것이 없으면 앱이 닫힙니다.
-   * (크롬은 화면을 만지기 전에 쌓은 페이지는 뒤로 가기에서 건너뛰기 때문에, 만질 때 쌓습니다)
+   *
+   * 주의 (크롬 규칙) : 사용자가 화면을 "만진 것으로 인정되기" 전에 쌓은 페이지가 있으면,
+   *   크롬은 뒤로 가기를 누를 때 그 아래 페이지까지 건너뛰어 앱을 닫아 버립니다.
+   *   휴대폰 터치는 손가락이 닿을 때(pointerdown)가 아니라 뗄 때(pointerup · touchend · click)부터 인정되므로
+   *   그때 쌓고, 뒤로 가기를 처리한 직후(popstate 안)에는 쌓지 않고 다음에 만질 때 쌓습니다.
+   *   그래서 화면을 만지지 않고 뒤로 가기를 두 번 누르면 두 번째에는 앱이 닫힐 수 있습니다.
    */
   var BACK_STATE = { sudokuBack: true };
   var backReady = false; // 가짜 페이지가 쌓여 있는가
@@ -2106,13 +2111,13 @@
   }
 
   function onBack() {
-    backReady = false;
-    if (!splashDone) return armBack();
-    if (closeTopOverlay()) return armBack(); // 창만 닫고, 다음 뒤로 가기도 받을 준비
+    backReady = false; // 다시 쌓는 것은 다음에 화면을 만질 때 (위 "주의" 참고)
+    if (!splashDone) return;
+    if (closeTopOverlay()) return; // 창만 닫음
     if (screen !== 'home') {
       // 게임 · 배지 · 내 기록 화면 → 홈 (하던 판은 저장되고 시간이 멈춤)
       if (!ending) showScreen('home');
-      return armBack();
+      return;
     }
     if (game && game.status === 'playing') persist();
     // 여기서는 다시 쌓지 않습니다 : 한 번 더 누르면 앱이 닫힙니다
@@ -2130,8 +2135,10 @@
     if (e.touches && e.touches.length > 1) e.preventDefault();
   }, { passive: false });
   // 화면을 만지면 다시 뒤로 가기를 받을 준비를 합니다
-  document.addEventListener('pointerdown', armBack, true);
-  document.addEventListener('keydown', armBack, true);
+  //   (손가락을 뗄 때 · 마우스를 누를 때 · 키를 누를 때 : 크롬이 "사용자가 만졌다"고 인정하는 때)
+  ['pointerup', 'touchend', 'mousedown', 'click', 'keydown'].forEach(function (type) {
+    document.addEventListener(type, armBack, true);
+  });
 
   /* 화면을 떠날 때 하던 판을 저장합니다 */
   document.addEventListener('visibilitychange', function () {
