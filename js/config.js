@@ -9,17 +9,38 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v21 → 'v21'
-    VERSION: 'v21',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v22 → 'v22'
+    VERSION: 'v22',
 
-    WINS_TO_PROMOTE: 5, // 같은 등급에서 이만큼 깨면 승급
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
     MAX_HINTS: 3, // 한 판에서 쓸 수 있는 힌트 수
 
     // true 이면 승급과 상관없이 등급을 눌러서 골라 할 수 있습니다.
-    // false 로 바꾸면 승급해야만 다음 등급을 할 수 있습니다.
-    FREE_GRADE_SELECT: true,
+    // false 이면 하수부터 시작해서, 승급 미션을 깨야만 다음 등급으로 올라갑니다.
+    FREE_GRADE_SELECT: false,
+
+    /*
+     * 승급 미션 : 지금 등급에서 아래 미션을 모두 깨면 다음 등급으로 올라갑니다.
+     *   등급 id → 미션 목록 (가장 높은 등급은 미션 없음)
+     *   type : 'win'     이 등급에서 n판 깨기
+     *          'perfect' 한 번도 안 틀리고 n판 깨기
+     *          'nohint'  힌트 없이 n판 깨기
+     *          'fast'    min분 안에 n판 깨기
+     *          'streak'  실패 없이 n판 연달아 깨기 (한 번 실패하면 처음부터)
+     * 미션 수는 진행 동그라미 개수가 됩니다. 등급이 바뀌면(승급·강등) 미션은 처음부터 다시 셉니다.
+     */
+    MISSIONS: {
+      hasu: [{ type: 'win', n: 3 }, { type: 'perfect', n: 1 }],
+      pyeongmin: [{ type: 'win', n: 3 }, { type: 'perfect', n: 1 }, { type: 'nohint', n: 1 }],
+      jungsu: [{ type: 'win', n: 4 }, { type: 'perfect', n: 1 }, { type: 'fast', n: 1, min: 15 }],
+      gosu: [{ type: 'win', n: 4 }, { type: 'perfect', n: 2 }, { type: 'nohint', n: 2 }],
+      hero: [{ type: 'win', n: 5 }, { type: 'streak', n: 3 }, { type: 'fast', n: 1, min: 12 }],
+      jijon: [{ type: 'win', n: 5 }, { type: 'perfect', n: 2 }, { type: 'nohint', n: 3 }],
+      choin: [{ type: 'win', n: 5 }, { type: 'streak', n: 3 }, { type: 'fast', n: 1, min: 15 }],
+      paewang: [{ type: 'win', n: 6 }, { type: 'perfect', n: 3 }, { type: 'nohint', n: 3 }],
+      daewang: [{ type: 'win', n: 6 }, { type: 'streak', n: 4 }, { type: 'perfect', n: 3 }, { type: 'fast', n: 1, min: 15 }]
+    },
 
     /*
      * 로그인 (Google · 페이스북) : 구글 Firebase 를 씁니다.

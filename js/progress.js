@@ -40,6 +40,7 @@
       version: 1,
       gradeIndex: 0, // 지금 등급 (0 = 하수)
       wins: 0, // 지금 등급에서 깬 판 수
+      mission: freshMission(), // 지금 등급의 승급 미션 진행 (js/config.js 의 MISSIONS)
       failStreak: 0, // 연속 실패 횟수
       totalWins: 0,
       totalGames: 0,
@@ -79,6 +80,11 @@
     data.starterGiven = true;
     var n = num(C.START_ITEMS, 0);
     if (n > 0) for (var i = 0; i < C.ITEMS.length; i++) addItem(data, C.ITEMS[i].id, n);
+  }
+
+  /* 승급 미션 진행 : 지금 등급에서 무결점·힌트 없이·빨리 깬 판 수, 지금 연승, 가장 긴 연승 */
+  function freshMission() {
+    return { perfect: 0, nohint: 0, fast: 0, streak: 0, best: 0 };
   }
 
   function freshItems() {
@@ -138,6 +144,15 @@
             // 통계가 생기기 전부터 하던 사람 : 지금 등급까지는 올라온 것으로 칩니다
             data.stats.maxPromoted = data.gradeIndex;
           }
+          if (saved.mission && typeof saved.mission === 'object') {
+            for (var mk in data.mission) data.mission[mk] = num(saved.mission[mk], 0);
+          }
+          // 등급 고르기를 잠근 뒤 : 고르기로 올라가 있던 등급은 승급으로 올라간 등급까지로 되돌립니다
+          if (!C.FREE_GRADE_SELECT && data.gradeIndex > data.stats.maxPromoted) {
+            data.gradeIndex = data.stats.maxPromoted;
+            data.wins = 0;
+            data.mission = freshMission();
+          }
           if (saved.gradeStats && typeof saved.gradeStats === 'object') data.gradeStats = saved.gradeStats;
           if (saved.badges && typeof saved.badges === 'object') data.badges = saved.badges;
           var sa = saved.attend;
@@ -181,7 +196,7 @@
    * 한 판 성공 처리.
    * 반환 : { promoted: 승급했는지, grade: 처리 후 등급, newBest: 최고 기록인지, newBestScore: 최고 점수인지 }
    */
-  function recordWin(data, seconds, score) {
+  function recordWin(data, seconds, score, g) {
     var grade = C.GRADES[data.gradeIndex];
     data.totalGames++;
     data.totalWins++;
@@ -205,10 +220,21 @@
       newBest = typeof prev === 'number';
     }
 
+    // 승급 미션 진행
+    var m = data.mission;
+    var hints = g ? C.MAX_HINTS - g.hintsLeft + (g.extraHints || 0) : 1;
+    if (g && g.mistakes === 0) m.perfect++;
+    if (g && hints <= 0) m.nohint++;
+    var fast = fastSec(grade);
+    if (fast && typeof seconds === 'number' && seconds <= fast) m.fast++;
+    m.streak++;
+    if (m.streak > m.best) m.best = m.streak;
+
     var promoted = false;
-    if (data.wins >= C.WINS_TO_PROMOTE && data.gradeIndex < C.GRADES.length - 1) {
+    if (missionsDone(data) && data.gradeIndex < C.GRADES.length - 1) {
       data.gradeIndex++;
       data.wins = 0;
+      data.mission = freshMission();
       promoted = true;
       if (data.gradeIndex > data.stats.maxPromoted) data.stats.maxPromoted = data.gradeIndex;
     }
@@ -223,12 +249,14 @@
     data.totalGames++;
     if (typeof score === 'number' && score > 0) data.totalScore += score; // 실패한 판에서 모은 점수도 쌓입니다
     data.failStreak++;
+    data.mission.streak = 0; // 연달아 깨기 미션은 처음부터
     var demoted = false;
     if (data.failStreak >= C.FAILS_TO_DEMOTE) {
       data.failStreak = 0;
       if (data.gradeIndex > 0) {
         data.gradeIndex--;
         data.wins = 0;
+        data.mission = freshMission();
         demoted = true;
       }
     }
@@ -240,6 +268,7 @@
     if (index < 0 || index >= C.GRADES.length || index === data.gradeIndex) return false;
     data.gradeIndex = index;
     data.wins = 0;
+    data.mission = freshMission();
     data.failStreak = 0;
     return true;
   }
@@ -464,10 +493,42 @@
     return t;
   }
 
-  /* 승급까지 남은 판 수 (가장 높은 등급이면 -1) */
-  function winsLeft(data) {
-    if (data.gradeIndex >= C.GRADES.length - 1) return -1;
-    return Math.max(1, C.WINS_TO_PROMOTE - data.wins);
+  /* ---------- 승급 미션 ---------- */
+  function missionDefs(grade) {
+    return (C.MISSIONS && C.MISSIONS[grade.id]) || [];
+  }
+  /* 이 등급의 '빨리 깨기' 기준 시간(초), 없으면 0 */
+  function fastSec(grade) {
+    var defs = missionDefs(grade);
+    for (var i = 0; i < defs.length; i++) if (defs[i].type === 'fast') return defs[i].min * 60;
+    return 0;
+  }
+  var MISSION_TEXT = {
+    win: function (m) { return '이 등급에서 ' + m.n + '판 깨기'; },
+    perfect: function (m) { return '한 번도 안 틀리고 ' + m.n + '판 깨기'; },
+    nohint: function (m) { return '힌트 없이 ' + m.n + '판 깨기'; },
+    fast: function (m) { return m.min + '분 안에 ' + m.n + '판 깨기'; },
+    streak: function (m) { return '실패 없이 ' + m.n + '판 연달아 깨기'; }
+  };
+  /* 지금 등급의 미션 목록 : [{ type, text, have, need, done }] (가장 높은 등급이면 빈 목록) */
+  function missions(data) {
+    if (data.gradeIndex >= C.GRADES.length - 1) return [];
+    var m = data.mission;
+    return missionDefs(C.GRADES[data.gradeIndex]).map(function (d) {
+      var have = d.type === 'win' ? data.wins : d.type === 'streak' ? m.best : num(m[d.type], 0);
+      return { type: d.type, text: (MISSION_TEXT[d.type] || MISSION_TEXT.win)(d), have: Math.min(have, d.n), need: d.n, done: have >= d.n };
+    });
+  }
+  function missionsDone(data) {
+    var list = missions(data);
+    for (var i = 0; i < list.length; i++) if (!list[i].done) return false;
+    return true;
+  }
+  /* { done: 깬 미션 수, total: 전체 미션 수 } */
+  function missionCount(data) {
+    var list = missions(data), done = 0;
+    for (var i = 0; i < list.length; i++) if (list[i].done) done++;
+    return { done: done, total: list.length };
   }
 
   S.Storage = Storage;
@@ -478,7 +539,8 @@
     reset: reset,
     recordWin: recordWin,
     recordLoss: recordLoss,
-    winsLeft: winsLeft,
+    missions: missions,
+    missionCount: missionCount,
     setGrade: setGrade,
     dateKey: dateKey,
     dailyDone: dailyDone,

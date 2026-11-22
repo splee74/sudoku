@@ -5,7 +5,7 @@
   <!-- 두 손가락으로 화면이 확대되지 않게 (maximum-scale, user-scalable). 설명 글 쪽 privacy.html 은 확대 가능 -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#f3eee3">
-  <meta name="description" content="하수에서 시작해 한 단계씩 올라가는 무료 스도쿠. 5판을 깨면 승급, 설치 없이 바로 즐기세요.">
+  <meta name="description" content="하수에서 시작해 한 단계씩 올라가는 무료 스도쿠. 승급 미션을 깨며 올라가는 재미, 설치 없이 바로 즐기세요.">
   <title>스도쿠 승급전 - 하수부터 올라가는 무료 스도쿠</title>
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <!-- 아이폰 홈 화면 아이콘과 앱처럼 열기 (설치 정보 manifest.json 은 js/ui.js 맨 아래에서 연결합니다) -->
@@ -13,12 +13,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=21">
-  <link rel="stylesheet" href="css/skins.css?v=21">
-  <link rel="stylesheet" href="css/screens.css?v=21">
-  <link rel="stylesheet" href="css/about.css?v=21">
+  <link rel="stylesheet" href="css/style.css?v=22">
+  <link rel="stylesheet" href="css/skins.css?v=22">
+  <link rel="stylesheet" href="css/screens.css?v=22">
+  <link rel="stylesheet" href="css/about.css?v=22">
   <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=21">
+  <link rel="stylesheet" href="css/dark.css?v=22">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -123,7 +123,7 @@
             <span class="dots" id="home-grade-dots" aria-hidden="true"></span>
             <span class="hcard-sub" id="home-grade-left"></span>
           </span>
-          <span class="hcard-btn">등급 고르기</span>
+          <span class="hcard-btn">승급 미션</span>
         </button>
       </div>
 
@@ -198,7 +198,7 @@
     <!-- ================= 등급 줄 ================= -->
     <section class="gradebar" aria-label="내 등급">
       <span class="gradebar-label" id="gradebar-label">내 등급</span>
-      <!-- 등급 이름을 누르면 등급 고르기 창이 열립니다 -->
+      <!-- 등급 이름을 누르면 승급 미션 창이 열립니다 (FREE_GRADE_SELECT 가 true 면 등급 고르기) -->
       <button type="button" class="chip" id="grade-chip">하수</button>
       <span class="gradebar-text" id="grade-text"></span>
       <span class="dots" id="grade-dots" aria-hidden="true"></span>
@@ -382,7 +382,7 @@
           <div class="ab-split-main">
             <ol class="ab-ladder" aria-label="등급 10단계"><li style="--c:#6f7f8c"><b>하수</b><span>4×4</span></li><li style="--c:#4d8558"><b>평민</b><span>6×6</span></li><li style="--c:#2f6aa8"><b>중수</b><span>9×9</span></li><li style="--c:#6a4fa3"><b>고수</b><span>9×9</span></li><li style="--c:#a3477f"><b>영웅</b><span>9×9</span></li><li style="--c:#b0562f"><b>지존</b><span>9×9</span></li><li style="--c:#a07a1f"><b>초인</b><span>9×9</span></li><li style="--c:#8c2f2f"><b>패왕</b><span>9×9</span></li><li style="--c:#3d3a6b"><b>대왕</b><span>9×9</span></li><li style="--c:#1f1f1f"><b>신</b><span>9×9</span></li></ol>
             <div class="ab-updown">
-              <div class="ab-card ab-up"><span aria-hidden="true">⬆️</span><b>5판 깨면 승급</b><small>같은 등급에서 5판</small></div>
+              <div class="ab-card ab-up"><span aria-hidden="true">⬆️</span><b>미션 깨면 승급</b><small>등급마다 승급 미션</small></div>
               <div class="ab-card ab-down"><span aria-hidden="true">⬇️</span><b>3번 연속 실패면 강등</b><small>하수 밑으로는 안 내려가요</small></div>
             </div>
             <p class="ab-note">등급 이름을 누르면 승급과 상관없이 하고 싶은 등급을 골라서 할 수 있습니다. 내 등급과 기록은 이 기기에 저장되어 다음에도 그대로 이어집니다.</p>
@@ -594,7 +594,7 @@
         <section class="rb-sec" id="rb-grade">
           <h3><span class="ab-ico" aria-hidden="true">🏆</span>승급과 강등</h3>
           <div class="ab-updown">
-            <div class="ab-card ab-up"><span aria-hidden="true">⬆️</span><b>같은 등급에서 <em id="rules-wins">5</em>판 깨면 승급</b></div>
+            <div class="ab-card ab-up"><span aria-hidden="true">⬆️</span><b>등급마다 <em>승급 미션</em>을 모두 깨면 승급</b><small>처음에는 하수부터 시작해요</small></div>
             <div class="ab-card ab-down"><span aria-hidden="true">⬇️</span><b><em id="rules-fails">3</em>번 연속 실패면 강등</b><small>가장 낮은 등급 밑으로는 안 내려가요</small></div>
           </div>
           <ul class="rb-tips">
@@ -640,7 +640,7 @@
     </div>
   </div>
 
-  <!-- 등급 고르기 창 -->
+  <!-- 승급 미션 창 (FREE_GRADE_SELECT 가 true 면 등급 고르기 창) -->
   <div class="overlay" id="sheet-grades" hidden>
     <div class="sheet-box" role="dialog" aria-modal="true" aria-labelledby="grades-title">
       <div class="sheet-head">
@@ -648,7 +648,7 @@
         <button type="button" class="sheet-close" data-close aria-label="닫기">✕</button>
       </div>
       <div class="sheet-body">
-        <p class="sheet-note">하고 싶은 등급을 누르세요. 등급을 바꾸면 승급까지 남은 판 수는 처음부터 다시 셉니다.</p>
+        <p class="sheet-note" id="grades-note">하고 싶은 등급을 누르세요. 등급을 바꾸면 승급까지 남은 판 수는 처음부터 다시 셉니다.</p>
         <div class="grade-list" id="pick-grades"></div>
       </div>
     </div>
@@ -727,18 +727,18 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=21"></script>
-  <script src="js/engine.js?v=21"></script>
-  <script src="js/game.js?v=21"></script>
-  <script src="js/progress.js?v=21"></script>
-  <script src="js/settings.js?v=21"></script>
-  <script src="js/skins.js?v=21"></script>
-  <script src="js/sound.js?v=21"></script>
-  <script src="js/effects.js?v=21"></script>
-  <script src="js/badges.js?v=21"></script>
-  <script src="js/account.js?v=21"></script>
-  <script src="js/tutorial.js?v=21"></script>
-  <script src="js/hero.js?v=21"></script>
-  <script src="js/ui.js?v=21"></script>
+  <script src="js/config.js?v=22"></script>
+  <script src="js/engine.js?v=22"></script>
+  <script src="js/game.js?v=22"></script>
+  <script src="js/progress.js?v=22"></script>
+  <script src="js/settings.js?v=22"></script>
+  <script src="js/skins.js?v=22"></script>
+  <script src="js/sound.js?v=22"></script>
+  <script src="js/effects.js?v=22"></script>
+  <script src="js/badges.js?v=22"></script>
+  <script src="js/account.js?v=22"></script>
+  <script src="js/tutorial.js?v=22"></script>
+  <script src="js/hero.js?v=22"></script>
+  <script src="js/ui.js?v=22"></script>
 </body>
 </html>

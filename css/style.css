@@ -105,7 +105,7 @@ button.chip:disabled { cursor: default; }
   font-size: 20px; font-weight: 700; white-space: nowrap;
 }
 
-/* 승급까지 진행 상황 (동그라미 5개) */
+/* 승급 미션 진행 상황 (미션 하나에 동그라미 하나) */
 .dots { display: flex; justify-content: center; gap: 8px; }
 .dots:empty { display: none; }
 .dot {
@@ -485,6 +485,21 @@ button.chip:disabled { cursor: default; }
 }
 .grade-row span { white-space: nowrap; }
 .grade-row.now { border: 2px solid var(--line-strong); font-weight: 700; }
+.grade-row.locked { opacity: 0.5; }
+/* 승급 미션 목록 */
+.mission-list { list-style: none; margin: 14px 0 6px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.mission-list li {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  background: var(--surface); border: 2px solid var(--line); border-radius: 14px; font-size: 18px; font-weight: 700;
+}
+.mission-list li.done { border-color: var(--grade); background: color-mix(in srgb, var(--grade) 10%, var(--surface)); }
+.mission-mark {
+  flex: none; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--grade);
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 17px; font-weight: 900;
+}
+.mission-list li.done .mission-mark { background: var(--grade); }
+.mission-text { flex: 1; min-width: 0; }
+.mission-count { flex: none; color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: 16px; }
 /* 등급 고르기 창 : 줄 전체가 누르는 단추 */
 button.grade-row { width: 100%; min-height: 56px; cursor: pointer; }
 button.grade-row:hover, button.grade-row:active { background: var(--peer); }
@@ -1010,7 +1025,7 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
   #screen-game #btn-new { min-height: 52px; padding: 6px 20px; font-size: 21px; }
   /* 판 위에서 손가락을 움직여도 화면이 끌려가지 않게 */
   #screen-game .game { touch-action: manipulation; }
-  /* 등급 줄은 한 줄로 : 동그라미 대신 "승급까지 N판" 글자만, 오늘의 퍼즐 단추는 작게 */
+  /* 등급 줄은 한 줄로 : 동그라미 대신 "승급 미션 N/M" 글자만, 오늘의 퍼즐 단추는 작게 */
   body[data-screen="game"] .gradebar { flex-wrap: nowrap; gap: 8px; min-height: 36px; font-size: 17px; }
   body[data-screen="game"] .gradebar .dots { display: none; }
   body[data-screen="game"] .gradebar .chip { font-size: 18px; padding: 2px 12px; min-height: 34px; }

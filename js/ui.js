@@ -58,19 +58,63 @@
     document.documentElement.style.setProperty('--grade', grade.color);
   }
 
-  function renderDots(el, filled) {
+  /* 승급 미션 진행 동그라미 : 깬 미션은 색칠 */
+  function renderDots(el) {
     el.innerHTML = '';
-    for (var i = 0; i < C.WINS_TO_PROMOTE; i++) {
+    var mc = Progress.missionCount(data);
+    for (var i = 0; i < mc.total; i++) {
       var d = document.createElement('span');
-      d.className = 'dot' + (i < filled ? ' on' : '');
+      d.className = 'dot' + (i < mc.done ? ' on' : '');
       el.appendChild(d);
     }
   }
+  function missionShort() {
+    var mc = Progress.missionCount(data);
+    return '승급 미션 ' + mc.done + '/' + mc.total;
+  }
 
   function progressText() {
-    var left = Progress.winsLeft(data);
-    if (left < 0) return '지금이 가장 높은 등급이에요';
-    return '승급까지 ' + left + '판 남았어요';
+    if (!C.GRADES[data.gradeIndex + 1]) return '지금이 가장 높은 등급이에요';
+    var left = Progress.missions(data).filter(function (m) { return !m.done; });
+    return '승급까지 남은 미션\n' + left.map(function (m) { return '· ' + m.text + ' (' + m.have + '/' + m.need + ')'; }).join('\n');
+  }
+
+  /* 승급 미션 창 : 지금 등급의 미션과, 등급 사다리 (위 등급은 잠김) */
+  function renderMissionSheet() {
+    var box = $('pick-grades');
+    box.innerHTML = '';
+    var grade = C.GRADES[data.gradeIndex];
+    var next = C.GRADES[data.gradeIndex + 1];
+    $('grades-title').textContent = '승급 미션';
+    $('grades-note').textContent = next
+      ? grade.name + '에서 아래 미션을 모두 깨면 ' + next.name + '(으)로 올라가요. 등급이 바뀌면 미션은 처음부터 다시 세요.'
+      : '가장 높은 등급 ' + grade.name + '에 올랐어요! 🎉';
+    if (next) {
+      var ul = document.createElement('ul');
+      ul.className = 'mission-list';
+      Progress.missions(data).forEach(function (m) {
+        var li = document.createElement('li');
+        li.className = m.done ? 'done' : '';
+        var mark = document.createElement('span');
+        mark.className = 'mission-mark';
+        mark.textContent = m.done ? '✓' : '';
+        var text = document.createElement('span');
+        text.className = 'mission-text';
+        text.textContent = m.text;
+        var cnt = document.createElement('span');
+        cnt.className = 'mission-count';
+        cnt.textContent = m.have + ' / ' + m.need;
+        li.appendChild(mark);
+        li.appendChild(text);
+        li.appendChild(cnt);
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+    }
+    var ladder = document.createElement('div');
+    ladder.className = 'grade-list';
+    box.appendChild(ladder);
+    renderGradeList(ladder, false, false);
   }
 
   /*
@@ -86,13 +130,14 @@
         row.type = 'button';
         row.setAttribute('data-grade', i);
       }
-      row.className = 'grade-row' + (pick ? ' grade-pick' : '') + (i === data.gradeIndex ? ' now' : '');
+      var locked = !C.FREE_GRADE_SELECT && i > data.gradeIndex;
+      row.className = 'grade-row' + (pick ? ' grade-pick' : '') + (i === data.gradeIndex ? ' now' : '') + (locked ? ' locked' : '');
       var name = document.createElement('b');
       name.textContent = g.name;
       name.style.background = g.color;
       var info = document.createElement('span');
       // 9×9 등급이 여러 개라서 빈칸 수로 어려운 정도를 구분해 보여 줍니다
-      info.textContent = g.size + '×' + g.size + ' · 빈칸 ' + (g.size * g.size - g.givens) + '칸' + (!withBest && i === data.gradeIndex ? ' · 지금 내 등급' : '');
+      info.textContent = (locked ? '🔒 ' : '') + g.size + '×' + g.size + ' · 빈칸 ' + (g.size * g.size - g.givens) + '칸' + (!withBest && i === data.gradeIndex ? ' · 지금 내 등급' : '');
       row.appendChild(name);
       row.appendChild(info);
       if (withBest) {
@@ -143,7 +188,10 @@
     closeSheets();
     if (name === 'settings') renderSettings();
     if (name === 'rules') renderRules();
-    if (name === 'grades') renderGradeList($('pick-grades'), false, true);
+    if (name === 'grades') {
+      if (C.FREE_GRADE_SELECT) renderGradeList($('pick-grades'), false, true);
+      else renderMissionSheet();
+    }
     if (name === 'items') renderItems();
     var sheet = $('sheet-' + name);
     sheet.hidden = false;
@@ -156,7 +204,6 @@
   }
 
   function renderRules() {
-    $('rules-wins').textContent = C.WINS_TO_PROMOTE;
     $('rules-fails').textContent = C.FAILS_TO_DEMOTE;
     renderGradeList($('rules-grades'), false);
   }
@@ -218,13 +265,13 @@
     card.style.setProperty('--grade', grade.color);
     $('home-grade-name').textContent = grade.name;
     if (next) {
-      renderDots($('home-grade-dots'), data.wins);
-      $('home-grade-left').textContent = '승급까지 ' + Progress.winsLeft(data) + '판';
+      renderDots($('home-grade-dots'));
+      $('home-grade-left').textContent = missionShort();
     } else {
       $('home-grade-dots').innerHTML = '';
       $('home-grade-left').textContent = '가장 높은 등급';
     }
-    card.querySelector('.hcard-btn').hidden = !C.FREE_GRADE_SELECT;
+    card.querySelector('.hcard-btn').textContent = C.FREE_GRADE_SELECT ? '등급 고르기' : '승급 미션';
 
     // 계속하기 · 새 게임
     var r = resumable();
@@ -704,15 +751,15 @@
     var grade = C.GRADES[data.gradeIndex];
     var next = C.GRADES[data.gradeIndex + 1];
     setGradeColor(grade);
-    chip.textContent = grade.name + (C.FREE_GRADE_SELECT ? ' ▾' : '');
-    chip.disabled = !C.FREE_GRADE_SELECT;
-    chip.setAttribute('aria-label', grade.name + (C.FREE_GRADE_SELECT ? ' (눌러서 등급 고르기)' : ''));
+    chip.textContent = grade.name + ' ▾';
+    chip.disabled = false;
+    chip.setAttribute('aria-label', grade.name + (C.FREE_GRADE_SELECT ? ' (눌러서 등급 고르기)' : ' (눌러서 승급 미션 보기)'));
     $('gradebar-label').textContent = '내 등급';
     $('btn-daily').textContent = '오늘의 퍼즐' + (Progress.dailyDone(data, today) ? ' ✓' : '');
     $('btn-new').textContent = '새 게임';
     if (next) {
-      $('grade-text').textContent = '승급까지 ' + Progress.winsLeft(data) + '판';
-      renderDots($('grade-dots'), data.wins);
+      $('grade-text').textContent = missionShort();
+      renderDots($('grade-dots'));
     } else {
       $('grade-text').textContent = '가장 높은 등급';
       $('grade-dots').innerHTML = '';
@@ -1322,7 +1369,7 @@
       res = won ? Progress.recordDaily(data, finished.daily, seconds, finished.score) : {};
       data.dailyGame = null;
     } else {
-      res = won ? Progress.recordWin(data, seconds, finished.score) : Progress.recordLoss(data, finished.score);
+      res = won ? Progress.recordWin(data, seconds, finished.score, finished) : Progress.recordLoss(data, finished.score);
       data.game = null;
     }
     Progress.recordStats(data, finished, won);
@@ -1385,9 +1432,10 @@
       msg = '괜찮아요, ' + grade.name + ' 밑으로는 내려가지 않아요';
     } else {
       msg = '연속 실패 ' + data.failStreak + '번\n' + C.FAILS_TO_DEMOTE + '번이면 한 단계 내려가요';
+      if (Progress.missions(data).some(function (m) { return m.type === 'streak' && !m.done; })) msg += '\n연달아 깨기 미션은 처음부터 다시 세요';
     }
     $('result-progress').textContent = msg;
-    if (next) renderDots($('result-dots'), data.wins);
+    if (next) renderDots($('result-dots'));
     else $('result-dots').innerHTML = '';
   }
 
@@ -1704,7 +1752,7 @@
   $('btn-again').addEventListener('click', pressAgain);
   $('btn-daily').addEventListener('click', pressDaily);
   $('grade-chip').addEventListener('click', function () {
-    if (!isDaily() && C.FREE_GRADE_SELECT) openSheet('grades');
+    if (!isDaily()) openSheet('grades');
   });
   $('btn-result-close').addEventListener('click', function () {
     $('result').hidden = true;
@@ -1718,7 +1766,7 @@
   $('home-new').addEventListener('click', homeNew);
   $('home-daily').addEventListener('click', homeDaily);
   $('home-grade').addEventListener('click', function () {
-    if (C.FREE_GRADE_SELECT) openSheet('grades');
+    openSheet('grades');
   });
   $('btn-pause').addEventListener('click', pressPause);
   $('btn-resume').addEventListener('click', pressPause);
