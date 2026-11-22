@@ -1,15 +1,15 @@
 {
   "name": "스도쿠 승급전",
   "short_name": "스도쿠",
-  "description": "하수에서 시작해 한 단계씩 올라가는 스도쿠. 4×4부터 9×9까지 10단계 등급, 오늘의 퍼즐, 배지 모으기.",
+  "description": "하수에서 시작해 한 단계씩 올라가는 스도쿠. 4×4부터 9×9까지 10단계 등급, 오늘의 퍼즐, 46가지 배지 모으기.",
   "lang": "ko",
   "id": "./",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0b0d24",
-  "theme_color": "#0b0d24",
+  "background_color": "#a2cdfe",
+  "theme_color": "#a2cdfe",
   "icons": [
     {
       "src": "icons/icon-192.png",

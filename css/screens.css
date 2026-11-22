@@ -19,44 +19,43 @@ body:not([data-screen="home"]) .slot-ad { display: none !important; }
 body:not([data-screen="game"]) { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 
-/* ---------- 시작 그림 ----------
-   그림 전체가 화면 안에 들어오게 맞춥니다 (잘리지 않음).
-   화면이 그림보다 넓거나 길면 남는 곳은 같은 그림을 흐리게 깔아 채웁니다. */
+/* ---------- 시작 그림 (img/gate.webp, 941×1672) ----------
+   휴대폰(세로로 긴 화면) : 그림이 화면을 꽉 채웁니다. 화면 비율이 그림과 다르면 양옆(또는 위아래)이 조금 잘립니다.
+   가로로 넓은 화면(태블릿 · PC) : 그림 전체가 보이게 맞추고, 남는 곳은 같은 그림을 흐리게 깔아 채웁니다. */
 .splash {
-  --ratio: 941 / 1672;            /* 그림의 가로 / 세로 (img/splash.webp 크기) */
   position: fixed; inset: 0; z-index: 100;
-  background: #0b0d24;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
+  background: #a2cdfe;            /* 그림이 뜨기 전 잠깐 보이는 하늘색 (manifest.json 의 background_color 와 같게) */
+  overflow: hidden; cursor: pointer;
   transition: opacity 0.35s ease;
 }
 .splash::before {
   content: ""; position: absolute; inset: -40px;
-  background: url("../img/splash.webp") center / cover no-repeat;
-  filter: blur(24px) brightness(0.55);
+  background: url("../img/gate.webp") center / cover no-repeat;
+  filter: blur(24px) brightness(0.9);
 }
-.splash-art {
-  position: relative;
-  /* 화면 너비와 (화면 높이 × 그림 비율) 중 작은 쪽 → 그림이 늘 화면 안에 다 들어감 */
-  width: min(100vw, calc(100vh * 941 / 1672));
-  width: min(100vw, calc(100dvh * 941 / 1672));
-  aspect-ratio: var(--ratio);
-  container-type: inline-size;
+.splash-art { position: absolute; inset: 0; container-type: size; }
+.splash-art img {
+  display: block; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 30%;   /* 위아래가 잘릴 때는 제목 쪽(위)을 더 살립니다 */
 }
-.splash-art img { display: block; width: 100%; height: 100%; object-fit: contain; }
+@media (min-aspect-ratio: 2 / 3) {
+  .splash-art {
+    inset: auto; position: relative; margin: 0 auto; top: 50%; transform: translateY(-50%);
+    height: 100vh; height: 100dvh; aspect-ratio: 941 / 1672; max-width: 100vw;
+  }
+  .splash-art img { object-fit: contain; }
+}
 .splash.out { opacity: 0; pointer-events: none; }
 
-/* 시작 단추 자리 : 그림 아래쪽 나무 탁자 위 (그림 크기에 대한 %) */
-.splash { cursor: pointer; }
+/* 시작 단추 : 화면 아래쪽 가운데 (휴대폰 아래 막대에 가리지 않게 safe-area 만큼 띄움) */
 .splash-start {
-  position: absolute;
-  left: 50%; top: 87.5%; width: 66%; height: 7.2%;
-  margin-left: -33%;
-  padding: 0; border: 3px solid #fff; border-radius: 999px;
+  position: absolute; left: 0; right: 0; margin: 0 auto;
+  bottom: calc(6% + env(safe-area-inset-bottom, 0px));
+  width: min(72%, 380px); padding: 0.75em 0;
+  border: 3px solid #fff; border-radius: 999px;
   background: linear-gradient(#ffd54a, #f5a623);
   color: #6b3a00; font-family: inherit; font-weight: 900; line-height: 1; letter-spacing: 0.02em;
-  font-size: clamp(16px, 5.4vw, 30px);
-  font-size: 5.4cqw;              /* 그림 너비에 맞춰 글자 크기 */
+  font-size: clamp(18px, 6.2cqw, 28px);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   box-shadow: 0 6px 0 #c97a12, 0 10px 22px rgba(60, 30, 0, 0.35);
   cursor: pointer;

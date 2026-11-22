@@ -3,11 +3,11 @@
 # 작업 중에 찍어 둔 미리보기 그림
 _preview/
 
-# 참고용 사진과 스크린샷 (게임은 img/skin-wood.jpg, img/splash.webp, img/sudoku_img01.webp, img/chars.webp 만 씁니다)
-# 캐릭터 원본 img/cat_grades_84/ 와 시작 그림 원본 img/18884.png 는 올리지 않습니다 (chars.webp 는 tools/make_chars.py, splash.webp 는 18884.png 로 만듭니다)
+# 참고용 사진과 스크린샷 (게임은 img/skin-wood.jpg, img/gate.webp, img/sudoku_img01.webp, img/chars.webp 만 씁니다)
+# 캐릭터 원본 img/cat_grades_84/ 와 시작 그림 원본 img/18884.png 는 올리지 않습니다 (chars.webp 는 tools/make_chars.py, gate.webp 는 18884.png 로 만듭니다)
 img/*
 !img/skin-wood.jpg
-!img/splash.webp
+!img/gate.webp
 !img/sudoku_img01.webp
 !img/chars.webp
 !img/title.webp

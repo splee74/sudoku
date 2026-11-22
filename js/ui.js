@@ -496,32 +496,55 @@
     if (screen === 'record') renderProfile();
   });
 
-  /* 내 기록 화면 : 배지 모음 (받은 것은 색, 아직인 것은 흐리게) */
+  /* 배지 화면 : 받기 어려운 정도(브론즈 → 전설)로 묶어서 보여 줍니다 (받은 것은 색, 아직인 것은 흐리게) */
+  function badgeTile(b) {
+    var got = data.badges[b.id];
+    var el = document.createElement('div');
+    el.className = 'badge-tile' + (got ? ' got' : '');
+    var icon = document.createElement('span');
+    icon.className = 'badge-icon';
+    icon.textContent = got ? b.icon : '🔒';
+    icon.setAttribute('aria-hidden', 'true');
+    var name = document.createElement('b');
+    name.textContent = b.name;
+    var desc = document.createElement('span');
+    desc.className = 'badge-desc';
+    desc.textContent = got ? dayLabel(got) + ' 받음' : b.desc;
+    el.title = b.desc;
+    el.setAttribute('aria-label', b.name + ', ' + b.desc + (got ? ', 받음' : ', 아직 못 받음'));
+    el.appendChild(icon);
+    el.appendChild(name);
+    el.appendChild(desc);
+    return el;
+  }
   function renderBadges() {
     $('record-badge-count').textContent = S.Badges.count(data) + ' / ' + S.Badges.LIST.length;
     var box = $('record-badges');
     box.innerHTML = '';
-    S.Badges.LIST.forEach(function (b) {
-      var got = data.badges[b.id];
-      var el = document.createElement('div');
-      el.className = 'badge-tile' + (got ? ' got' : '');
-      var icon = document.createElement('span');
-      icon.className = 'badge-icon';
-      icon.textContent = got ? b.icon : '🔒';
-      icon.setAttribute('aria-hidden', 'true');
-      var name = document.createElement('b');
-      name.textContent = b.name;
-      var desc = document.createElement('span');
-      desc.className = 'badge-desc';
-      desc.textContent = got ? dayLabel(got) + ' 받음' : b.desc;
-      el.title = b.desc;
-      el.setAttribute('aria-label', b.name + ', ' + b.desc + (got ? ', 받음' : ', 아직 못 받음'));
-      el.appendChild(icon);
-      el.appendChild(name);
-      el.appendChild(desc);
-      box.appendChild(el);
+    S.Badges.TIERS.forEach(function (t) {
+      var list = S.Badges.LIST.filter(function (b) { return S.Badges.tierOf(b) === t; });
+      if (!list.length) return;
+      var have = list.filter(function (b) { return data.badges[b.id]; }).length;
+      var sec = document.createElement('section');
+      sec.className = 'badge-tier tier-' + t.id;
+      sec.style.setProperty('--tier', t.color);
+      var head = document.createElement('h3');
+      head.className = 'badge-tier-head';
+      head.innerHTML = '<span class="tier-icon" aria-hidden="true"></span><span class="tier-name"></span>' +
+        '<span class="tier-hint"></span><span class="tier-count"></span>';
+      head.querySelector('.tier-icon').textContent = t.icon;
+      head.querySelector('.tier-name').textContent = t.name;
+      head.querySelector('.tier-hint').textContent = t.hint;
+      head.querySelector('.tier-count').textContent = have + ' / ' + list.length;
+      var grid = document.createElement('div');
+      grid.className = 'badge-grid';
+      list.forEach(function (b) { grid.appendChild(badgeTile(b)); });
+      sec.appendChild(head);
+      sec.appendChild(grid);
+      box.appendChild(sec);
     });
   }
+
 
   /* 설정 화면은 settings.js의 ITEMS 목록대로 만들어집니다 */
   function renderSettings() {
@@ -1395,8 +1418,14 @@
       icon.textContent = b.icon;
       var name = document.createElement('b');
       name.textContent = b.name;
+      var t = S.Badges.tierOf(b);
+      var tag = document.createElement('span');
+      tag.className = 'tier-tag';
+      tag.style.setProperty('--tier', t.color);
+      tag.textContent = t.name;
       row.appendChild(icon);
       row.appendChild(name);
+      row.appendChild(tag);
       box.appendChild(row);
     });
   }

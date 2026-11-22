@@ -13,12 +13,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=19">
-  <link rel="stylesheet" href="css/skins.css?v=19">
-  <link rel="stylesheet" href="css/screens.css?v=19">
-  <link rel="stylesheet" href="css/about.css?v=19">
-  <link rel="preload" as="image" href="img/splash.webp">
-  <link rel="stylesheet" href="css/dark.css?v=19">
+  <link rel="stylesheet" href="css/style.css?v=20">
+  <link rel="stylesheet" href="css/skins.css?v=20">
+  <link rel="stylesheet" href="css/screens.css?v=20">
+  <link rel="stylesheet" href="css/about.css?v=20">
+  <link rel="preload" as="image" href="img/gate.webp">
+  <link rel="stylesheet" href="css/dark.css?v=20">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -38,13 +38,13 @@
   <span class="app-ver" id="app-ver" aria-hidden="true"></span>
 
   <!-- ================= 시작 화면 =================
-       그림 : img/splash.webp (그림 전체가 화면 안에 들어오게 맞추고, 남는 곳은 흐린 그림으로 채웁니다)
+       그림 : img/gate.webp (휴대폰에서는 화면을 꽉 채우고, 가로로 넓은 화면에서는 그림 전체가 보이게 맞춥니다)
        원본은 img/18884.png ("시작하기" 단추는 그림 위에 따로 그려 깜박이게 합니다, 화면 아무 곳을 눌러도 시작).
        단추 자리를 옮기려면 css/screens.css 의 "시작 단추 자리" 숫자를 고치세요. -->
   <div class="splash" id="splash">
     <div class="splash-art">
-      <img src="img/splash.webp" alt="스도쿠 승급전">
-      <button type="button" class="splash-start" id="splash-start" >터치해서 시작하기</button>
+      <img src="img/gate.webp" alt="스도쿠 승급전">
+      <button type="button" class="splash-start" id="splash-start">터치해서 시작하기</button>
     </div>
   </div>
 
@@ -158,8 +158,8 @@
         <h2 class="screen-title">배지 <span class="h3-sub" id="record-badge-count"></span></h2>
         <button type="button" class="icon-btn" data-open="settings" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button>
       </div>
-      <p class="screen-note">목표를 이루면 배지를 받아요.</p>
-      <div class="badge-grid" id="record-badges"></div>
+      <p class="screen-note">목표를 이루면 배지를 받아요. 브론즈 → 실버 → 골드 → 다이아 → 전설 순으로 어려워요.</p>
+      <div class="badge-tiers" id="record-badges"></div>
     </section>
 
     <!-- ================= 내 기록 화면 ================= -->
@@ -413,7 +413,7 @@
           <figure class="ab-phone"><img src="img/about/game.webp" alt="9×9 게임 화면" width="360" height="640" loading="lazy"><figcaption>큰 글씨, 큰 단추</figcaption></figure>
           <figure class="ab-phone"><img src="img/about/wood.webp" alt="나무판 스킨" width="360" height="640" loading="lazy"><figcaption>10가지 판 꾸미기</figcaption></figure>
           <figure class="ab-phone"><img src="img/about/dark.webp" alt="다크 모드 화면" width="360" height="640" loading="lazy"><figcaption>눈이 편한 다크 모드</figcaption></figure>
-          <figure class="ab-phone"><img src="img/about/badges.webp" alt="배지 모음 화면" width="360" height="640" loading="lazy"><figcaption>19가지 배지 모으기</figcaption></figure>
+          <figure class="ab-phone"><img src="img/about/badges.webp" alt="배지 모음 화면" width="360" height="640" loading="lazy"><figcaption>다섯 단계 배지 모으기</figcaption></figure>
         </div>
       </section>
     </article>
@@ -728,18 +728,18 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=19"></script>
-  <script src="js/engine.js?v=19"></script>
-  <script src="js/game.js?v=19"></script>
-  <script src="js/progress.js?v=19"></script>
-  <script src="js/settings.js?v=19"></script>
-  <script src="js/skins.js?v=19"></script>
-  <script src="js/sound.js?v=19"></script>
-  <script src="js/effects.js?v=19"></script>
-  <script src="js/badges.js?v=19"></script>
-  <script src="js/account.js?v=19"></script>
-  <script src="js/tutorial.js?v=19"></script>
-  <script src="js/hero.js?v=19"></script>
-  <script src="js/ui.js?v=19"></script>
+  <script src="js/config.js?v=20"></script>
+  <script src="js/engine.js?v=20"></script>
+  <script src="js/game.js?v=20"></script>
+  <script src="js/progress.js?v=20"></script>
+  <script src="js/settings.js?v=20"></script>
+  <script src="js/skins.js?v=20"></script>
+  <script src="js/sound.js?v=20"></script>
+  <script src="js/effects.js?v=20"></script>
+  <script src="js/badges.js?v=20"></script>
+  <script src="js/account.js?v=20"></script>
+  <script src="js/tutorial.js?v=20"></script>
+  <script src="js/hero.js?v=20"></script>
+  <script src="js/ui.js?v=20"></script>
 </body>
 </html>
