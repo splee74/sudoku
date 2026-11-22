@@ -1,0 +1,132 @@
+<!doctype html>
+<!--
+  게임 효과음 들어 보기 : 이 파일을 더블클릭해서 브라우저로 여세요.
+  게임과 똑같은 js/sound.js 를 그대로 불러 쓰므로, sound.js 를 고친 뒤 새로고침하면 바뀐 소리가 바로 들립니다.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>효과음 들어 보기</title>
+<style>
+  :root { --bg: #f6f1e7; --card: #fff; --ink: #2b2418; --soft: #7a6d58; --line: #e4dccb; --key: #f5a623; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1c1a16; --card: #2a2620; --ink: #f1ead9; --soft: #b3a68c; --line: #3d372d; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { margin: 0 0 4px; font-size: 26px; }
+  .sub { margin: 0 0 18px; color: var(--soft); font-size: 15px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
+  .bar button { font: inherit; font-weight: 700; padding: 8px 14px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  .list { display: grid; gap: 10px; }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .row.on { outline: 3px solid var(--key); }
+  .name { font-size: 18px; font-weight: 800; }
+  .name code { font-size: 13px; font-weight: 600; color: var(--soft); margin-left: 6px; }
+  .when { font-size: 14px; color: var(--soft); margin-top: 3px; line-height: 1.4; }
+  .meta { font-size: 12px; color: var(--soft); margin-top: 4px; }
+  .btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .play { font: inherit; font-weight: 800; min-width: 64px; padding: 10px 14px; border: 0; border-radius: 12px;
+    background: var(--key); color: #4a2a00; cursor: pointer; }
+  .play.small { min-width: 0; padding: 8px 10px; font-size: 14px; }
+  .play:active { transform: scale(0.96); }
+  .unused { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 6px; border-radius: 6px;
+    background: #fde2e2; color: #a12b2b; margin-left: 6px; }
+  @media (max-width: 520px) { .row { grid-template-columns: 1fr; } .btns { justify-content: flex-start; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>🔊 효과음 들어 보기</h1>
+  <p class="sub">단추를 누르면 게임에서 나는 소리와 똑같이 납니다. (소리 정의 : js/sound.js)</p>
+  <div class="bar">
+    <button type="button" id="all">▶ 전부 차례로 듣기</button>
+    <button type="button" id="stop">■ 멈춤</button>
+  </div>
+  <div class="list" id="list"></div>
+</main>
+
+<script src="../js/sound.js"></script>
+<script>
+  // 소리 이름 → 화면에 보일 이름과, 게임에서 언제 나는지
+  var INFO = {
+    note:    ['연필 톡', '메모 모드에서 작은 숫자를 적을 때'],
+    correct: ['맞힘 (딩동)', '숫자를 맞혔을 때. 연속으로 맞힐수록 1→5단계로 음이 올라감', [1, 2, 3, 4, 5]],
+    wrong:   ['틀림 (부웅)', '틀린 숫자를 넣었을 때'],
+    line:    ['한 줄 완성', '가로·세로 한 줄을 다 채웠을 때 · 출석 도장 찍을 때'],
+    box:     ['상자 완성', '굵은 선 상자 하나를 다 채웠을 때'],
+    erase:   ['지우개 (쓱)', '지우기 단추'],
+    hint:    ['반짝 종소리', '힌트 · 아이템 사용 · 되살아나기'],
+    undo:    ['되돌리기 (뾰롱)', '되돌리기 단추'],
+    memoOn:  ['메모 켜기', '메모 단추를 켤 때 · 시작 화면에서 시작할 때'],
+    memoOff: ['메모 끄기', '메모 단추를 끌 때'],
+    win:     ['판 깸 (빵빠레)', '퍼즐을 다 풀었을 때'],
+    lose:    ['판 실패', '3번 틀려서 졌을 때'],
+    promo:   ['승급 팡파르', '다음 등급으로 올라갔을 때']
+  };
+
+  var Sound = window.SUDOKU.Sound;
+  var list = document.getElementById('list');
+  var timers = [];
+
+  function mark(row) {
+    var on = list.querySelector('.on');
+    if (on) on.classList.remove('on');
+    if (row) row.classList.add('on');
+  }
+
+  Sound.names.forEach(function (name) {
+    var info = INFO[name] || [name, '(설명 없음)'];
+    var row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML =
+      '<div><div class="name"></div><div class="when"></div><div class="meta">길이 계산 중…</div></div>' +
+      '<div class="btns"></div>';
+    row.querySelector('.name').textContent = info[0];
+    var code = document.createElement('code');
+    code.textContent = name;
+    row.querySelector('.name').appendChild(code);
+    row.querySelector('.when').textContent = info[1];
+    var btns = row.querySelector('.btns');
+    (info[2] || [undefined]).forEach(function (arg) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'play' + (arg !== undefined ? ' small' : '');
+      b.textContent = arg !== undefined ? arg + '연속' : '▶ 듣기';
+      b.addEventListener('click', function () { mark(row); Sound.play(name, arg); });
+      btns.appendChild(b);
+    });
+    row.dataset.name = name;
+    list.appendChild(row);
+    // 소리 길이와 크기 (화면 표시용)
+    Sound.measure(name, 1).then(function (r) {
+      row.querySelector('.meta').textContent =
+        '길이 ' + r.end.toFixed(2) + '초 · 최대 크기 ' + Math.round(r.peak * 100) + '%';
+    }).catch(function () { row.querySelector('.meta').textContent = ''; });
+  });
+
+  function stopAll() {
+    timers.forEach(clearTimeout);
+    timers = [];
+    mark(null);
+  }
+
+  document.getElementById('all').addEventListener('click', function () {
+    stopAll();
+    var t = 0;
+    Array.prototype.forEach.call(list.children, function (row) {
+      var name = row.dataset.name;
+      timers.push(setTimeout(function () { mark(row); Sound.play(name, 1); }, t));
+      t += name === 'win' || name === 'promo' ? 3200 : name === 'lose' ? 1800 : 1200;
+    });
+    timers.push(setTimeout(function () { mark(null); }, t));
+  });
+  document.getElementById('stop').addEventListener('click', stopAll);
+</script>
+</body>
+</html>
