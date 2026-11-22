@@ -258,6 +258,29 @@
     S.Music.play(splashDone && screen === 'game' ? 'game' : 'title');
   }
 
+  /* 화면마다 있는 작은 음악 단추 🔊/🔇 (index.html 의 data-music) : 설정의 '배경 음악'과 같은 스위치 */
+  var MUSIC_ICON = {
+    on: '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="mb-body" d="M3.5 9.5h3.6L11.5 6v12l-4.4-3.5H3.5Z"/><path d="M15 9.2a4 4 0 0 1 0 5.6M17.8 6.6a7.6 7.6 0 0 1 0 10.8"/></svg>',
+    off: '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="mb-body" d="M3.5 9.5h3.6L11.5 6v12l-4.4-3.5H3.5Z"/><path d="m15.5 9.5 5 5M20.5 9.5l-5 5"/></svg>'
+  };
+  function renderMusicBtns() {
+    var on = !!Settings.get('music');
+    var btns = document.querySelectorAll('[data-music]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].innerHTML = on ? MUSIC_ICON.on : MUSIC_ICON.off;
+      btns[i].classList.toggle('off', !on);
+      btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+      btns[i].setAttribute('aria-label', on ? '배경 음악 끄기' : '배경 음악 켜기');
+    }
+    var row = document.querySelector('.set-row[data-key="music"]');
+    if (row) row.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
+  function toggleMusic() {
+    Settings.set('music', !Settings.get('music'));
+    renderMusicBtns();
+    playMusic();
+  }
+
   /* 이어서 할 수 있는 판 (지금 판이 끝났으면 저장해 둔 승급전 판) */
   function resumable() {
     if (game && game.status === 'playing') return game;
@@ -753,7 +776,10 @@
     var value = !Settings.get(key);
     Settings.set(key, value);
     row.setAttribute('aria-checked', value ? 'true' : 'false');
-    if (key === 'music') playMusic();
+    if (key === 'music') {
+      renderMusicBtns();
+      playMusic();
+    }
     if (game) renderGame(); // 바꾼 설정을 판에 바로 반영
   }
 
@@ -1970,6 +1996,7 @@
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (!t.closest) return;
+    if (t.closest('[data-music]')) return toggleMusic();
     var jump = t.closest('[data-jump]');
     if (jump) {
       // 규칙 창의 바로 가기 : 그 묶음까지 창 안에서 부드럽게 내려갑니다
@@ -2222,6 +2249,7 @@
   /* 저장해 둔 스킨을 입힙니다 */
   S.Skins.apply(Settings.get('skin'));
   S.Theme.apply();
+  renderMusicBtns();
 
   /* 앱으로 열었는지 표시 (화면 꾸밈에서 앱만 다르게 할 때 씀) */
   if (isAppMode()) document.documentElement.classList.add('is-app');
@@ -2266,8 +2294,9 @@
 
   /* 시작 그림 : "터치해서 시작하기"(깜박이는 단추)나 화면 아무 곳을 누르면 홈 화면으로 */
   var splashDone = false;
-  function leaveSplash() {
+  function leaveSplash(e) {
     if (splashDone) return;
+    if (e && e.target && e.target.closest && e.target.closest('[data-music]')) return; // 음악 단추는 켜고 끄기만
     splashDone = true;
     var sp = $('splash');
     sp.classList.add('out');

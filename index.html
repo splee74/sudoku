@@ -13,12 +13,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=36">
-  <link rel="stylesheet" href="css/skins.css?v=36">
-  <link rel="stylesheet" href="css/screens.css?v=36">
-  <link rel="stylesheet" href="css/about.css?v=36">
+  <link rel="stylesheet" href="css/style.css?v=37">
+  <link rel="stylesheet" href="css/skins.css?v=37">
+  <link rel="stylesheet" href="css/screens.css?v=37">
+  <link rel="stylesheet" href="css/about.css?v=37">
   <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=36">
+  <link rel="stylesheet" href="css/dark.css?v=37">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -42,6 +42,7 @@
        원본은 img/18884.png ("시작하기" 단추는 그림 위에 따로 그려 깜박이게 합니다, 화면 아무 곳을 눌러도 시작).
        단추 자리를 옮기려면 css/screens.css 의 "시작 단추 자리" 숫자를 고치세요. -->
   <div class="splash" id="splash">
+    <button type="button" class="splash-music music-btn" data-music aria-label="배경 음악"></button>
     <div class="splash-art" role="img" aria-label="스도쿠 승급전">
       <button type="button" class="splash-start" id="splash-start">터치해서 시작하기</button>
     </div>
@@ -72,6 +73,7 @@
       <!-- 배경 : 나무 스도쿠판 그림을 크게 깔고, 남는 곳은 같은 그림을 흐리게 (css/screens.css 의 .home-bg) -->
       <div class="home-bg" aria-hidden="true"><img src="img/sudoku_img01.webp" alt="" width="900" height="926"></div>
       <div class="top-row">
+        <button type="button" class="icon-btn music-btn" data-music aria-label="배경 음악"></button>
         <span class="pill" id="home-streak" title="오늘의 퍼즐 연속 일수">🔥 <b>0</b></span>
         <span class="pill" id="home-score" title="모은 점수">🏆 <b>0</b></span>
         <button type="button" class="pill pill-bag" data-open="stars" id="home-stars" title="내 별 (눌러서 충전)">⭐ <b>0</b></button>
@@ -156,6 +158,7 @@
     <section class="screen screen-badges" id="screen-badges" aria-label="배지">
       <div class="top-row">
         <h2 class="screen-title">배지 <span class="h3-sub" id="record-badge-count"></span></h2>
+        <button type="button" class="icon-btn music-btn" data-music aria-label="배경 음악"></button>
         <button type="button" class="icon-btn" data-open="settings" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button>
       </div>
       <p class="screen-note">목표를 이루면 배지를 받아요. 브론즈 → 실버 → 골드 → 다이아 → 전설 순으로 어려워요.</p>
@@ -166,6 +169,7 @@
     <section class="screen screen-ranking" id="screen-ranking" aria-label="랭킹">
       <div class="top-row">
         <h2 class="screen-title">랭킹</h2>
+        <button type="button" class="icon-btn music-btn" data-music aria-label="배경 음악"></button>
         <button type="button" class="icon-btn" data-open="settings" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button>
       </div>
       <div class="rank-tabs" role="tablist" aria-label="랭킹 종류">
@@ -187,6 +191,7 @@
     <section class="screen screen-record" id="screen-record" aria-label="내 기록">
       <div class="top-row">
         <h2 class="screen-title">내 기록</h2>
+        <button type="button" class="icon-btn music-btn" data-music aria-label="배경 음악"></button>
         <button type="button" class="icon-btn" data-open="settings" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button>
       </div>
 
@@ -241,6 +246,7 @@
           <span class="score" id="game-score-wrap">점수 <b id="game-score">0</b></span>
           <span class="time">
             <span class="timer" id="game-timer" aria-label="걸린 시간">00:00</span>
+            <button type="button" class="pause-btn music-btn" data-music aria-label="배경 음악"></button>
             <button type="button" class="pause-btn bag-btn" data-open="items" id="btn-bag" aria-label="아이템 가방">
               <span aria-hidden="true">🎒</span><i class="bag-count" id="bag-count" hidden>0</i>
             </button>
@@ -803,21 +809,21 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=36"></script>
-  <script src="js/engine.js?v=36"></script>
-  <script src="js/game.js?v=36"></script>
-  <script src="js/progress.js?v=36"></script>
-  <script src="js/settings.js?v=36"></script>
-  <script src="js/skins.js?v=36"></script>
-  <script src="js/sound.js?v=36"></script>
-  <script src="js/music.js?v=36"></script>
-  <script src="js/effects.js?v=36"></script>
-  <script src="js/badges.js?v=36"></script>
-  <script src="js/shop.js?v=36"></script>
-  <script src="js/account.js?v=36"></script>
-  <script src="js/ranking.js?v=36"></script>
-  <script src="js/tutorial.js?v=36"></script>
-  <script src="js/hero.js?v=36"></script>
-  <script src="js/ui.js?v=36"></script>
+  <script src="js/config.js?v=37"></script>
+  <script src="js/engine.js?v=37"></script>
+  <script src="js/game.js?v=37"></script>
+  <script src="js/progress.js?v=37"></script>
+  <script src="js/settings.js?v=37"></script>
+  <script src="js/skins.js?v=37"></script>
+  <script src="js/sound.js?v=37"></script>
+  <script src="js/music.js?v=37"></script>
+  <script src="js/effects.js?v=37"></script>
+  <script src="js/badges.js?v=37"></script>
+  <script src="js/shop.js?v=37"></script>
+  <script src="js/account.js?v=37"></script>
+  <script src="js/ranking.js?v=37"></script>
+  <script src="js/tutorial.js?v=37"></script>
+  <script src="js/hero.js?v=37"></script>
+  <script src="js/ui.js?v=37"></script>
 </body>
 </html>

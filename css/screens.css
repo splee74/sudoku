@@ -467,3 +467,23 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
   .rk-row { grid-template-columns: 36px 1fr auto; padding: 8px 10px; }
   .rk-val { font-size: 16px; }
 }
+
+/* ---------- 배경 음악 단추 (모든 화면, 🔊/🔇) ---------- */
+.music-btn svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.music-btn .mb-body { fill: currentColor; }
+.music-btn.off { color: var(--ink-soft); }
+.screen-home .top-row .music-btn { margin-right: auto; }
+.top-row .music-btn { width: 40px; height: 40px; flex: none; }
+.top-row .music-btn svg { width: 22px; height: 22px; }
+.pause-btn.music-btn svg { width: 22px; height: 22px; stroke-width: 2; }
+/* 시작 그림 : 왼쪽 위 구석에 작게 (눌러도 시작 그림이 넘어가지 않음) */
+.splash-music {
+  position: absolute; z-index: 2;
+  top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px;
+  width: 42px; height: 42px; padding: 0; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.9); background: rgba(255, 255, 255, 0.55);
+  color: #1f2d47; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+.splash-music svg { width: 22px; height: 22px; }
+.splash-music.off { color: #586a86; }
