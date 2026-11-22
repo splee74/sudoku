@@ -187,7 +187,7 @@
   }
   /* 무언가 창이 떠 있으면 시간이 멈추고 키보드 입력도 받지 않습니다 */
   function overlayOpen() {
-    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || S.Tutorial.isOpen();
+    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || !$('login-ask').hidden || S.Tutorial.isOpen();
   }
   function openSheet(name) {
     closeSheets();
@@ -477,7 +477,7 @@
     else if (accountState === 'restoring') name.textContent = (A.lastName() || '') + ' 로그인 확인 중…';
     else name.textContent = '로그인하여 기록 지키기';
     var sub = '게임한 시간 ' + playTime(data.stats.playSec || 0);
-    if (u) sub = (u.provider === 'facebook' ? '페이스북' : '구글') + ' 계정에 저장 중 · ' + sub;
+    if (u) sub = providerLabel(u.provider) + ' 계정에 저장 중 · ' + sub;
     $('profile-sub').textContent = sub;
 
     var box = $('login-btns');
@@ -489,7 +489,7 @@
       box.appendChild(del);
     } else if (accountState !== 'restoring') {
       A.providers().forEach(function (p) {
-        box.appendChild(loginButton(p, p === 'facebook' ? '페이스북으로 로그인' : 'Google로 로그인'));
+        box.appendChild(loginButton(p, loginText(p)));
       });
     }
     var note = accountMsg;
@@ -502,7 +502,15 @@
     $('login-note').textContent = note;
   }
 
+  function providerLabel(p) {
+    return p === 'kakao' ? '카카오' : p === 'facebook' ? '페이스북' : '구글';
+  }
+  function loginText(p) {
+    return p === 'kakao' ? '카카오로 로그인' : p === 'facebook' ? '페이스북으로 로그인' : 'Google로 로그인';
+  }
+
   var LOGO = {
+    kakao: '<svg viewBox="0 0 24 24"><path fill="#191919" d="M12 3.5c-5 0-9 3.1-9 7 0 2.5 1.7 4.7 4.2 5.9l-1 3.7c-.1.3.3.6.6.4l4.4-2.9c.3 0 .5.1.8.1 5 0 9-3.1 9-7s-4-7.2-9-7.2Z"/></svg>',
     google: '<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2Z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.4 3-4.1 5.6-4.1Z"/></svg>',
     facebook: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#1877F2"/><path fill="#fff" d="M13.4 22v-7h2.3l.4-2.8h-2.7v-1.8c0-.8.3-1.4 1.4-1.4h1.4V6.6c-.3 0-1.1-.1-2.1-.1-2.1 0-3.5 1.3-3.5 3.6v2.1H8.3V15h2.3v7Z"/></svg>'
   };
@@ -537,12 +545,33 @@
       });
       return;
     }
+    if (!$('login-ask').hidden) closeLoginAsk();
     S.Account.signIn(id);
+  }
+
+  /*
+   * 승급할 때 로그인 권하기 : 로그인하지 않았으면 승급 축하 창을 닫은 뒤에 매번 뜹니다.
+   * (로그인이 준비되지 않았으면 — js/config.js 의 FIREBASE 가 비어 있으면 — 뜨지 않습니다)
+   */
+  function maybeAskLogin(grade) {
+    if (!S.Account.configured() || S.Account.user() || accountState === 'restoring') return;
+    $('login-ask-title').textContent = grade.name + ' 승급을 축하해요!';
+    var box = $('login-ask-btns');
+    box.innerHTML = '';
+    S.Account.providers().forEach(function (p) {
+      box.appendChild(loginButton(p, loginText(p)));
+    });
+    $('login-ask').hidden = false;
+  }
+  function closeLoginAsk() {
+    $('login-ask').hidden = true;
+    lastTick = Date.now();
   }
 
   S.Account.onChange(function (status, user, msg) {
     accountState = status;
     accountMsg = status === 'error' ? msg || '' : '';
+    if (status === 'error' && msg && screen !== 'record') appToast(msg);
     if (status === 'in' && user && splashDone) appToast(user.name + '님, 반가워요!');
     if (status === 'deleted') appToast('계정을 지웠어요');
     if (screen === 'record') renderProfile();
@@ -1799,7 +1828,9 @@
     $('promo').hidden = true;
     S.Effects.stop();
     $('btn-again').focus();
+    maybeAskLogin(C.GRADES[data.gradeIndex]);
   });
+  $('login-ask-later').addEventListener('click', closeLoginAsk);
   $('modal-ok').addEventListener('click', function () {
     closeModal(true);
   });
@@ -1976,6 +2007,7 @@
     if (!$('modal').hidden) { closeModal(false); return true; }
     if (!$('attend').hidden) { closeAttend(); return true; }
     if (!$('promo').hidden) { $('btn-promo-ok').click(); return true; }
+    if (!$('login-ask').hidden) { closeLoginAsk(); return true; }
     if (sheetOpen()) { closeSheets(); return true; }
     if (!$('result').hidden) { $('btn-result-close').click(); return true; }
     return false;

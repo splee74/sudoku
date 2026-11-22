@@ -280,7 +280,15 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 .login-facebook:active { background: #1466d4; }
 .login-facebook .login-logo circle { fill: #fff; }
 .login-facebook .login-logo path { fill: #1877f2; }
+.login-kakao { background: #fee500; border-color: #fee500; color: rgba(0, 0, 0, 0.85); }
+.login-kakao:active { background: #f2d900; }
 .login-logout { min-height: 46px; font-size: 16px; color: var(--ink-soft); }
+/* 승급할 때 로그인 권하기 */
+.login-ask-box { display: flex; flex-direction: column; gap: 12px; animation: rise 0.35s ease-out; }
+.login-ask-art { font-size: 52px; line-height: 1; }
+.login-ask-title { margin: 0; font-size: 24px; font-weight: 900; color: var(--grade); }
+.login-ask-text { margin: 0 0 4px; font-size: 17px; line-height: 1.55; color: var(--ink-soft); word-break: keep-all; }
+.login-ask-later { align-self: center; font-size: 16px; padding: 6px 12px; }
 .login-delete { align-self: center; font-size: 15px; }
 .login-note { margin: -4px 0 0; color: var(--ink-soft); font-size: 15px; line-height: 1.45; }
 .login-note:empty { display: none; }

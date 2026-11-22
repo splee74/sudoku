@@ -1,5 +1,6 @@
 /*
- * 계정 : Google · 페이스북으로 로그인하고, 내 기록을 계정에 저장합니다.
+ * 계정 : Google · 카카오로 로그인하고, 내 기록을 계정에 저장합니다.
+ *   카카오는 Firebase 의 OpenID Connect 제공업체 'oidc.kakao' 로 로그인합니다.
  *   - 로그인하면 이 기기의 기록과 계정에 저장된 기록을 합칩니다. (js/progress.js 의 merge)
  *   - 그 뒤로는 기록이 바뀔 때마다 몇 초 뒤에 계정에도 저장합니다.
  *   - 다른 휴대폰에서 같은 계정으로 로그인하면 기록이 그대로 이어집니다.
@@ -73,7 +74,7 @@
         fb.auth.languageCode = 'ko';
         fb.auth.onAuthStateChanged(handleUser);
         // 다른 창으로 로그인했다가 돌아온 경우 (redirect 방식)
-        fb.auth.getRedirectResult().catch(function (e) {
+        fb.auth.getRedirectResult().then(fillProfile).catch(function (e) {
           emit('error', message(e));
         });
         return fb;
@@ -88,7 +89,30 @@
   function providerName(id) {
     if (id === 'google.com') return 'google';
     if (id === 'facebook.com') return 'facebook';
+    if (id === KAKAO) return 'kakao';
     return id || '';
+  }
+  var KAKAO = 'oidc.kakao';
+
+  /*
+   * 카카오는 이름을 'nickname' 으로 보내 줘서 Firebase 가 이름을 못 채울 때가 있습니다.
+   * 로그인 결과에 들어 있는 카카오 이름 · 사진으로 계정 이름을 채웁니다.
+   */
+  function fillProfile(result) {
+    var u = result && result.user;
+    var info = result && result.additionalUserInfo;
+    var p = (info && info.profile) || {};
+    if (!u || u.displayName) return;
+    var nick = p.nickname || p.name || '';
+    if (!nick) return;
+    return u.updateProfile({ displayName: nick, photoURL: u.photoURL || p.picture || null }).then(function () {
+      if (user && user.uid === u.uid) {
+        user.name = nick;
+        if (!user.photo && p.picture) user.photo = p.picture;
+        S.Storage.set(HINT_KEY, JSON.stringify({ name: user.name, provider: user.provider }));
+        emit('in');
+      }
+    });
   }
 
   function handleUser(u) {
@@ -168,6 +192,11 @@
   function makeProvider(id) {
     var auth = fb.firebase.auth;
     if (id === 'facebook') return new auth.FacebookAuthProvider();
+    if (id === 'kakao') {
+      var k = new auth.OAuthProvider(KAKAO);
+      k.addScope('openid');
+      return k;
+    }
     var g = new auth.GoogleAuthProvider();
     g.setCustomParameters({ prompt: 'select_account' });
     return g;
@@ -185,7 +214,7 @@
     ready()
       .then(function () {
         var provider = makeProvider(id);
-        return fb.auth.signInWithPopup(provider).catch(function (e) {
+        return fb.auth.signInWithPopup(provider).then(fillProfile).catch(function (e) {
           var code = e && e.code;
           if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
             return fb.auth.signInWithRedirect(provider);
@@ -218,7 +247,7 @@
     if (!fb || !fb.auth.currentUser) return Promise.resolve();
     window.clearTimeout(uploadTimer);
     var u = fb.auth.currentUser;
-    var provider = makeProvider(user && user.provider === 'facebook' ? 'facebook' : 'google');
+    var provider = makeProvider(user && (user.provider === 'facebook' || user.provider === 'kakao') ? user.provider : 'google');
     emit('busy');
     return fb.db.collection('users').doc(u.uid).delete()
       .then(function () {
@@ -243,7 +272,8 @@
     var code = (e && e.code) || '';
     if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return '로그인을 그만뒀어요';
     if (code === 'auth/network-request-failed' || /load /.test(e && e.message)) return '인터넷 연결을 확인해 주세요';
-    if (code === 'auth/account-exists-with-different-credential') return '같은 이메일로 다른 방법(구글/페이스북)으로 가입되어 있어요. 그 방법으로 로그인해 주세요';
+    if (code === 'auth/account-exists-with-different-credential') return '같은 이메일로 다른 방법(구글/카카오)으로 가입되어 있어요. 그 방법으로 로그인해 주세요';
+    if (code === 'auth/operation-not-allowed' || code === 'auth/invalid-oauth-provider' || code === 'auth/configuration-not-found') return '이 로그인 방법은 아직 준비 중이에요';
     if (code === 'auth/unauthorized-domain') return '이 주소는 로그인이 허락되지 않았어요 (Firebase 설정 확인)';
     if (e && e.message === 'not-configured') return '로그인은 아직 준비 중이에요';
     return '로그인하지 못했어요. 잠시 뒤에 다시 해 보세요';
