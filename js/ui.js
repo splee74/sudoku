@@ -1395,7 +1395,7 @@
       renderNewBadges(newBadges);
       closeSheets();
       $('result').hidden = false;
-      if (won && res.promoted) showPromo(res.grade);
+      if (won && res.promoted && !res.replay) showPromo(res.grade);
       else {
         $('btn-again').focus();
       }
@@ -1433,7 +1433,8 @@
     }
     $('btn-again').textContent = '다시 하기';
     if (won) {
-      if (res.promoted) msg = '축! ' + grade.name + ' 승급!';
+      if (res.promoted && res.replay) msg = '미션 완료! ' + grade.name + '(으)로 돌아왔어요';
+      else if (res.promoted) msg = '축! ' + grade.name + ' 승급!';
       else msg = progressText();
     } else if (res.demoted) {
       msg = '연속 ' + C.FAILS_TO_DEMOTE + '번 실패해서\n' + grade.name + '(으)로 내려왔어요.\n다시 올라가 봐요!';

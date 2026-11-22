@@ -206,7 +206,7 @@
 
   /*
    * 한 판 성공 처리.
-   * 반환 : { promoted: 승급했는지, grade: 처리 후 등급, newBest: 최고 기록인지, newBestScore: 최고 점수인지 }
+   * 반환 : { promoted: 승급했는지, replay: 이미 열린 등급으로 올라간 것인지(축하 없음), grade: 처리 후 등급, newBest: 최고 기록인지, newBestScore: 최고 점수인지 }
    */
   function recordWin(data, seconds, score, g) {
     var grade = C.GRADES[data.gradeIndex];
@@ -242,17 +242,20 @@
     m.streak++;
     if (m.streak > m.best) m.best = m.streak;
 
-    var promoted = false;
+    var promoted = false, replay = false;
     if (missionsDone(data) && data.gradeIndex < C.GRADES.length - 1) {
+      // 이미 열려 있는 등급으로 올라가는 것인지 (낮은 등급을 골라서 하던 중) : 축하 없이 조용히 올라갑니다
+      replay = data.gradeIndex + 1 <= data.reach;
       data.gradeIndex++;
-      data.wins = 0;
-      data.mission = freshMission();
+      var back = replay ? data.parked[C.GRADES[data.gradeIndex].id] : null; // 그 등급에 맡겨 둔 미션 진행
       delete data.parked[C.GRADES[data.gradeIndex].id];
+      data.wins = back ? back.wins : 0;
+      data.mission = back ? back.mission : freshMission();
       promoted = true;
       if (data.gradeIndex > data.reach) data.reach = data.gradeIndex;
       if (data.gradeIndex > data.stats.maxPromoted) data.stats.maxPromoted = data.gradeIndex;
     }
-    return { promoted: promoted, grade: C.GRADES[data.gradeIndex], newBest: newBest, newBestScore: newBestScore };
+    return { promoted: promoted, replay: replay, grade: C.GRADES[data.gradeIndex], newBest: newBest, newBestScore: newBestScore };
   }
 
   /*
