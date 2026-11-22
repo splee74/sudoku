@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v20 → 'v20'
-    VERSION: 'v20',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v21 → 'v21'
+    VERSION: 'v21',
 
     WINS_TO_PROMOTE: 5, // 같은 등급에서 이만큼 깨면 승급
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등

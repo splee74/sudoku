@@ -8,6 +8,8 @@ _preview/
 img/*
 !img/skin-wood.jpg
 !img/gate.webp
+# 예전 이름 : 휴대폰에 남은 예전 화면 파일이 찾을 수 있게 같은 새 그림을 둡니다
+!img/splash.webp
 !img/sudoku_img01.webp
 !img/chars.webp
 !img/title.webp

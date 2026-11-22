@@ -10,7 +10,7 @@
  * 새 파일(그림, js, css)을 추가했으면 아래 FILES 목록에도 한 줄 넣어 주세요.
  * 버전을 올릴 때는  python tools/bump_version.py  를 쓰면 CACHE, 화면 버전, index.html 의 ?v= 가 한 번에 바뀝니다.
  */
-var CACHE = 'sudoku-files-v20';
+var CACHE = 'sudoku-files-v21';
 var FILES = [
   './',
   'index.html',
@@ -88,7 +88,10 @@ self.addEventListener('fetch', function (event) {
       .catch(function () {
         // 인터넷이 안 될 때 : 저장해 둔 파일. 주소 뒤에 ?... 가 붙어 있어도 찾습니다
         return caches.match(req, { ignoreSearch: true }).then(function (hit) {
-          return hit || caches.match('index.html');
+          if (hit) return hit;
+          // 화면을 여는 요청일 때만 게임 첫 화면으로 (그림·css 자리에 html 을 주면 깨져 보임)
+          if (req.mode === 'navigate') return caches.match('index.html');
+          return Response.error();
         });
       })
   );

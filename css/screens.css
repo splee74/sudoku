@@ -33,17 +33,17 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
   background: url("../img/gate.webp") center / cover no-repeat;
   filter: blur(24px) brightness(0.9);
 }
-.splash-art { position: absolute; inset: 0; container-type: size; }
-.splash-art img {
-  display: block; width: 100%; height: 100%;
-  object-fit: cover; object-position: 50% 30%;   /* 위아래가 잘릴 때는 제목 쪽(위)을 더 살립니다 */
+/* 그림은 <img> 대신 배경으로 그립니다 (흐린 뒷그림과 같은 주소라, 뒷그림이 보이면 이 그림도 꼭 보임) */
+.splash-art {
+  position: absolute; inset: 0; container-type: size;
+  background: url("../img/gate.webp") 50% 30% / cover no-repeat;   /* 위아래가 잘릴 때는 제목 쪽(위)을 더 살립니다 */
 }
 @media (min-aspect-ratio: 2 / 3) {
   .splash-art {
     inset: auto; position: relative; margin: 0 auto; top: 50%; transform: translateY(-50%);
     height: 100vh; height: 100dvh; aspect-ratio: 941 / 1672; max-width: 100vw;
   }
-  .splash-art img { object-fit: contain; }
+  .splash-art { background-size: contain; background-position: center; }
 }
 .splash.out { opacity: 0; pointer-events: none; }
 
