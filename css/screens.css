@@ -41,28 +41,32 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
   width: min(100vw, calc(100vh * 941 / 1672));
   width: min(100vw, calc(100dvh * 941 / 1672));
   aspect-ratio: var(--ratio);
+  container-type: inline-size;
 }
 .splash-art img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .splash.out { opacity: 0; pointer-events: none; }
 
-/* 시작 그림 단추 자리 : 그림 안에서 "지금 시작하기" 가 그려진 곳 (그림 크기에 대한 %)
-   left 126px, top 1340px, 너비 689px, 높이 157px  (그림 941×1672 기준) */
+/* 시작 단추 자리 : 그림 아래쪽 나무 탁자 위 (그림 크기에 대한 %) */
+.splash { cursor: pointer; }
 .splash-start {
   position: absolute;
-  left: 13.39%; top: 80.14%; width: 73.22%; height: 9.39%;
-  padding: 0; border: 0; border-radius: 22% / 50%;
-  /* 같은 그림에서 단추 부분만 잘라 겹칩니다 → 단추가 커졌다 작아지며 반짝임 */
-  background: url("../img/splash.webp") no-repeat;
-  background-size: 136.57% auto;
-  background-position: 50% 88.45%;
+  left: 50%; top: 87.5%; width: 66%; height: 7.2%;
+  margin-left: -33%;
+  padding: 0; border: 3px solid #fff; border-radius: 999px;
+  background: linear-gradient(#ffd54a, #f5a623);
+  color: #6b3a00; font-family: inherit; font-weight: 900; line-height: 1; letter-spacing: 0.02em;
+  font-size: clamp(16px, 5.4vw, 30px);
+  font-size: 5.4cqw;              /* 그림 너비에 맞춰 글자 크기 */
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  box-shadow: 0 6px 0 #c97a12, 0 10px 22px rgba(60, 30, 0, 0.35);
   cursor: pointer;
   animation: start-blink 1.1s ease-in-out infinite;
 }
 .splash-start:focus-visible { outline: 3px solid #fff3b0; outline-offset: 4px; }
 .splash-start:active { animation: none; transform: scale(0.96); filter: brightness(0.9); }
 @keyframes start-blink {
-  0%, 100% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 0 rgba(255, 196, 60, 0)); }
-  50% { transform: scale(1.06); filter: brightness(1.35) drop-shadow(0 0 18px rgba(255, 196, 60, 0.95)); }
+  0%, 100% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 0 rgba(255, 220, 90, 0)); }
+  50% { transform: scale(1.06); filter: brightness(1.12) drop-shadow(0 0 16px rgba(255, 230, 120, 0.95)); }
 }
 @media (prefers-reduced-motion: reduce) {
   /* 움직임 줄이기 설정에서도 단추가 눈에 띄게 : 크기 변화 없이 밝기만 */

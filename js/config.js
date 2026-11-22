@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v17 → 'v17'
-    VERSION: 'v17',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v18 → 'v18'
+    VERSION: 'v18',
 
     WINS_TO_PROMOTE: 5, // 같은 등급에서 이만큼 깨면 승급
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
@@ -107,7 +107,7 @@
      *   givens  : 처음부터 채워져 있는 숫자 개수 (적을수록 어려움)
      *   level   : 어려운 정도 (1 기본 요령만으로 풀림, 2 중급 요령 필요, 3 고급 요령 필요)
      *   color   : 등급 배지 색
-     *   char    : 판 위 캐릭터 그림(img/chars.webp)의 몇 번째 칸인지 (0 = 맨 왼쪽 하수 … 8 = 신)
+     *   char    : 판 위 캐릭터 그림(img/chars.webp)의 몇 번째 칸인지 (0 = grade01 가장 낮음 … 13 = grade14 가장 높음)
      *
      * 새 등급을 추가하려면 목록에 같은 모양으로 한 줄을 더 넣으면 됩니다.
      * (id는 한 번 정하면 바꾸지 마세요. 저장된 기록이 이 이름을 씁니다.)
@@ -115,15 +115,15 @@
      */
     GRADES: [
       { id: 'hasu', name: '하수', size: 4, boxRows: 2, boxCols: 2, givens: 10, level: 1, color: '#6f7f8c', char: 0 },
-      { id: 'pyeongmin', name: '평민', size: 6, boxRows: 2, boxCols: 3, givens: 20, level: 1, color: '#4d8558', char: 0 },
-      { id: 'jungsu', name: '중수', size: 9, boxRows: 3, boxCols: 3, givens: 45, level: 1, color: '#2f6aa8', char: 1 },
-      { id: 'gosu', name: '고수', size: 9, boxRows: 3, boxCols: 3, givens: 40, level: 1, color: '#6a4fa3', char: 2 },
-      { id: 'hero', name: '영웅', size: 9, boxRows: 3, boxCols: 3, givens: 36, level: 1, color: '#a3477f', char: 3 },
-      { id: 'jijon', name: '지존', size: 9, boxRows: 3, boxCols: 3, givens: 33, level: 1, color: '#b0562f', char: 4 },
-      { id: 'choin', name: '초인', size: 9, boxRows: 3, boxCols: 3, givens: 30, level: 2, color: '#a07a1f', char: 5 },
-      { id: 'paewang', name: '패왕', size: 9, boxRows: 3, boxCols: 3, givens: 28, level: 2, color: '#8c2f2f', char: 6 },
-      { id: 'daewang', name: '대왕', size: 9, boxRows: 3, boxCols: 3, givens: 26, level: 2, color: '#3d3a6b', char: 7 },
-      { id: 'sin', name: '신', size: 9, boxRows: 3, boxCols: 3, givens: 24, level: 3, color: '#1f1f1f', char: 8 }
+      { id: 'pyeongmin', name: '평민', size: 6, boxRows: 2, boxCols: 3, givens: 20, level: 1, color: '#4d8558', char: 1 },
+      { id: 'jungsu', name: '중수', size: 9, boxRows: 3, boxCols: 3, givens: 45, level: 1, color: '#2f6aa8', char: 3 },
+      { id: 'gosu', name: '고수', size: 9, boxRows: 3, boxCols: 3, givens: 40, level: 1, color: '#6a4fa3', char: 4 },
+      { id: 'hero', name: '영웅', size: 9, boxRows: 3, boxCols: 3, givens: 36, level: 1, color: '#a3477f', char: 6 },
+      { id: 'jijon', name: '지존', size: 9, boxRows: 3, boxCols: 3, givens: 33, level: 1, color: '#b0562f', char: 7 },
+      { id: 'choin', name: '초인', size: 9, boxRows: 3, boxCols: 3, givens: 30, level: 2, color: '#a07a1f', char: 9 },
+      { id: 'paewang', name: '패왕', size: 9, boxRows: 3, boxCols: 3, givens: 28, level: 2, color: '#8c2f2f', char: 10 },
+      { id: 'daewang', name: '대왕', size: 9, boxRows: 3, boxCols: 3, givens: 26, level: 2, color: '#3d3a6b', char: 12 },
+      { id: 'sin', name: '신', size: 9, boxRows: 3, boxCols: 3, givens: 24, level: 3, color: '#1f1f1f', char: 13 }
     ]
   };
 })(typeof window !== 'undefined' ? window : globalThis);

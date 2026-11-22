@@ -13,12 +13,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=17">
-  <link rel="stylesheet" href="css/skins.css?v=17">
-  <link rel="stylesheet" href="css/screens.css?v=17">
-  <link rel="stylesheet" href="css/about.css?v=17">
+  <link rel="stylesheet" href="css/style.css?v=18">
+  <link rel="stylesheet" href="css/skins.css?v=18">
+  <link rel="stylesheet" href="css/screens.css?v=18">
+  <link rel="stylesheet" href="css/about.css?v=18">
   <link rel="preload" as="image" href="img/splash.webp">
-  <link rel="stylesheet" href="css/dark.css?v=17">
+  <link rel="stylesheet" href="css/dark.css?v=18">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -39,12 +39,12 @@
 
   <!-- ================= 시작 화면 =================
        그림 : img/splash.webp (그림 전체가 화면 안에 들어오게 맞추고, 남는 곳은 흐린 그림으로 채웁니다)
-       "지금 시작하기" 단추는 그림에 그려져 있고, 그 위에 같은 그림 조각을 겹쳐 깜박이게 합니다.
-       그림을 바꿔서 단추 자리가 달라지면 css/screens.css 의 "시작 그림 단추 자리" 숫자를 고치세요. -->
+       원본은 img/18884.png ("시작하기" 단추는 그림 위에 따로 그려 깜박이게 합니다, 화면 아무 곳을 눌러도 시작).
+       단추 자리를 옮기려면 css/screens.css 의 "시작 단추 자리" 숫자를 고치세요. -->
   <div class="splash" id="splash">
     <div class="splash-art">
       <img src="img/splash.webp" alt="스도쿠 승급전">
-      <button type="button" class="splash-start" id="splash-start" aria-label="지금 시작하기"></button>
+      <button type="button" class="splash-start" id="splash-start" >터치해서 시작하기</button>
     </div>
   </div>
 
@@ -728,18 +728,18 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=17"></script>
-  <script src="js/engine.js?v=17"></script>
-  <script src="js/game.js?v=17"></script>
-  <script src="js/progress.js?v=17"></script>
-  <script src="js/settings.js?v=17"></script>
-  <script src="js/skins.js?v=17"></script>
-  <script src="js/sound.js?v=17"></script>
-  <script src="js/effects.js?v=17"></script>
-  <script src="js/badges.js?v=17"></script>
-  <script src="js/account.js?v=17"></script>
-  <script src="js/tutorial.js?v=17"></script>
-  <script src="js/hero.js?v=17"></script>
-  <script src="js/ui.js?v=17"></script>
+  <script src="js/config.js?v=18"></script>
+  <script src="js/engine.js?v=18"></script>
+  <script src="js/game.js?v=18"></script>
+  <script src="js/progress.js?v=18"></script>
+  <script src="js/settings.js?v=18"></script>
+  <script src="js/skins.js?v=18"></script>
+  <script src="js/sound.js?v=18"></script>
+  <script src="js/effects.js?v=18"></script>
+  <script src="js/badges.js?v=18"></script>
+  <script src="js/account.js?v=18"></script>
+  <script src="js/tutorial.js?v=18"></script>
+  <script src="js/hero.js?v=18"></script>
+  <script src="js/ui.js?v=18"></script>
 </body>
 </html>

@@ -1986,7 +1986,7 @@
   else data.game = null;
   showScreen('home');
 
-  /* 시작 그림 : "지금 시작하기"(깜박이는 단추)를 누르면 홈 화면으로 */
+  /* 시작 그림 : "터치해서 시작하기"(깜박이는 단추)나 화면 아무 곳을 누르면 홈 화면으로 */
   var splashDone = false;
   function leaveSplash() {
     if (splashDone) return;
@@ -2001,6 +2001,6 @@
     if (!Settings.get('tutorialDone') && data.totalGames === 0 && !data.daily.total) openTutorial();
     else window.setTimeout(maybeAttend, 450);
   }
-  $('splash-start').addEventListener('click', leaveSplash);
+  $('splash').addEventListener('click', leaveSplash);
   $('splash-start').focus();
 })();

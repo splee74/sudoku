@@ -1,8 +1,8 @@
 /*
  * 판 위의 캐릭터 : 내 등급의 캐릭터가 맞히거나 틀릴 때마다 표정이 바뀝니다.
  *
- * 그림 : img/chars.webp (tools/make_chars.py 가 img/ch002.png 에서 잘라 만듭니다)
- *   가로 9칸 = 등급 캐릭터 (어느 등급이 몇 번째 칸인지는 js/config.js 의 GRADES 의 char)
+ * 그림 : img/chars.webp (tools/make_chars.py 가 img/cat_grades_84/ 의 낱장 그림을 모아 만듭니다)
+ *   가로 14칸 = 등급 캐릭터 (grade01 … grade14) (어느 등급이 몇 번째 칸인지는 js/config.js 의 GRADES 의 char)
  *   세로 6줄 = 표정 (아래 MOODS 순서)
  *
  * 말풍선 대사를 바꾸고 싶으면 아래 LINES 만 고치면 됩니다.
@@ -10,10 +10,10 @@
 (function (root) {
   var S = (root.SUDOKU = root.SUDOKU || {});
   var C = S.Config;
-  var COLS = 9;
+  var COLS = 14;
 
   // 표정 → 그림의 몇 번째 줄인지
-  var MOODS = { base: 0, angry: 1, smug: 2, surprise: 3, cry: 4, joy: 5 };
+  var MOODS = { base: 0, joy: 1, angry: 2, cry: 3, surprise: 4, curious: 5 };
   var ROWS = 6;
 
   // 상황별 말풍선 대사 (여러 개면 그때그때 하나를 고릅니다)
@@ -106,8 +106,8 @@
    *   ms   : 이만큼 지나면 기본 표정으로 돌아옴 (0 이면 그대로 둠)
    */
   var KIND_MOOD = {
-    correct: 'joy', combo: 'smug', unit: 'joy', box: 'joy',
-    wrong1: 'surprise', wrong2: 'angry', hint: 'surprise', item: 'surprise',
+    correct: 'joy', combo: 'joy', unit: 'joy', box: 'joy',
+    wrong1: 'surprise', wrong2: 'angry', hint: 'curious', item: 'surprise',
     revive: 'joy', win: 'joy', lose: 'cry'
   };
   function react(kind, ms) {
@@ -116,7 +116,7 @@
     draw(m, true);
     if (els()) {
       // 표정에 맞는 몸짓 (틀리면 흔들, 기쁘면 폴짝, 울면 들썩)
-      var move = m === 'angry' || m === 'surprise' ? 'hero-shake' : m === 'cry' ? 'hero-sob' : 'hero-hop';
+      var move = m === 'angry' || m === 'surprise' ? 'hero-shake' : m === 'cry' ? 'hero-sob' : m === 'curious' ? 'hero-tilt' : 'hero-hop';
       restart(face, move);
     }
     say(pick(LINES[kind] || ['']), ms === 0 ? 0 : Math.max(1400, (ms || 1400) + 400));
