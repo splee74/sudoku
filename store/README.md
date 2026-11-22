@@ -31,7 +31,7 @@
 1. <https://www.pwabuilder.com> 에 게임 주소 `https://splee74.github.io/sudoku/` 를 넣고 Start
 2. **Package for stores → Android → Generate Package**
    - Package ID : `io.github.splee74.sudoku` 처럼 정하면 됩니다 (한 번 올리면 못 바꿈)
-   - App name : 스도쿠 승급전 / Launcher name : 스도쿠
+   - App name : 스도쿠 승급전 / Launcher name : 스도쿠 승급전
 3. 받은 zip 안의 파일
    - `*.aab` : 플레이스토어에 올리는 앱 파일
    - `signing.keystore`, `signing-key-info.txt` : **앱 서명 열쇠. 잃어버리면 앱을 고쳐 올릴 수 없습니다.** 안전한 곳에 꼭 따로 보관하세요 (GitHub에는 올리지 마세요)
