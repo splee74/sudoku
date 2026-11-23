@@ -225,7 +225,8 @@
     // 화면 넘김 효과의 방향 (css/screens.css 의 "화면 넘김") : 아래 메뉴에서 오른쪽 화면으로 가면 오른쪽에서, 왼쪽이면 왼쪽에서 들어옵니다
     var TAB_ORDER = ['home', 'badges', 'ranking', 'record'];
     var from = TAB_ORDER.indexOf(screen), to = TAB_ORDER.indexOf(name);
-    document.body.setAttribute('data-dir', from >= 0 && to >= 0 && to < from ? 'back' : 'fwd');
+    // 같은 화면을 다시 그릴 때(처음 켤 때의 홈 등)는 움직이지 않고, 게임에서 나올 때는 살짝 떠오르듯
+    document.body.setAttribute('data-dir', name === screen ? 'none' : from < 0 || to < 0 ? 'fade' : to < from ? 'back' : 'fwd');
     screen = name;
     document.body.setAttribute('data-screen', name);
     var tabs = document.querySelectorAll('.tab[data-tab]');

@@ -10,9 +10,10 @@
 body { overflow-x: clip; }
 @media (prefers-reduced-motion: no-preference) {
   body[data-screen="game"] #screen-game { animation: fx-screen-up 0.34s cubic-bezier(.2, .8, .3, 1); }
-  body[data-dir="fwd"]:not([data-screen="game"]) .screen { animation: fx-screen-r 0.28s ease-out; }
-  body[data-dir="back"]:not([data-screen="game"]) .screen { animation: fx-screen-l 0.28s ease-out; }
-  body[data-dir="fade"]:not([data-screen="game"]) .screen { animation: fx-screen-fade 0.3s ease-out; }
+  /* 홈 배경 그림(.home-bg)은 가만히 두고, 그 위의 내용만 움직입니다 */
+  body[data-dir="fwd"]:not([data-screen="game"]) .screen > :not(.home-bg) { animation: fx-screen-r 0.28s ease-out; }
+  body[data-dir="back"]:not([data-screen="game"]) .screen > :not(.home-bg) { animation: fx-screen-l 0.28s ease-out; }
+  body[data-dir="fade"]:not([data-screen="game"]) .screen > :not(.home-bg) { animation: fx-screen-fade 0.3s ease-out; }
 }
 @keyframes fx-screen-up { from { opacity: 0; transform: translateY(26px) scale(0.98); } to { opacity: 1; transform: none; } }
 @keyframes fx-screen-r { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
@@ -92,19 +93,22 @@ body { overflow-x: clip; }
 }
 
 /* ---------- 승급 : 빛줄기가 돌고, 등급 이름이 도장처럼 쾅, 창이 한 번 쿵 ---------- */
+/* 작은 화면에서도 스크롤 없이 한눈에 : 감탄 글자는 창 너비에, 빛줄기 자리는 화면 높이에 맞춰 줄어듭니다 */
+.promo-box { container-type: inline-size; }
+.promo-cheer { font-size: min(50px, 14cqi); white-space: nowrap; }
 .promo-stage {
-  position: relative; width: 100%; height: 230px; flex: none;
+  position: relative; width: 100%; height: clamp(150px, 34vh, 230px); flex: none;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
 .promo-stage .badge-big { position: relative; z-index: 1; }
 .promo-rays {
   position: absolute; left: 50%; top: 50%;
-  width: 360px; height: 360px; margin: -180px 0 0 -180px;
+  height: 150%; aspect-ratio: 1 / 1; translate: -50% -50%; /* 빛줄기 자리 높이에 맞춰 커지고 작아짐 */
   border-radius: 50%;
   background: repeating-conic-gradient(from 0deg, rgba(255, 200, 60, 0.55) 0deg 9deg, rgba(255, 200, 60, 0) 9deg 22.5deg);
-  -webkit-mask: radial-gradient(circle, #000 25%, transparent 68%);
-  mask: radial-gradient(circle, #000 25%, transparent 68%);
+  -webkit-mask: radial-gradient(circle, #000 22%, transparent 64%);
+  mask: radial-gradient(circle, #000 22%, transparent 64%);
   animation: fx-rays-in 0.7s ease-out both, fx-spin 14s linear infinite;
 }
 @keyframes fx-rays-in { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
@@ -116,6 +120,15 @@ body { overflow-x: clip; }
   100% { opacity: 1; transform: none; }
 }
 .promo-box { animation: rise 0.45s ease-out, fx-thud 0.35s 0.92s ease-out; }
+@media (max-height: 640px) {
+  .promo-box { gap: 8px; padding-top: 18px; padding-bottom: 16px; }
+  .promo-stage .badge-big { width: 136px; height: 136px; }
+  .promo-text { font-size: 34px; margin-bottom: 2px; }
+}
+@media (max-height: 520px) {
+  .promo-stage .badge-big { width: 116px; height: 116px; }
+  .promo-text { font-size: 30px; }
+}
 @keyframes fx-thud {
   25% { transform: translateY(5px) scale(1.01); }
   55% { transform: translateY(-2px); }

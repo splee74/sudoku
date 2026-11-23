@@ -47,6 +47,10 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
   .splash-art { background-size: contain; background-position: center; }
 }
 .splash.out { opacity: 0; pointer-events: none; }
+/* 앱을 막 켰을 때 화면 크기가 자리 잡을 때까지 그림을 숨겼다가 부드럽게 띄움 (index.html 의 splash 바로 아래 글) */
+.splash.wait::before, .splash.wait .splash-art { opacity: 0; }
+.splash.ready::before, .splash.ready .splash-art { animation: splash-in 0.3s ease-out; }
+@keyframes splash-in { from { opacity: 0; } }
 
 /* 시작 단추 : 화면 아래쪽 가운데 (휴대폰 아래 막대에 가리지 않게 safe-area 만큼 띄움) */
 .splash-start {

@@ -13,13 +13,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=39">
-  <link rel="stylesheet" href="css/skins.css?v=39">
-  <link rel="stylesheet" href="css/screens.css?v=39">
-  <link rel="stylesheet" href="css/about.css?v=39">
-  <link rel="stylesheet" href="css/fx.css?v=39">
+  <link rel="stylesheet" href="css/style.css?v=40">
+  <link rel="stylesheet" href="css/skins.css?v=40">
+  <link rel="stylesheet" href="css/screens.css?v=40">
+  <link rel="stylesheet" href="css/about.css?v=40">
+  <link rel="stylesheet" href="css/fx.css?v=40">
   <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=39">
+  <link rel="stylesheet" href="css/dark.css?v=40">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -48,6 +48,30 @@
       <button type="button" class="splash-start" id="splash-start">터치해서 시작하기</button>
     </div>
   </div>
+  <!-- 앱을 막 켰을 때는 휴대폰이 화면 크기를 몇 번 고치느라 그림이 흔들립니다.
+       크기가 자리 잡을 때까지(잠깐 동안 바뀌지 않을 때까지, 길어야 0.9초) 하늘색만 보여 주다가 그림을 부드럽게 띄웁니다 -->
+  <script>
+    (function () {
+      var sp = document.getElementById('splash'), t = 0, done = false;
+      sp.classList.add('wait');
+      function show() {
+        if (done) return;
+        done = true;
+        sp.classList.remove('wait');
+        sp.classList.add('ready');
+        // 혹시 효과가 멈춰 있는 환경이어도 그림이 꼭 보이게, 효과 시간이 지나면 떼어 냅니다
+        setTimeout(function () { sp.classList.remove('ready'); }, 400);
+        window.removeEventListener('resize', settle);
+      }
+      function settle() {
+        clearTimeout(t);
+        t = setTimeout(show, 180);
+      }
+      window.addEventListener('resize', settle);
+      settle();
+      setTimeout(show, 900);
+    })();
+  </script>
 
   <!-- ================= 게임 화면의 맨 위 줄 ================= -->
   <header class="site-head">
@@ -814,21 +838,21 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=39"></script>
-  <script src="js/engine.js?v=39"></script>
-  <script src="js/game.js?v=39"></script>
-  <script src="js/progress.js?v=39"></script>
-  <script src="js/settings.js?v=39"></script>
-  <script src="js/skins.js?v=39"></script>
-  <script src="js/sound.js?v=39"></script>
-  <script src="js/music.js?v=39"></script>
-  <script src="js/effects.js?v=39"></script>
-  <script src="js/badges.js?v=39"></script>
-  <script src="js/shop.js?v=39"></script>
-  <script src="js/account.js?v=39"></script>
-  <script src="js/ranking.js?v=39"></script>
-  <script src="js/tutorial.js?v=39"></script>
-  <script src="js/hero.js?v=39"></script>
-  <script src="js/ui.js?v=39"></script>
+  <script src="js/config.js?v=40"></script>
+  <script src="js/engine.js?v=40"></script>
+  <script src="js/game.js?v=40"></script>
+  <script src="js/progress.js?v=40"></script>
+  <script src="js/settings.js?v=40"></script>
+  <script src="js/skins.js?v=40"></script>
+  <script src="js/sound.js?v=40"></script>
+  <script src="js/music.js?v=40"></script>
+  <script src="js/effects.js?v=40"></script>
+  <script src="js/badges.js?v=40"></script>
+  <script src="js/shop.js?v=40"></script>
+  <script src="js/account.js?v=40"></script>
+  <script src="js/ranking.js?v=40"></script>
+  <script src="js/tutorial.js?v=40"></script>
+  <script src="js/hero.js?v=40"></script>
+  <script src="js/ui.js?v=40"></script>
 </body>
 </html>
