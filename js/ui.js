@@ -1032,7 +1032,11 @@
       b.type = 'button';
       b.className = 'num';
       b.setAttribute('data-d', k);
-      b.textContent = k;
+      b.appendChild(document.createTextNode(k));
+      var left = document.createElement('span'); // 이 숫자가 더 들어갈 칸 수 (오른쪽 위 작은 숫자)
+      left.className = 'left';
+      left.setAttribute('aria-hidden', 'true');
+      b.appendChild(left);
       pad.appendChild(b);
       numEls.push(b);
     }
@@ -1127,7 +1131,10 @@
     for (var k = 1; k <= n; k++) {
       var b = numEls[k - 1];
       b.classList.toggle('on', showSame && hl === k);
-      b.classList.toggle('done', Game.placedCount(game, k) >= n);
+      var leftN = Math.max(0, n - Game.placedCount(game, k));
+      b.classList.toggle('done', leftN === 0);
+      b.lastChild.textContent = leftN > 0 ? leftN : '';
+      b.setAttribute('aria-label', k + ', ' + (leftN > 0 ? leftN + '개 남음' : '다 채움'));
     }
 
     $('game-timer').textContent = formatTime(game.elapsedMs);
