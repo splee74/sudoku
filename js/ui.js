@@ -2365,7 +2365,8 @@
   }
 
   /* 오른쪽 위 버전 표시 */
-  $('app-ver').textContent = C.VERSION || '';
+  $('app-ver').setAttribute('data-ver', C.VERSION || '');
+  $('app-ver').textContent = (C.VERSION || '') + (window.SPLASH_SIZES && window.SPLASH_SIZES.length > 1 ? ' ' + window.SPLASH_SIZES.join('→') : '');
 
   /* 저장해 둔 스킨을 입힙니다 */
   S.Skins.apply(Settings.get('skin'));
