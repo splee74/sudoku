@@ -301,7 +301,123 @@
     el.classList.add(cls);
   }
 
+  /* ---------------- 그 밖의 꾸밈 효과 ----------------
+   * 꾸밈(색, 움직임)은 css/style.css 의 "꾸밈 효과" 에 있습니다.
+   */
+
+  /* 단추를 누른 자리에서 물결이 퍼집니다 (x, y : 화면 기준 누른 곳) */
+  function ripple(btn, x, y) {
+    if (!btn || reduced()) return;
+    var r = btn.getBoundingClientRect();
+    if (!r.width) return;
+    var clip = document.createElement('span');
+    clip.className = 'fx-ripple-clip';
+    clip.setAttribute('aria-hidden', 'true');
+    var dot = document.createElement('span');
+    dot.className = 'fx-ripple';
+    var size = Math.max(r.width, r.height) * 2.2;
+    dot.style.width = dot.style.height = size + 'px';
+    dot.style.left = (x - r.left - size / 2) + 'px';
+    dot.style.top = (y - r.top - size / 2) + 'px';
+    clip.appendChild(dot);
+    btn.appendChild(clip);
+    root.setTimeout(function () {
+      if (clip.parentNode) clip.parentNode.removeChild(clip);
+    }, 600);
+  }
+
+  /*
+   * 그림 글자(✨ ⭐ 🎁 같은 것)가 fromEl 에서 toEl 로 둥글게 날아갑니다.
+   *   icons : 글자 하나 또는 글자 목록 (차례로 돌려 씀)
+   *   count : 날릴 개수
+   * 반환 : 마지막 조각이 도착할 때까지 걸리는 시간(ms). 효과를 안 틀면 0
+   */
+  function fly(fromEl, toEl, icons, count) {
+    if (!fromEl || !toEl || reduced()) return 0;
+    var a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+    if (!b.width || !a.width) return 0;
+    var list = typeof icons === 'string' ? [icons] : icons;
+    count = count || 1;
+    var ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+    var dx = b.left + b.width / 2 - ax, dy = b.top + b.height / 2 - ay;
+    var DUR = 620, GAP = 70;
+    for (var i = 0; i < count; i++) {
+      var el = document.createElement('span');
+      el.className = 'fx-fly';
+      el.setAttribute('aria-hidden', 'true');
+      el.textContent = list[i % list.length];
+      el.style.left = ax + 'px';
+      el.style.top = ay + 'px';
+      document.body.appendChild(el);
+      // 가운데쯤에서 옆으로 살짝 휘어지며 날아갑니다
+      var bend = (Math.random() - 0.5) * 90, lift = -40 - Math.random() * 50;
+      var jx = (Math.random() - 0.5) * 24, jy = (Math.random() - 0.5) * 24;
+      if (el.animate) {
+        el.animate([
+          { transform: 'translate(-50%, -50%) translate(' + jx + 'px, ' + jy + 'px) scale(0.4)', opacity: 0 },
+          { transform: 'translate(-50%, -50%) translate(' + (dx * 0.45 + bend) + 'px, ' + (dy * 0.45 + lift) + 'px) scale(1.35)', opacity: 1, offset: 0.45 },
+          { transform: 'translate(-50%, -50%) translate(' + dx + 'px, ' + dy + 'px) scale(0.55)', opacity: 0.9 }
+        ], { duration: DUR, delay: i * GAP, easing: 'cubic-bezier(.45, .05, .55, .95)', fill: 'both' });
+      }
+      (function (node, ms) {
+        root.setTimeout(function () {
+          if (node.parentNode) node.parentNode.removeChild(node);
+        }, ms);
+      })(el, DUR + i * GAP + 30);
+    }
+    var total = DUR + (count - 1) * GAP;
+    root.setTimeout(function () { restart(toEl, 'fx-catch'); }, DUR);
+    return total;
+  }
+
+  /*
+   * 숫자 하나를 다 채움 : 판 위의 그 숫자 칸들이 차례로 금빛으로 반짝이고,
+   * 숫자 단추는 크게 "쏙" 하고 흐려지며 반짝이가 튑니다.
+   *   cells : 그 숫자가 든 칸 요소들,  btn : 숫자 단추,  pad : 숫자 단추 묶음
+   */
+  function numberDone(wrap, cells, btn, pad) {
+    if (!wrap || reduced()) return;
+    var w = wrap.getBoundingClientRect();
+    for (var i = 0; i < cells.length; i++) {
+      var c = cells[i].getBoundingClientRect();
+      var glow = addTemp(wrap, 'fx-cellglow', 900 + i * 70);
+      place(glow, { left: c.left - w.left, top: c.top - w.top, width: c.width, height: c.height });
+      glow.style.animationDelay = i * 70 + 'ms';
+    }
+    if (btn && pad) {
+      restart(btn, 'fx-numdone');
+      var p = pad.getBoundingClientRect(), r = btn.getBoundingClientRect();
+      sparks(pad, r.left - p.left + r.width / 2, r.top - p.top + r.height / 2, 12, Math.max(r.width, 50) * 0.9, 'box');
+    }
+  }
+
+  /* 연속 정답 : 판 가운데에 "5연속!" 글자가 튀어나왔다가 떠오릅니다 */
+  function combo(wrap, count) {
+    if (!wrap) return;
+    var el = addTemp(wrap, 'fx-combo', 1300);
+    el.textContent = count + '연속!';
+    el.setAttribute('data-lv', count >= 20 ? 4 : count >= 15 ? 3 : count >= 10 ? 2 : 1);
+    if (!reduced()) {
+      var w = wrap.getBoundingClientRect();
+      sparks(wrap, w.width / 2, w.height * 0.42, 10 + Math.min(count, 20), Math.min(w.width, 320) * 0.45, 'box');
+    }
+  }
+
+  /* 칸 하나에서 작은 반짝이가 튑니다 (힌트 숫자가 나타날 때) */
+  function cellSparkle(wrap, cellEl, kind) {
+    if (!wrap || !cellEl) return;
+    var w = wrap.getBoundingClientRect(), c = cellEl.getBoundingClientRect();
+    sparks(wrap, c.left - w.left + c.width / 2, c.top - w.top + c.height / 2, 10, Math.max(c.width, 30) * 1.3, kind || 'box');
+  }
+
   S.Effects = {
+    ripple: ripple,
+    fly: fly,
+    numberDone: numberDone,
+    combo: combo,
+    cellSparkle: cellSparkle,
+    screenFlash: function () { if (!reduced()) screenFlash(); },
+    reduced: reduced,
     confetti: confetti,
     flowers: flowers,
     stop: stop,

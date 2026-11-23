@@ -13,12 +13,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=38">
-  <link rel="stylesheet" href="css/skins.css?v=38">
-  <link rel="stylesheet" href="css/screens.css?v=38">
-  <link rel="stylesheet" href="css/about.css?v=38">
+  <link rel="stylesheet" href="css/style.css?v=39">
+  <link rel="stylesheet" href="css/skins.css?v=39">
+  <link rel="stylesheet" href="css/screens.css?v=39">
+  <link rel="stylesheet" href="css/about.css?v=39">
+  <link rel="stylesheet" href="css/fx.css?v=39">
   <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=38">
+  <link rel="stylesheet" href="css/dark.css?v=39">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -523,8 +524,12 @@
     <div class="promo-box">
       <p class="promo-cheer" id="promo-cheer">대단해요!</p>
       <!-- 동그라미 안 : 올라간 등급의 고양이 (js/ui.js 의 showPromo) -->
-      <div class="badge badge-big" id="promo-badge">
-        <span class="promo-face" id="promo-face" role="img" aria-label="평민 고양이"></span>
+      <!-- 뒤에서 빛줄기가 빙글 돕니다 (css/fx.css 의 promo-rays) -->
+      <div class="promo-stage" id="promo-stage">
+        <span class="promo-rays" aria-hidden="true"></span>
+        <div class="badge badge-big" id="promo-badge">
+          <span class="promo-face" id="promo-face" role="img" aria-label="평민 고양이"></span>
+        </div>
       </div>
       <p class="promo-text" id="promo-text">평민 승급!</p>
       <button type="button" class="btn btn-primary" id="btn-promo-ok">좋아요!</button>
@@ -809,21 +814,21 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=38"></script>
-  <script src="js/engine.js?v=38"></script>
-  <script src="js/game.js?v=38"></script>
-  <script src="js/progress.js?v=38"></script>
-  <script src="js/settings.js?v=38"></script>
-  <script src="js/skins.js?v=38"></script>
-  <script src="js/sound.js?v=38"></script>
-  <script src="js/music.js?v=38"></script>
-  <script src="js/effects.js?v=38"></script>
-  <script src="js/badges.js?v=38"></script>
-  <script src="js/shop.js?v=38"></script>
-  <script src="js/account.js?v=38"></script>
-  <script src="js/ranking.js?v=38"></script>
-  <script src="js/tutorial.js?v=38"></script>
-  <script src="js/hero.js?v=38"></script>
-  <script src="js/ui.js?v=38"></script>
+  <script src="js/config.js?v=39"></script>
+  <script src="js/engine.js?v=39"></script>
+  <script src="js/game.js?v=39"></script>
+  <script src="js/progress.js?v=39"></script>
+  <script src="js/settings.js?v=39"></script>
+  <script src="js/skins.js?v=39"></script>
+  <script src="js/sound.js?v=39"></script>
+  <script src="js/music.js?v=39"></script>
+  <script src="js/effects.js?v=39"></script>
+  <script src="js/badges.js?v=39"></script>
+  <script src="js/shop.js?v=39"></script>
+  <script src="js/account.js?v=39"></script>
+  <script src="js/ranking.js?v=39"></script>
+  <script src="js/tutorial.js?v=39"></script>
+  <script src="js/hero.js?v=39"></script>
+  <script src="js/ui.js?v=39"></script>
 </body>
 </html>

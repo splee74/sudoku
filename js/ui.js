@@ -222,6 +222,10 @@
 
   function showScreen(name) {
     if (name !== 'game' && screen === 'game' && game && game.status === 'playing') persist();
+    // 화면 넘김 효과의 방향 (css/screens.css 의 "화면 넘김") : 아래 메뉴에서 오른쪽 화면으로 가면 오른쪽에서, 왼쪽이면 왼쪽에서 들어옵니다
+    var TAB_ORDER = ['home', 'badges', 'ranking', 'record'];
+    var from = TAB_ORDER.indexOf(screen), to = TAB_ORDER.indexOf(name);
+    document.body.setAttribute('data-dir', from >= 0 && to >= 0 && to < from ? 'back' : 'fwd');
     screen = name;
     document.body.setAttribute('data-screen', name);
     var tabs = document.querySelectorAll('.tab[data-tab]');
@@ -1063,10 +1067,21 @@
       }
     }
 
+    // 마지막 한 칸만 남으면 그 칸이 은은하게 깜박입니다
+    var lastOne = -1;
+    if (game.status === 'playing' && !ending) {
+      var miss = 0;
+      for (var q = 0; q < n * n; q++) {
+        if (game.cells[q] !== game.solution[q]) { miss++; lastOne = q; }
+      }
+      if (miss !== 1) lastOne = -1;
+    }
+
     for (var idx = 0; idx < n * n; idx++) {
       var el = cellEls[idx];
       var v = game.cells[idx];
       var cls = el.getAttribute('data-base');
+      if (idx === lastOne) cls += ' last-one';
       var wrong = v !== 0 && v !== game.solution[idx];
       if (game.hinted[idx]) cls += ' hinted';
       else if (!game.fixed[idx] && v !== 0) cls += ' user';
@@ -1133,7 +1148,7 @@
       b.classList.toggle('on', showSame && hl === k);
       var leftN = Math.max(0, n - Game.placedCount(game, k));
       b.classList.toggle('done', leftN === 0);
-      b.lastChild.textContent = leftN > 0 ? leftN : '';
+      b.querySelector('.left').textContent = leftN > 0 ? leftN : '';
       b.setAttribute('aria-label', k + ', ' + (leftN > 0 ? leftN + '개 남음' : '다 채움'));
     }
 
@@ -1157,6 +1172,19 @@
       el.classList.add('wave');
     }
     return max * 30 + 500;
+  }
+
+  /* 판을 깼을 때 : 왼쪽 위에서 오른쪽 아래로 칸이 차례로 뒤집힙니다. 반환 : 걸리는 시간(ms) */
+  function flipBoard() {
+    var n = game.size, STEP = 45, DUR = 600;
+    for (var i = 0; i < n * n; i++) {
+      var el = cellEls[i];
+      el.style.setProperty('--d', (Math.floor(i / n) + i % n) * STEP + 'ms');
+      el.classList.remove('win-flip');
+      void el.offsetWidth;
+      el.classList.add('win-flip');
+    }
+    return (n - 1) * 2 * STEP + DUR;
   }
 
   /* idx 칸이 들어 있는 가로줄·세로줄·상자 중에서 방금 완성된 것을 찾습니다 */
@@ -1207,8 +1235,17 @@
   }
 
   /* 맞는 숫자가 들어간 뒤 : 효과와 응원 메시지 */
-  function afterCorrect(idx, byPlayer) {
-    flash(idx, 'pop');
+  function afterCorrect(idx, byPlayer, hintDelay) {
+    if (byPlayer) flash(idx, 'pop');
+    else hintAppear(idx, hintDelay || 0);
+    var d = game.cells[idx];
+    if (Settings.get('unitEffect') && Game.placedCount(game, d) === game.size) {
+      var same = [];
+      for (var s = 0; s < game.cells.length; s++) if (game.cells[s] === d) same.push(cellEls[s]);
+      window.setTimeout(function () {
+        S.Effects.numberDone($('board').parentNode, same, numEls[d - 1], $('numpad'));
+      }, hintDelay || 0);
+    }
     var units = completedUnits(idx);
     if (units.cells.length && Settings.get('unitEffect')) {
       wave(units.cells, idx);
@@ -1235,6 +1272,17 @@
     } else if (units.line) {
       toast('한 줄 완성! 👏');
     }
+  }
+
+  /* 힌트 숫자 : 반짝이 가루가 도착하면(delay 뒤) 숫자가 빛나며 나타납니다 */
+  function hintAppear(idx, delay) {
+    var el = cellEls[idx];
+    if (!el) return;
+    el.style.setProperty('--hd', delay + 'ms');
+    flash(idx, 'hint-in');
+    window.setTimeout(function () {
+      S.Effects.cellSparkle($('board').parentNode, el, 'box');
+    }, delay + 120);
   }
 
   /* 틀렸을 때 : 붉은 고리, 판 흔들림, 겹치는 숫자 깜박임, 틀림 표시 톡 */
@@ -1277,9 +1325,23 @@
     if (now - lastSave > 5000) persist();
   }
 
+  var coverTimer = 0;
   function setPaused(on) {
     paused = on;
-    $('pause-cover').hidden = !on;
+    var cover = $('pause-cover');
+    window.clearTimeout(coverTimer);
+    cover.classList.remove('leaving');
+    if (on || cover.hidden || S.Effects.reduced()) {
+      cover.hidden = !on;
+    } else {
+      // 막을 위로 걷어 올리고, 판이 흐릿한 데서 또렷하게 돌아옵니다
+      cover.classList.add('leaving');
+      S.Effects.restart($('board'), 'fx-reveal');
+      coverTimer = window.setTimeout(function () {
+        cover.classList.remove('leaving');
+        cover.hidden = true;
+      }, 380);
+    }
     $('game').classList.toggle('is-paused', on);
     lastTick = Date.now();
   }
@@ -1350,6 +1412,10 @@
         if (done.box) S.Hero.react('box', 1800);
         else if (done.line) S.Hero.react('unit', 1600);
         else S.Hero.react(game.streak >= 5 ? 'combo' : 'correct', 1200);
+        // 틀리지 않고 5번, 10번, 15번… 이어서 맞히면 "5연속!"
+        if (game.streak >= 5 && game.streak % 5 === 0 && Settings.get('cheer')) {
+          S.Effects.combo($('board').parentNode, game.streak);
+        }
       }
     }
     if (game.status !== 'playing') finishGame(sel);
@@ -1399,8 +1465,12 @@
     hl = game.cells[target];
     persist();
     renderGame();
-    if (game.status === 'playing') afterCorrect(target, false);
-    else finishGame(target);
+    var flyMs = S.Effects.fly($('btn-hint'), cellEls[target], ['✨', '⭐'], 5);
+    if (game.status === 'playing') afterCorrect(target, false, flyMs);
+    else {
+      hintAppear(target, flyMs);
+      finishGame(target);
+    }
   }
 
   /* ---------------- 한 판 끝 ---------------- */
@@ -1448,12 +1518,14 @@
     var won = game.status === 'won';
     var fancy = won && Settings.get('winEffect');
     if (fancy) {
-      // 빵빠레와 함께 화면이 번쩍이고 꽃이 휘날립니다
-      S.Effects.flowers(3200);
-      // 마지막에 넣은 칸에서부터 판 전체가 물결처럼 반짝입니다
-      var all = [];
-      for (var i = 0; i < game.cells.length; i++) all.push(i);
-      wait = wave(all, lastIdx >= 0 ? lastIdx : 0) + 150;
+      if (S.Effects.reduced()) {
+        S.Effects.flowers(3200);
+      } else {
+        // 칸들이 왼쪽 위부터 차례로 뒤집히며 금빛으로 바뀌고, 다 바뀔 즈음 화면이 번쩍이며 꽃이 휘날립니다
+        var flipMs = flipBoard();
+        window.setTimeout(function () { S.Effects.flowers(3200); }, Math.max(0, flipMs - 350));
+        wait = flipMs + 150;
+      }
     }
     var finished = game;
     var seconds = Math.floor(finished.elapsedMs / 1000);
@@ -1559,9 +1631,16 @@
     label.className = 'card-label';
     label.textContent = '새 배지를 받았어요!';
     box.appendChild(label);
-    list.forEach(function (b) {
+    list.forEach(function (b, i) {
       var row = document.createElement('p');
       row.className = 'new-badge';
+      row.style.setProperty('--i', i);
+      // 배지가 빙글 돌며 날아와 자리를 잡으면 반짝 (css 의 badge-spin : 0.35초 + 하나에 0.3초씩 늦게, 0.8초 동안)
+      window.setTimeout(function () {
+        if ($('result').hidden || !row.parentNode) return;
+        S.Effects.cellSparkle(box, row.querySelector('.badge-icon'), 'box');
+        S.Sound.play('line');
+      }, 350 + i * 300 + 700);
       var icon = document.createElement('span');
       icon.className = 'badge-icon';
       icon.textContent = b.icon;
@@ -1592,6 +1671,13 @@
     $('promo').hidden = false;
     S.Sound.play('promo');
     S.Effects.confetti(3500);
+    // 등급 이름이 도장처럼 쾅 찍히는 순간(css 의 promo-text) 화면이 번쩍이고 반짝이가 터집니다
+    window.setTimeout(function () {
+      if ($('promo').hidden) return;
+      S.Effects.screenFlash();
+      var stage = $('promo-stage'), r = stage.getBoundingClientRect();
+      S.Effects.sparks(stage, r.width / 2, r.height / 2, 26, Math.min(r.width, 320) * 0.5, 'box');
+    }, 600);
     $('btn-promo-ok').focus();
   }
 
@@ -1697,6 +1783,8 @@
     }
     persist();
     S.Sound.play('memoOn');
+    var from = document.querySelector('#items-body [data-buy="' + id + '"]');
+    S.Effects.fly(from, visibleBag(), it.icon, 1);
     renderItems();
     renderHome();
     appToast(it.icon + ' ' + it.name + ' 1개를 샀어요 (⭐' + res.price + ')');
@@ -1736,6 +1824,7 @@
     }
     S.Shop.buyStars(id).then(function () {
       persist();
+      S.Effects.fly(document.querySelector('#stars-body [data-pack="' + id + '"]'), $('stars-have'), '⭐', 6);
       renderStars();
       renderHome();
     }).catch(function () {
@@ -1921,9 +2010,23 @@
       var b = box.getBoundingClientRect(), r = stamp.getBoundingClientRect();
       S.Effects.sparks(box, r.left - b.left + r.width / 2, r.top - b.top + r.height / 2, 16, 70, 'box');
     }
+    // 받은 선물이 가방(🎒)으로 날아갑니다
+    if (stamp && res && res.reward) {
+      var icons = [];
+      for (var rid in res.reward) {
+        var info = itemInfo(rid);
+        for (var k = 0; k < Math.min(res.reward[rid], 3); k++) if (info) icons.push(info.icon);
+      }
+      if (icons.length) window.setTimeout(function () { S.Effects.fly(stamp, visibleBag(), icons, icons.length); }, 350);
+    }
     // 7일을 다 채운 날은 색종이
     if (res && res.streak % C.ATTEND_REWARDS.length === 0) S.Effects.confetti(1500);
     $('attend-ok').focus();
+  }
+
+  /* 지금 화면에 보이는 가방 단추 (게임 화면이면 🎒 단추, 아니면 홈 위쪽 가방) */
+  function visibleBag() {
+    return screen === 'game' ? $('btn-bag') : $('home-bag');
   }
 
   /* 그날 처음 열었으면 출석 창을 띄웁니다 (다른 창이 떠 있거나 게임 중이면 다음에) */
@@ -1933,6 +2036,16 @@
   }
 
   /* ---------------- 버튼 연결 ---------------- */
+  // 단추를 누르면 누른 자리에서 물결이 퍼지고, 숫자·도구 단추는 아주 짧게 떨립니다
+  document.addEventListener('pointerdown', function (e) {
+    var b = e.target.closest ? e.target.closest('.num, .tool, .btn') : null;
+    if (!b || b.disabled) return;
+    S.Effects.ripple(b, e.clientX, e.clientY);
+    if (Settings.get('tapVibrate') && navigator.vibrate && (b.classList.contains('num') || b.classList.contains('tool'))) {
+      try { navigator.vibrate(12); } catch (err) { /* 진동이 막힌 기기 */ }
+    }
+  }, { passive: true });
+
   $('btn-new').addEventListener('click', pressNew);
   $('btn-again').addEventListener('click', pressAgain);
   $('btn-daily').addEventListener('click', pressDaily);
