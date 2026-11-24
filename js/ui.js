@@ -2176,6 +2176,21 @@
   }
 
   /* ---------------- 아이템 ---------------- */
+  /* 아이템 그림 : img 가 있으면 그림(img/icons/), 없으면 icon 글자(이모지) */
+  function itemIconEl(it, cls) {
+    if (!it.img) {
+      var t = document.createElement('span');
+      t.className = cls || 'ico-t';
+      t.textContent = it.icon;
+      return t;
+    }
+    var im = document.createElement('img');
+    im.className = cls || 'ico';
+    im.src = 'img/icons/' + it.img + '.webp';
+    im.alt = '';
+    im.draggable = false;
+    return im;
+  }
   function itemInfo(id) {
     for (var i = 0; i < C.ITEMS.length; i++) if (C.ITEMS[i].id === id) return C.ITEMS[i];
     return null;
@@ -2202,7 +2217,7 @@
       row.className = 'item-row' + (n ? '' : ' empty');
       var icon = document.createElement('span');
       icon.className = 'item-icon';
-      icon.textContent = it.icon;
+      icon.appendChild(itemIconEl(it));
       icon.setAttribute('aria-hidden', 'true');
       var text = document.createElement('span');
       text.className = 'item-text';
@@ -2404,14 +2419,6 @@
     }
     return parts.join(sep || ' · ');
   }
-  function rewardIcons(reward) {
-    var out = '';
-    for (var id in reward) {
-      var it = itemInfo(id);
-      if (it) out += it.icon;
-    }
-    return out;
-  }
 
   /* 홈 위쪽 출석 줄 */
   function renderAttendBar(today) {
@@ -2469,7 +2476,14 @@
       d.textContent = i === slot ? '오늘' : (i + 1) + '일';
       var ic = document.createElement('span');
       ic.className = 'attend-day-i';
-      ic.textContent = i === last ? '🎁' : rewardIcons(rw);
+      if (i === last) {
+        ic.appendChild(itemIconEl({ img: 'gift' }));
+      } else {
+        for (var rid0 in rw) {
+          var info0 = itemInfo(rid0);
+          if (info0) ic.appendChild(itemIconEl(info0));
+        }
+      }
       li.title = rewardText(rw);
       li.setAttribute('aria-label', (i + 1) + '일째 ' + rewardText(rw) + (got ? ', 받음' : ''));
       li.appendChild(d);

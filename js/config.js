@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v50 → 'v50'
-    VERSION: 'v50',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v51 → 'v51'
+    VERSION: 'v51',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -98,13 +98,14 @@
      */
     //   auto : true 면 직접 쓰는 아이템이 아니라, 필요할 때 저절로 쓰이거나 물어봅니다
     ITEMS: [
+      // img : img/icons/ 의 그림 이름 (있으면 가방 · 상점 · 출석 창에서 그림으로, 글 안에서는 icon 글자로 씀)
       { id: 'hint', icon: '💡', name: '힌트권', desc: '힌트 3번을 다 쓴 뒤에도 한 칸을 더 알려 줘요' },
-      { id: 'time', icon: '⏱️', name: '시간 단축권', desc: '걸린 시간을 30초 줄여요' },
-      { id: 'shield', icon: '🩹', name: '실수 지우개', desc: '틀린 횟수 1번을 없던 일로 해요' },
-      { id: 'memo', icon: '✏️', name: '자동 메모권', desc: '빈칸마다 들어갈 수 있는 숫자를 모두 메모해 줘요' },
-      { id: 'double', icon: '✨', name: '점수 2배권', desc: '이번 판에서 받는 점수가 모두 2배가 돼요' },
-      { id: 'magnify', icon: '🔍', name: '돋보기', desc: '고른 숫자가 들어갈 수 있는 자리를 판에 모두 보여 줘요' },
-      { id: 'revive', icon: '💖', name: '되살리기권', desc: '3번 틀려 실패하면, 그 판을 이어서 할 수 있어요', auto: true, autoText: '실패하면 물어봐요' },
+      { id: 'time', img: 'stopwatch', icon: '⏱️', name: '시간 단축권', desc: '걸린 시간을 30초 줄여요' },
+      { id: 'shield', img: 'eraser', icon: '🩹', name: '실수 지우개', desc: '틀린 횟수 1번을 없던 일로 해요' },
+      { id: 'memo', img: 'pencil', icon: '✏️', name: '자동 메모권', desc: '빈칸마다 들어갈 수 있는 숫자를 모두 메모해 줘요' },
+      { id: 'double', img: 'sparkle', icon: '✨', name: '점수 2배권', desc: '이번 판에서 받는 점수가 모두 2배가 돼요' },
+      { id: 'magnify', img: 'cat-curious', icon: '🔍', name: '돋보기', desc: '고른 숫자가 들어갈 수 있는 자리를 판에 모두 보여 줘요' },
+      { id: 'revive', img: 'heart', icon: '💖', name: '되살리기권', desc: '3번 틀려 실패하면, 그 판을 이어서 할 수 있어요', auto: true, autoText: '실패하면 물어봐요' },
       { id: 'guard', icon: '🛡️', name: '연속 보호권', desc: '하루 빠져도 출석과 오늘의 퍼즐 연속 일수가 끊기지 않아요 (빠진 하루에 1장)', auto: true, autoText: '저절로 쓰여요' }
     ],
     TIME_ITEM_SEC: 30, // 시간 단축권 한 장이 줄여 주는 시간(초)

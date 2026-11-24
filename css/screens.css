@@ -229,36 +229,28 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 }
 .pill-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
-/* 동그라미 단추 : 이어서 하기 · 새 게임 */
-.home-actions { flex: none; display: flex; justify-content: center; gap: 28px; padding: 4px 0 8px; }
-.round-btn {
-  --size: clamp(104px, 30vw, 128px);
-  width: var(--size); height: var(--size); border-radius: 50%;
-  padding: 0; border: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-  line-height: 1.2;
+/* 고양이 그림 단추 : 이어서 하기 · 새 게임 (img/btn-continue.webp, img/btn-new.webp) */
+.home-actions { flex: none; display: flex; justify-content: center; align-items: flex-end; gap: clamp(6px, 2.5vw, 20px); padding: 4px 0 8px; }
+.pic-btn {
+  width: min(46vw, 220px); padding: 0; border: 0; background: none;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  filter: drop-shadow(0 6px 10px rgba(30, 30, 10, 0.25));
+  transition: transform 0.12s;
 }
-.round-btn[hidden] { display: none; }
-.round-btn svg { width: 30px; height: 30px; }
-.round-btn b { font-size: 19px; font-weight: 800; }
-.round-btn small { font-size: 14px; font-weight: 700; opacity: 0.9; font-variant-numeric: tabular-nums; }
-.round-btn:active { transform: translateY(3px); }
-.round-continue {
-  background: var(--accent); color: var(--accent-ink);
-  box-shadow: 0 5px 0 var(--accent-shadow, #1d4fa8), 0 10px 20px rgba(0, 0, 0, 0.18);
+.pic-btn[hidden] { display: none; }
+.pic-btn img { display: block; width: 100%; height: auto; pointer-events: none; -webkit-user-drag: none; }
+.pic-btn:active { transform: translateY(3px) scale(0.97); }
+/* 그림 아래 작은 글씨 (이어서 할 판의 시간 · 등급 이름) */
+.pic-btn small {
+  margin-top: -2px; padding: 1px 10px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92); color: var(--ink);
+  font-size: clamp(12px, 3.5vw, 14px); font-weight: 800; line-height: 1.5;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-.round-continue svg { fill: currentColor; }
-.round-continue:active { box-shadow: 0 2px 0 var(--accent-shadow, #1d4fa8); }
-.round-new {
-  background: var(--surface); color: var(--ink);
-  border: 3px solid var(--accent);
-  box-shadow: 0 5px 0 var(--line), 0 10px 20px rgba(0, 0, 0, 0.12);
-}
-.round-new svg { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
-.round-new:active { box-shadow: 0 2px 0 var(--line); }
-/* 이어서 할 판이 없을 때 : 새 게임이 꽉 찬 색 단추 */
-.round-new.solo { background: var(--accent); color: var(--accent-ink); border: 0; box-shadow: 0 5px 0 var(--accent-shadow, #1d4fa8), 0 10px 20px rgba(0, 0, 0, 0.18); }
-.round-new.solo svg { stroke: currentColor; }
+.pic-btn small:empty { display: none; }
+:root[data-theme="dark"] .pic-btn small { background: rgba(30, 30, 30, 0.85); color: #f3efe6; }
+/* 이어서 할 판이 없을 때 : 새 게임 하나만 크게 */
+.pic-new.solo { width: min(64vw, 280px); }
 
 /* ---------- 아래 메뉴 ---------- */
 .tabbar {
@@ -417,8 +409,8 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 /* 세로가 짧은 휴대폰 홈 : 제목과 동그라미 단추를 조금 작게 */
 @media (max-height: 700px) {
   .home-title img { height: 46px; }
-  .screen-home .round-btn { --size: 100px; }
-  .screen-home .round-btn b { font-size: 17px; }
+  .screen-home .pic-btn { width: min(42vw, 180px); }
+  .screen-home .pic-new.solo { width: min(56vw, 230px); }
   .screen-home .home-hero { gap: 6px; }
 }
 

@@ -1212,3 +1212,22 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
 }
 .btn-kakao svg { width: 24px; height: 24px; fill: #191919; flex: none; }
 .btn-kakao:active { transform: translateY(2px); box-shadow: 0 1px 0 #d4bf00; }
+
+/* ---------- 고양이 아이콘 그림 (img/icons/, tools/make_icons.py) ---------- */
+img.ico, img.tool-img, img.pill-ico, img.btn-ico, img.tab-ico { display: block; object-fit: contain; -webkit-user-drag: none; user-select: none; pointer-events: none; }
+.tool img.tool-img { width: 30px; height: 30px; flex: none; }
+.tool.on img.tool-img { filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.9)); }
+.tool:disabled img.tool-img { filter: grayscale(0.6); }
+.pill img.pill-ico { width: 22px; height: 22px; display: inline-block; vertical-align: middle; }
+.icon-btn img.btn-ico { width: 30px; height: 30px; }
+.attend-bar-i img.ico { width: 34px; height: 34px; }
+.item-icon img.ico { width: 40px; height: 40px; }
+.attend-day-i { display: inline-flex; align-items: center; justify-content: center; gap: 0; }
+.attend-day-i img.ico { width: 28px; height: 28px; }
+.attend-day-i img.ico + img.ico { margin-left: -6px; } /* 선물이 두 개면 살짝 겹쳐서 */
+.attend-day.big .attend-day-i img.ico { width: 44px; height: 44px; }
+.tab img.tab-ico { width: 30px; height: 30px; filter: grayscale(0.55); opacity: 0.75; transition: transform 0.15s; }
+.tab.on img.tab-ico { filter: none; opacity: 1; transform: scale(1.12); }
+@media (max-width: 899px) {
+  #screen-game .tool img.tool-img { width: clamp(20px, 4dvh, 30px); height: clamp(20px, 4dvh, 30px); }
+}

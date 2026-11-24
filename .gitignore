@@ -14,3 +14,7 @@ img/*
 !img/chars.webp
 !img/title.webp
 !img/about/
+# 고양이 아이콘 (tools/make_icons.py 가 원본 img/cat_icon_img01.png, img/cat_icon_img02.png 에서 잘라 냄. 원본은 올리지 않음)
+!img/icons/
+!img/btn-continue.webp
+!img/btn-new.webp
