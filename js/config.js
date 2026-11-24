@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v52 → 'v52'
-    VERSION: 'v52',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v53 → 'v53'
+    VERSION: 'v53',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -63,13 +63,9 @@
     LOGIN_PROVIDERS: ['google'],
 
     /*
-     * 결과 창의 "카톡으로 친구에게 자랑하기"
-     *   KAKAO_JS_KEY : 비워 두면 휴대폰 공유 창이 뜹니다 (안드로이드는 거기서 카카오톡을 고름).
-     *                  카카오 개발자 사이트(developers.kakao.com)에서 앱을 만들고 'JavaScript 키'를 넣고,
-     *                  [플랫폼 > Web] 에 게임 주소를 등록하면 카카오톡 공유 창이 바로 뜹니다.
-     *   SHARE_URL    : 친구가 누르면 열릴 주소 (비워 두면 지금 게임 주소)
+     * 결과 창의 "카톡으로 친구에게 자랑하기" : 결과 창을 그림으로 찍어 휴대폰 공유 창으로 보냅니다
+     *   SHARE_URL : 그림 아래와 글에 적을 게임 주소 (비워 두면 지금 게임 주소)
      */
-    KAKAO_JS_KEY: '',
     SHARE_URL: '',
 
     /*

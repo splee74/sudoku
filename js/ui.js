@@ -1972,10 +1972,11 @@
   }
 
   /* ---------------- 친구에게 기록 자랑하기 ----------------
-     js/config.js 의 KAKAO_JS_KEY 가 있으면 카카오톡 공유(카카오 SDK)로 바로 보내고,
-     없으면 휴대폰의 공유 창을 띄웁니다 (안드로이드는 여기서 카카오톡을 고르면 됨).
-     둘 다 안 되는 PC 등은 글을 복사해 줍니다. */
-  var shareInfo = null;
+     성공 결과 창(점수 · 시간)을 그림으로 찍어서 휴대폰 공유 창으로 보냅니다 (안드로이드는 여기서 카카오톡을 고름).
+     - 그림 찍기 : js/vendor/html-to-image.js (처음 누를 때 불러옴). 단추들은 빼고, 맨 아래에 게임 이름과 주소를 넣음
+     - 결과 창이 뜨고 조금 뒤에 미리 찍어 둡니다 (누른 뒤 오래 걸리면 휴대폰이 공유 창을 막아서)
+     - 그림을 보낼 수 없는 기기(PC 등)는 글로 공유하고, 그것도 안 되면 글을 복사해 줍니다 */
+  var shareInfo = null, shareShot = null, shareTimer = 0;
   function shareUrl() {
     return C.SHARE_URL || location.href.split(/[?#]/)[0];
   }
@@ -1988,46 +1989,97 @@
       '나보다 잘할 수 있어? 도전해 봐! 👇'
     ].join(String.fromCharCode(10));
   }
-  function loadKakao() {
-    if (window.Kakao) return Promise.resolve(window.Kakao);
+  function loadScript(src, global) {
+    if (window[global]) return Promise.resolve(window[global]);
     return new Promise(function (ok, fail) {
       var sc = document.createElement('script');
-      sc.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js';
-      sc.crossOrigin = 'anonymous';
-      sc.onload = function () { ok(window.Kakao); };
+      sc.src = src;
+      sc.onload = function () { window[global] ? ok(window[global]) : fail(new Error('load')); };
       sc.onerror = fail;
       document.head.appendChild(sc);
     });
+  }
+  function canShareFiles() {
+    try {
+      return !!(navigator.canShare && window.File && navigator.canShare({ files: [new File([''], 'a.png', { type: 'image/png' })] }));
+    } catch (e) {
+      return false;
+    }
+  }
+  /* 결과 창을 그림(png 파일)으로 찍습니다 */
+  function captureResult() {
+    var box = document.querySelector('#result .result-box');
+    $('share-foot').textContent = '🐱 스도쿠 승급전 · 나도 도전하기 👉 ' + shareUrl().replace(/^https?:\/\//, '');
+    return loadScript('js/vendor/html-to-image.js?v=' + (C.VERSION || ''), 'htmlToImage').then(function (lib) {
+      box.classList.add('capturing');
+      var bg = getComputedStyle(box).backgroundColor;
+      // 단추들은 빼고 찍으므로 높이는 맨 아래 줄(게임 이름 · 주소)까지만
+      var foot = $('share-foot').getBoundingClientRect(), top = box.getBoundingClientRect().top;
+      var height = Math.ceil(foot.bottom - top + box.scrollTop + 18);
+      return lib.toBlob(box, {
+        pixelRatio: Math.min(3, Math.max(2, window.devicePixelRatio || 2)),
+        backgroundColor: bg,
+        cacheBust: false,
+        // 창이 길어 스크롤되는 휴대폰에서도 전체가 다 찍히게
+        height: height,
+        style: { maxHeight: 'none', overflow: 'visible', animation: 'none', transform: 'none', margin: '0', boxShadow: 'none' },
+        // 단추들과 반짝이 효과는 빼고 찍음
+        filter: function (node) {
+          if (!node.classList) return true;
+          return !(node.classList.contains('actions') || node.id === 'btn-share' || node.classList.contains('fx-spark') || node.tagName === 'CANVAS');
+        }
+      });
+    }).then(function (blob) {
+      box.classList.remove('capturing');
+      if (!blob) throw new Error('capture');
+      return new File([blob], 'sudoku-record.png', { type: 'image/png' });
+    }, function (e) {
+      box.classList.remove('capturing');
+      throw e;
+    });
+  }
+  /* 결과 창이 뜬 뒤 (배지가 날아와 자리 잡을 때쯤) 미리 찍어 둠 */
+  function prepareShot() {
+    window.clearTimeout(shareTimer);
+    shareShot = null;
+    if (!shareInfo || !canShareFiles()) return;
+    shareTimer = window.setTimeout(function () {
+      if ($('result').hidden || !shareInfo) return;
+      shareShot = captureResult();
+      shareShot.catch(function () { shareShot = null; });
+    }, 1600);
   }
   function shareResult() {
     if (!shareInfo) return;
     var text = shareText(shareInfo), url = shareUrl();
     S.Sound.play('memoOn');
-    if (C.KAKAO_JS_KEY) {
-      return loadKakao().then(function (K) {
-        if (!K.isInitialized()) K.init(C.KAKAO_JS_KEY);
-        K.Share.sendDefault({
-          objectType: 'text',
-          text: text,
-          link: { mobileWebUrl: url, webUrl: url },
-          buttonTitle: '나도 도전하기'
-        });
-      }).catch(shareSheet);
+    if (canShareFiles()) {
+      var btn = $('btn-share');
+      btn.disabled = true;
+      (shareShot || captureResult()).then(function (file) {
+        btn.disabled = false;
+        return navigator.share({ files: [file], title: '스도쿠 승급전', text: text + String.fromCharCode(10) + url });
+      }).catch(function (e) {
+        btn.disabled = false;
+        if (e && e.name === 'AbortError') return; // 공유 창을 그냥 닫음
+        shareTextOnly(text, url); // 그림을 못 만들었거나 막혔으면 글로
+      });
+      return;
     }
-    shareSheet();
-    function shareSheet() {
-      if (navigator.share) {
-        navigator.share({ title: '스도쿠 승급전', text: text, url: url }).catch(function () { /* 닫음 */ });
-        return;
-      }
-      var all = text + String.fromCharCode(10) + url;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(all).then(function () {
-          appToast('기록을 복사했어요. 카톡 대화창에 붙여 넣어 보내 주세요');
-        }, function () { appToast('이 기기에서는 공유할 수 없어요'); });
-      } else {
-        appToast('이 기기에서는 공유할 수 없어요');
-      }
+    shareTextOnly(text, url);
+  }
+  function shareTextOnly(text, url) {
+    if (navigator.share) {
+      navigator.share({ title: '스도쿠 승급전', text: text, url: url }).catch(function () { /* 닫음 */ });
+      return;
+    }
+    var all = text + String.fromCharCode(10) + url;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(all).then(function () {
+        appToast('기록을 복사했어요. 카톡 대화창에 붙여 넣어 보내 주세요');
+      }, function () { appToast('이 기기에서는 공유할 수 없어요'); });
+    } else {
+      appToast('이 기기에서는 공유할 수 없어요');
     }
   }
   $('btn-share').addEventListener('click', shareResult);
@@ -2051,6 +2103,7 @@
       mistakes: finished.mistakes
     } : null;
     $('btn-share').hidden = !won;
+    prepareShot();
 
     var detail = '틀린 횟수 ' + finished.mistakes + '번 · 힌트 ' + (C.MAX_HINTS - finished.hintsLeft + (finished.extraHints || 0)) + '번 사용';
     if (finished.itemsUsed) detail += '\n아이템 ' + finished.itemsUsed + '개 사용';

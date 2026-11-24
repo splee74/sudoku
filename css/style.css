@@ -1231,3 +1231,8 @@ img.ico, img.tool-img, img.pill-ico, img.btn-ico, img.tab-ico { display: block; 
 @media (max-width: 899px) {
   #screen-game .tool img.tool-img { width: clamp(20px, 4dvh, 30px); height: clamp(20px, 4dvh, 30px); }
 }
+
+/* 결과 그림 공유 : 그림을 찍는 잠깐 동안만 맨 아래에 게임 이름과 주소가 보입니다 */
+.share-foot { display: none; margin: 2px 0 0; font-size: 14px; font-weight: 700; color: var(--ink-soft); text-align: center; }
+.result-box.capturing .share-foot { display: block; }
+.btn-kakao:disabled { opacity: 0.7; }

@@ -13,13 +13,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=52">
-  <link rel="stylesheet" href="css/skins.css?v=52">
-  <link rel="stylesheet" href="css/screens.css?v=52">
-  <link rel="stylesheet" href="css/about.css?v=52">
-  <link rel="stylesheet" href="css/fx.css?v=52">
+  <link rel="stylesheet" href="css/style.css?v=53">
+  <link rel="stylesheet" href="css/skins.css?v=53">
+  <link rel="stylesheet" href="css/screens.css?v=53">
+  <link rel="stylesheet" href="css/about.css?v=53">
+  <link rel="stylesheet" href="css/fx.css?v=53">
   <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=52">
+  <link rel="stylesheet" href="css/dark.css?v=53">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -559,7 +559,10 @@
       <!-- 이번 판에서 새로 받은 배지 -->
       <div class="card result-badges" id="result-badges" hidden></div>
 
-      <!-- 친구에게 기록 자랑하기 (카카오톡 · 공유 창, js/ui.js 의 shareResult) -->
+      <!-- 공유 그림에만 보이는 맨 아래 줄 (결과 창을 그림으로 찍을 때 .capturing 이 붙음) -->
+      <p class="share-foot" id="share-foot" aria-hidden="true"></p>
+
+      <!-- 친구에게 기록 자랑하기 : 이 창을 그림으로 찍어 카카오톡 · 공유 창으로 보냄 (js/ui.js 의 shareResult) -->
       <button type="button" class="btn btn-kakao" id="btn-share" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5C6.8 3.5 2.6 6.8 2.6 10.9c0 2.6 1.7 4.9 4.3 6.2l-1 3.7c-.1.3.3.6.6.4l4.4-2.9c.4 0 .7.1 1.1.1 5.2 0 9.4-3.3 9.4-7.5S17.2 3.5 12 3.5Z"/></svg>
         카톡으로 친구에게 자랑하기
@@ -924,22 +927,22 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=52"></script>
-  <script src="js/engine.js?v=52"></script>
-  <script src="js/game.js?v=52"></script>
-  <script src="js/progress.js?v=52"></script>
-  <script src="js/settings.js?v=52"></script>
-  <script src="js/skins.js?v=52"></script>
-  <script src="js/sound.js?v=52"></script>
-  <script src="js/music.js?v=52"></script>
-  <script src="js/effects.js?v=52"></script>
-  <script src="js/badges.js?v=52"></script>
-  <script src="js/shop.js?v=52"></script>
-  <script src="js/account.js?v=52"></script>
-  <script src="js/ranking.js?v=52"></script>
-  <script src="js/tutorial.js?v=52"></script>
-  <script src="js/hero.js?v=52"></script>
-  <script src="js/remind.js?v=52"></script>
-  <script src="js/ui.js?v=52"></script>
+  <script src="js/config.js?v=53"></script>
+  <script src="js/engine.js?v=53"></script>
+  <script src="js/game.js?v=53"></script>
+  <script src="js/progress.js?v=53"></script>
+  <script src="js/settings.js?v=53"></script>
+  <script src="js/skins.js?v=53"></script>
+  <script src="js/sound.js?v=53"></script>
+  <script src="js/music.js?v=53"></script>
+  <script src="js/effects.js?v=53"></script>
+  <script src="js/badges.js?v=53"></script>
+  <script src="js/shop.js?v=53"></script>
+  <script src="js/account.js?v=53"></script>
+  <script src="js/ranking.js?v=53"></script>
+  <script src="js/tutorial.js?v=53"></script>
+  <script src="js/hero.js?v=53"></script>
+  <script src="js/remind.js?v=53"></script>
+  <script src="js/ui.js?v=53"></script>
 </body>
 </html>
