@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v58 → 'v58'
-    VERSION: 'v58',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v59 → 'v59'
+    VERSION: 'v59',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -76,6 +76,11 @@
      *                  (JavaScript 키는 원래 웹페이지에 보이는 키라 여기 적어도 괜찮습니다. 등록한 도메인에서만 동작)
      */
     KAKAO_JS_KEY: '7bc4f4b406f6cf06e93984a5e256be63',
+    /*
+     *   PLAY_STORE_URL : 카톡 메시지의 [앱 받기] 단추가 여는 플레이 스토어 주소 (비우면 단추를 안 넣음)
+     *                    카카오 개발자 사이트 [제품 링크 관리 > 웹 도메인] 에 https://play.google.com 도 등록해야 열립니다
+     */
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=io.github.splee74.sudoku',
 
     /*
      * 오늘의 퍼즐 (계단 오르기) : 한 판을 깨면 같은 난이도의 다음 단계가 이어서 나옵니다. 밤 12시에 1단계부터 다시.

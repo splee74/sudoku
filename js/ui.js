@@ -2092,7 +2092,10 @@
             imageHeight: img.height,
             link: link
           },
-          buttons: [{ title: '나도 도전하기', link: link }]
+          // 단추 두 개 : 플레이 스토어에서 앱 받기 · 인터넷 창에서 바로 하기 (아이폰 친구도 바로 하기로)
+          buttons: C.PLAY_STORE_URL
+            ? [{ title: '앱 받기', link: { mobileWebUrl: C.PLAY_STORE_URL, webUrl: C.PLAY_STORE_URL } }, { title: '바로 하기', link: link }]
+            : [{ title: '나도 도전하기', link: link }]
         });
       });
     }).catch(function (e) {
