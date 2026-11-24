@@ -1,6 +1,7 @@
 /*
- * 배경 음악 : audio/bgm01.mp3 한 곡을 모든 화면에서 계속 반복해서 틉니다.
+ * 배경 음악 : audio/bgm01.mp3 → bgm02.mp3 → bgm01.mp3 … 두 곡을 번갈아 모든 화면에서 계속 틉니다.
  * 화면을 옮겨도 곡이 처음부터 다시 시작하지 않고 그대로 이어집니다.
+ * 곡을 더 넣으려면 아래 LIST 에 한 줄 더 적고 sw.js 의 FILES 에도 넣어 주세요.
  *
  * 소리 크기와 부드럽게 켜고 끄기는 Web Audio 를 거쳐서 합니다 (아이폰은 audio.volume 을 못 바꿔서).
  * 브라우저가 소리를 막아 두면, 화면을 처음 만지는 순간 이어서 나옵니다.
@@ -11,8 +12,9 @@
  */
 (function (root) {
   var S = (root.SUDOKU = root.SUDOKU || {});
-  var SRC = 'audio/bgm01.mp3';
-  var LEVEL = 0.45; // 소리 크기 (효과음보다 작게)
+  var LIST = ['audio/bgm01.mp3', 'audio/bgm02.mp3'];
+  var LEVEL = 0.36; // 소리 크기 (효과음보다 작게)
+  var track = 0; // 지금 곡 (LIST 의 몇 번째)
 
   var audio = null, ctx = null, gain = null;
   var want = false; // 지금 음악이 나와야 하는지
@@ -23,10 +25,19 @@
 
   function setup() {
     if (audio) return;
-    audio = new Audio(SRC);
-    audio.loop = true;
+    audio = new Audio(LIST[track]);
+    audio.loop = LIST.length < 2;
     audio.preload = 'auto';
     audio.setAttribute('playsinline', '');
+    // 한 곡이 끝나면 다음 곡으로 (마지막 곡 다음은 첫 곡)
+    audio.addEventListener('ended', function () {
+      track = (track + 1) % LIST.length;
+      audio.src = LIST[track];
+      if (want && !(root.document && root.document.hidden)) {
+        var p = audio.play();
+        if (p && p.catch) p.catch(function () {});
+      }
+    });
     var AC = root.AudioContext || root.webkitAudioContext;
     if (AC) {
       try {
