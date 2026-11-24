@@ -1977,8 +1977,9 @@
      - 결과 창이 뜨고 조금 뒤에 미리 찍어 둡니다 (누른 뒤 오래 걸리면 휴대폰이 공유 창을 막아서)
      - 그림을 보낼 수 없는 기기(PC 등)는 글로 공유하고, 그것도 안 되면 글을 복사해 줍니다 */
   var shareInfo = null, shareShot = null, shareTimer = 0;
+  /* 친구에게 보낼 주소 : 플레이 스토어 앱 받기 (없으면 게임 주소) */
   function shareUrl() {
-    return C.SHARE_URL || location.href.split(/[?#]/)[0];
+    return C.PLAY_STORE_URL || C.SHARE_URL || location.href.split(/[?#]/)[0];
   }
   function copyText(all) {
     try {
@@ -2015,7 +2016,9 @@
   /* 결과 창을 그림(png 파일)으로 찍습니다 */
   function captureResult() {
     var box = document.querySelector('#result .result-box');
-    $('share-foot').textContent = '🐱 스도쿠 승급전 · 나도 도전하기 👉 ' + shareUrl().replace(/^https?:\/\//, '');
+    $('share-foot').textContent = C.PLAY_STORE_URL
+      ? '🐱 스도쿠 승급전 · 플레이 스토어에서 받아 도전해 봐!'
+      : '🐱 스도쿠 승급전 · 나도 도전하기 👉 ' + shareUrl().replace(/^https?:\/\//, '');
     return loadScript('js/vendor/html-to-image.js?v=' + (C.VERSION || ''), 'htmlToImage').then(function (lib) {
       box.classList.add('capturing');
       var bg = getComputedStyle(box).backgroundColor;
@@ -2092,10 +2095,8 @@
             imageHeight: img.height,
             link: link
           },
-          // 단추 두 개 : 플레이 스토어에서 앱 받기 · 인터넷 창에서 바로 하기 (아이폰 친구도 바로 하기로)
-          buttons: C.PLAY_STORE_URL
-            ? [{ title: '앱 받기', link: { mobileWebUrl: C.PLAY_STORE_URL, webUrl: C.PLAY_STORE_URL } }, { title: '바로 하기', link: link }]
-            : [{ title: '나도 도전하기', link: link }]
+          // 단추 : 플레이 스토어에서 앱 받기 (사진을 눌러도 같은 곳으로)
+          buttons: [{ title: C.PLAY_STORE_URL ? '앱 받기' : '나도 도전하기', link: link }]
         });
       });
     }).catch(function (e) {
@@ -2125,7 +2126,7 @@
         btn.disabled = false;
         return navigator.share({ files: [file], title: '스도쿠 승급전', text: all }).then(function () {
           // 사진을 보낸 뒤 : 친구가 눌러서 바로 들어올 수 있게 게임 링크도 보내기
-          showModal(['사진을 보냈어요! 📸', '친구가 눌러서 바로 들어올 수 있게', '게임 링크도 보낼까요?', '(링크는 복사도 해 두었어요)']
+          showModal(['사진을 보냈어요! 📸', '친구가 바로 앱을 받을 수 있게', '앱 받기 링크도 보낼까요?', '(링크는 복사도 해 두었어요)']
             .join(String.fromCharCode(10)),
             '🔗 링크 보내기', '괜찮아요', function () {
               shareTextOnly(text, url);
