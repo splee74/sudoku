@@ -285,6 +285,32 @@
     var row = document.querySelector('.set-row[data-key="music"]');
     if (row) row.setAttribute('aria-checked', on ? 'true' : 'false');
   }
+  /* 다크 모드 단추 (index.html 의 data-dark) : 누를 때마다 밝게 ↔ 어둡게 */
+  var DARK_ICON = {
+    moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/></svg>',
+    sun: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>'
+  };
+  function renderDarkBtns() {
+    var dark = S.Theme.isDark();
+    var btns = document.querySelectorAll('[data-dark]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].innerHTML = dark ? DARK_ICON.sun : DARK_ICON.moon;
+      btns[i].setAttribute('aria-pressed', dark ? 'true' : 'false');
+      btns[i].setAttribute('aria-label', dark ? '밝은 화면으로' : '어두운 화면으로');
+    }
+    // 설정 창의 화면 밝기 단추도 맞춤
+    var segs = document.querySelectorAll('.seg-btn[data-theme-id]');
+    for (var s = 0; s < segs.length; s++) {
+      segs[s].setAttribute('aria-checked', segs[s].getAttribute('data-theme-id') === Settings.get('theme') ? 'true' : 'false');
+    }
+  }
+  function toggleDark() {
+    S.Theme.apply(S.Theme.isDark() ? 'light' : 'dark');
+    S.Sound.play('memoOn');
+    if (!$('view-pop').hidden) renderView();
+  }
+  document.addEventListener('themechange', renderDarkBtns);
+
   function toggleMusic() {
     Settings.set('music', !Settings.get('music'));
     renderMusicBtns();
@@ -784,6 +810,20 @@
     if (key === 'music') {
       renderMusicBtns();
       playMusic();
+    }
+    if (key === 'remind' && S.Remind) {
+      if (!value) S.Remind.disable();
+      else {
+        S.Remind.enable().then(function (res) {
+          if (res.ok) return appToast('매일 한 번 알려 드릴게요 🐾');
+          // 못 켰으면 스위치를 다시 끕니다
+          Settings.set('remind', false);
+          row.setAttribute('aria-checked', 'false');
+          appToast(res.why === 'denied' ? '알림이 막혀 있어요. 휴대폰 설정에서 알림을 허용해 주세요'
+            : res.why === 'install' ? '홈 화면에 설치한 앱에서만 매일 알림을 쓸 수 있어요'
+            : '이 기기에서는 매일 알림을 쓸 수 없어요');
+        });
+      }
     }
     if (game) renderGame(); // 바꾼 설정을 판에 바로 반영
   }
@@ -1931,6 +1971,67 @@
     }
   }
 
+  /* ---------------- 친구에게 기록 자랑하기 ----------------
+     js/config.js 의 KAKAO_JS_KEY 가 있으면 카카오톡 공유(카카오 SDK)로 바로 보내고,
+     없으면 휴대폰의 공유 창을 띄웁니다 (안드로이드는 여기서 카카오톡을 고르면 됨).
+     둘 다 안 되는 PC 등은 글을 복사해 줍니다. */
+  var shareInfo = null;
+  function shareUrl() {
+    return C.SHARE_URL || location.href.split(/[?#]/)[0];
+  }
+  function shareText(s) {
+    return [
+      '🐱 스도쿠 승급전',
+      s.what + ' 클리어!',
+      '⭐ 점수 ' + s.score,
+      '⏱️ 시간 ' + s.time + (s.mistakes ? '' : ' (실수 0번!)'),
+      '나보다 잘할 수 있어? 도전해 봐! 👇'
+    ].join(String.fromCharCode(10));
+  }
+  function loadKakao() {
+    if (window.Kakao) return Promise.resolve(window.Kakao);
+    return new Promise(function (ok, fail) {
+      var sc = document.createElement('script');
+      sc.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js';
+      sc.crossOrigin = 'anonymous';
+      sc.onload = function () { ok(window.Kakao); };
+      sc.onerror = fail;
+      document.head.appendChild(sc);
+    });
+  }
+  function shareResult() {
+    if (!shareInfo) return;
+    var text = shareText(shareInfo), url = shareUrl();
+    S.Sound.play('memoOn');
+    if (C.KAKAO_JS_KEY) {
+      return loadKakao().then(function (K) {
+        if (!K.isInitialized()) K.init(C.KAKAO_JS_KEY);
+        K.Share.sendDefault({
+          objectType: 'text',
+          text: text,
+          link: { mobileWebUrl: url, webUrl: url },
+          buttonTitle: '나도 도전하기'
+        });
+      }).catch(shareSheet);
+    }
+    shareSheet();
+    function shareSheet() {
+      if (navigator.share) {
+        navigator.share({ title: '스도쿠 승급전', text: text, url: url }).catch(function () { /* 닫음 */ });
+        return;
+      }
+      var all = text + String.fromCharCode(10) + url;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(all).then(function () {
+          appToast('기록을 복사했어요. 카톡 대화창에 붙여 넣어 보내 주세요');
+        }, function () { appToast('이 기기에서는 공유할 수 없어요'); });
+      } else {
+        appToast('이 기기에서는 공유할 수 없어요');
+      }
+    }
+  }
+  $('btn-share').addEventListener('click', shareResult);
+
   function renderResult(won, finished, before, res) {
     var grade = C.GRADES[data.gradeIndex];
     var next = C.GRADES[data.gradeIndex + 1];
@@ -1942,6 +2043,14 @@
       : '틀린 숫자가 ' + C.MAX_MISTAKES + '번 나왔어요';
     $('result-time').textContent = formatTime(finished.elapsedMs);
     $('result-score').textContent = formatScore(finished.score);
+    // 이기면 친구에게 자랑하기 단추
+    shareInfo = won ? {
+      what: finished.daily ? '오늘의 퍼즐 ' + (finished.stage || 1) + '단계' : before.name + ' 한 판',
+      score: formatScore(finished.score),
+      time: formatTime(finished.elapsedMs),
+      mistakes: finished.mistakes
+    } : null;
+    $('btn-share').hidden = !won;
 
     var detail = '틀린 횟수 ' + finished.mistakes + '번 · 힌트 ' + (C.MAX_HINTS - finished.hintsLeft + (finished.extraHints || 0)) + '번 사용';
     if (finished.itemsUsed) detail += '\n아이템 ' + finished.itemsUsed + '개 사용';
@@ -2583,6 +2692,7 @@
     var t = e.target;
     if (!t.closest) return;
     if (t.closest('[data-music]')) return toggleMusic();
+    if (t.closest('[data-dark]')) return toggleDark();
     var jump = t.closest('[data-jump]');
     if (jump) {
       // 규칙 창의 바로 가기 : 그 묶음까지 창 안에서 부드럽게 내려갑니다
@@ -2836,6 +2946,12 @@
 
   /* 오른쪽 위 버전 표시 */
   $('app-ver').textContent = C.VERSION || '';
+  renderDarkBtns();
+  if (S.Remind) {
+    S.Remind.start();
+    // 하루가 지나 다시 열었을 때도 "오늘 열었음"을 적어 둠 (그날은 알림을 보내지 않게)
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) S.Remind.touch(); });
+  }
 
   /* 저장해 둔 스킨을 입힙니다 */
   S.Skins.apply(Settings.get('skin'));

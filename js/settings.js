@@ -26,14 +26,16 @@
     { key: 'hero', group: '효과', title: '캐릭터 표시', desc: '판 위에 내 등급 캐릭터가 나와 맞히고 틀릴 때마다 표정이 바뀝니다 (끄면 판이 조금 커집니다)', on: true },
     { key: 'cheer', group: '효과', title: '응원 메시지', desc: '절반을 채웠을 때, 거의 다 왔을 때 캐릭터가 응원해 줍니다', on: true },
 
-    { key: 'music', group: '소리와 진동', title: '배경 음악', desc: '처음 화면과 게임 화면에서 고양이 음악이 흘러나옵니다', on: true },
+    { key: 'music', group: '소리와 진동', title: '배경 음악', desc: '모든 화면에서 배경 음악이 흘러나옵니다', on: true },
     { key: 'sound', group: '소리와 진동', title: '효과음', desc: '숫자를 넣거나 버튼을 누를 때 소리가 납니다', on: true },
     { key: 'vibrate', group: '소리와 진동', title: '틀렸을 때 진동', desc: '틀린 숫자를 넣으면 휴대폰이 짧게 떨립니다', on: true },
     { key: 'tapVibrate', group: '소리와 진동', title: '누를 때 진동', desc: '숫자와 도구 단추를 누를 때 휴대폰이 아주 짧게 톡 떨립니다', on: true },
 
     { key: 'showScore', group: '편의 기능', title: '점수 표시', desc: '게임 중에 점수와, 맞힐 때 올라가는 점수를 보여 줍니다', on: true },
     { key: 'showTimer', group: '편의 기능', title: '시간 표시', desc: '게임 중에 걸린 시간을 보여 줍니다', on: true },
-    { key: 'autoNotes', group: '편의 기능', title: '메모 자동 정리', desc: '숫자를 넣으면 같은 줄·상자의 메모에서 그 숫자를 지웁니다', on: true }
+    { key: 'autoNotes', group: '편의 기능', title: '메모 자동 정리', desc: '숫자를 넣으면 같은 줄·상자의 메모에서 그 숫자를 지웁니다', on: true },
+
+    { key: 'remind', group: '알림', title: '매일 알림', desc: '하루 한 번 "오늘의 스도쿠가 기다려요" 알림을 보내 줍니다 (휴대폰에 설치한 앱에서 돼요, 그날 이미 했으면 안 보냄)', on: false }
   ];
 
   var values = {};

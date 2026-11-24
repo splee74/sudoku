@@ -13,13 +13,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=49">
-  <link rel="stylesheet" href="css/skins.css?v=49">
-  <link rel="stylesheet" href="css/screens.css?v=49">
-  <link rel="stylesheet" href="css/about.css?v=49">
-  <link rel="stylesheet" href="css/fx.css?v=49">
+  <link rel="stylesheet" href="css/style.css?v=50">
+  <link rel="stylesheet" href="css/skins.css?v=50">
+  <link rel="stylesheet" href="css/screens.css?v=50">
+  <link rel="stylesheet" href="css/about.css?v=50">
+  <link rel="stylesheet" href="css/fx.css?v=50">
   <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=49">
+  <link rel="stylesheet" href="css/dark.css?v=50">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -110,6 +110,7 @@
       <div class="home-bg" aria-hidden="true"><img src="img/sudoku_img01.webp" alt="" width="900" height="926"></div>
       <div class="top-row">
         <button type="button" class="icon-btn music-btn" data-music aria-label="배경 음악"></button>
+        <button type="button" class="icon-btn dark-btn" data-dark aria-label="어두운 화면"></button>
         <span class="pill" id="home-streak" title="오늘의 퍼즐 연속 일수">🔥 <b>0</b></span>
         <span class="pill" id="home-score" title="모은 점수">🏆 <b>0</b></span>
         <button type="button" class="pill pill-bag" data-open="stars" id="home-stars" title="내 별 (눌러서 충전)">⭐ <b>0</b></button>
@@ -195,6 +196,7 @@
       <div class="top-row">
         <h2 class="screen-title">배지 <span class="h3-sub" id="record-badge-count"></span></h2>
         <button type="button" class="icon-btn music-btn" data-music aria-label="배경 음악"></button>
+        <button type="button" class="icon-btn dark-btn" data-dark aria-label="어두운 화면"></button>
         <button type="button" class="icon-btn" data-open="settings" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button>
       </div>
       <p class="screen-note">목표를 이루면 배지를 받아요. 브론즈 → 실버 → 골드 → 다이아 → 전설 순으로 어려워요.</p>
@@ -206,6 +208,7 @@
       <div class="top-row">
         <h2 class="screen-title">랭킹</h2>
         <button type="button" class="icon-btn music-btn" data-music aria-label="배경 음악"></button>
+        <button type="button" class="icon-btn dark-btn" data-dark aria-label="어두운 화면"></button>
         <button type="button" class="icon-btn" data-open="settings" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button>
       </div>
       <div class="rank-tabs" role="tablist" aria-label="랭킹 종류">
@@ -228,6 +231,7 @@
       <div class="top-row">
         <h2 class="screen-title">내 기록</h2>
         <button type="button" class="icon-btn music-btn" data-music aria-label="배경 음악"></button>
+        <button type="button" class="icon-btn dark-btn" data-dark aria-label="어두운 화면"></button>
         <button type="button" class="icon-btn" data-open="settings" aria-label="설정"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.6"/></svg></button>
       </div>
 
@@ -278,6 +282,7 @@
           <!-- 음악 · 글씨 크기 단추 (좁은 휴대폰에서 점수 줄이 넘치지 않게 캐릭터 줄 오른쪽에 둡니다) -->
           <span class="hero-tools">
             <button type="button" class="pause-btn music-btn" data-music aria-label="배경 음악"></button>
+            <button type="button" class="pause-btn dark-btn" data-dark aria-label="어두운 화면"></button>
             <button type="button" class="pause-btn view-btn" id="btn-view" aria-label="글씨 크기와 화면" aria-expanded="false">Aa</button>
           </span>
         </div>
@@ -573,8 +578,11 @@
       <!-- 이번 판에서 새로 받은 배지 -->
       <div class="card result-badges" id="result-badges" hidden></div>
 
-      <!-- [다음 버전 자리] 랭킹 등록 · 카카오톡 공유 버튼이 들어갈 곳 -->
-      <div class="slot" id="slot-result-extra" hidden></div>
+      <!-- 친구에게 기록 자랑하기 (카카오톡 · 공유 창, js/ui.js 의 shareResult) -->
+      <button type="button" class="btn btn-kakao" id="btn-share" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5C6.8 3.5 2.6 6.8 2.6 10.9c0 2.6 1.7 4.9 4.3 6.2l-1 3.7c-.1.3.3.6.6.4l4.4-2.9c.4 0 .7.1 1.1.1 5.2 0 9.4-3.3 9.4-7.5S17.2 3.5 12 3.5Z"/></svg>
+        카톡으로 친구에게 자랑하기
+      </button>
 
       <div class="actions">
         <button type="button" class="btn btn-primary" id="btn-again">다시 하기</button>
@@ -935,21 +943,22 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=49"></script>
-  <script src="js/engine.js?v=49"></script>
-  <script src="js/game.js?v=49"></script>
-  <script src="js/progress.js?v=49"></script>
-  <script src="js/settings.js?v=49"></script>
-  <script src="js/skins.js?v=49"></script>
-  <script src="js/sound.js?v=49"></script>
-  <script src="js/music.js?v=49"></script>
-  <script src="js/effects.js?v=49"></script>
-  <script src="js/badges.js?v=49"></script>
-  <script src="js/shop.js?v=49"></script>
-  <script src="js/account.js?v=49"></script>
-  <script src="js/ranking.js?v=49"></script>
-  <script src="js/tutorial.js?v=49"></script>
-  <script src="js/hero.js?v=49"></script>
-  <script src="js/ui.js?v=49"></script>
+  <script src="js/config.js?v=50"></script>
+  <script src="js/engine.js?v=50"></script>
+  <script src="js/game.js?v=50"></script>
+  <script src="js/progress.js?v=50"></script>
+  <script src="js/settings.js?v=50"></script>
+  <script src="js/skins.js?v=50"></script>
+  <script src="js/sound.js?v=50"></script>
+  <script src="js/music.js?v=50"></script>
+  <script src="js/effects.js?v=50"></script>
+  <script src="js/badges.js?v=50"></script>
+  <script src="js/shop.js?v=50"></script>
+  <script src="js/account.js?v=50"></script>
+  <script src="js/ranking.js?v=50"></script>
+  <script src="js/tutorial.js?v=50"></script>
+  <script src="js/hero.js?v=50"></script>
+  <script src="js/remind.js?v=50"></script>
+  <script src="js/ui.js?v=50"></script>
 </body>
 </html>

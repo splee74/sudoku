@@ -10,7 +10,7 @@
  * 새 파일(그림, js, css)을 추가했으면 아래 FILES 목록에도 한 줄 넣어 주세요.
  * 버전을 올릴 때는  python tools/bump_version.py  를 쓰면 CACHE, 화면 버전, index.html 의 ?v= 가 한 번에 바뀝니다.
  */
-var CACHE = 'sudoku-files-v49';
+var CACHE = 'sudoku-files-v50';
 var FILES = [
   './',
   'index.html',
@@ -48,6 +48,7 @@ var FILES = [
   'js/ranking.js',
   'js/tutorial.js',
   'js/hero.js',
+  'js/remind.js',
   'js/ui.js'
 ];
 
@@ -100,5 +101,48 @@ self.addEventListener('fetch', function (event) {
           return Response.error();
         });
       })
+  );
+});
+
+/* ---------------- 매일 알림 (js/remind.js) ----------------
+   크롬이 하루에 한 번쯤 깨워 주면, 오늘 앱을 안 열었고 오늘 알림도 안 보냈을 때만 알림을 띄웁니다.
+   밤 10시 ~ 아침 8시에는 보내지 않습니다. */
+function remindToday() {
+  var d = new Date();
+  return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+}
+function remindRead(cache, key) {
+  return cache.match(key).then(function (r) { return r ? r.text() : ''; });
+}
+self.addEventListener('periodicsync', function (event) {
+  if (event.tag !== 'daily-remind') return;
+  event.waitUntil(
+    caches.open('sudoku-meta').then(function (meta) {
+      var today = remindToday(), hour = new Date().getHours();
+      if (hour < 8 || hour >= 22) return;
+      return Promise.all([remindRead(meta, 'remind-open'), remindRead(meta, 'remind-shown')]).then(function (v) {
+        if (v[0] === today || v[1] === today) return;
+        return self.registration.showNotification('스도쿠 승급전', {
+          body: '오늘의 스도쿠가 기다려요 🐱',
+          icon: 'icons/icon-192.png',
+          badge: 'icons/icon-192.png',
+          tag: 'daily-remind',
+          data: { url: './' }
+        }).then(function () {
+          return meta.put('remind-shown', new Response(today));
+        });
+      });
+    })
+  );
+});
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        if ('focus' in list[i]) return list[i].focus();
+      }
+      return self.clients.openWindow('./');
+    })
   );
 });

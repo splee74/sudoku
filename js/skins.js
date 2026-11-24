@@ -82,6 +82,8 @@
     // 휴대폰 맨 위 알림줄 색도 바탕색에 맞춥니다
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', getComputedStyle(el).getPropertyValue('--bg').trim() || (dark ? '#1b1a17' : '#eaf4fd'));
+    // 화면 쪽(다크 모드 단추 그림 등)에 알림
+    try { document.dispatchEvent(new Event('themechange')); } catch (e) { /* 옛 브라우저 */ }
     return dark;
   }
 
