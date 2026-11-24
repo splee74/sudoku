@@ -13,7 +13,6 @@
  *   k.sparkle(t, [음들], 크기, 간격)          반짝이 종소리 여러 개
  *   k.swoosh(t, 길이, 크기, 처음 밝기, 끝 밝기) "쓱" 바람 소리
  *   k.click(t, 크기, 밝기)  k.thud(t, 크기, 처음 음, 끝 음)  "틱" / "둥"
- *   k.meow(t, 크기, 높이 배수, 길이, 좌우)    고양이 "냥"
  *   k.snare(t, 크기)  k.roll(t, 길이, 크기)  k.riser(t, 길이, 크기)  k.crash(t, 크기, 길이)
  *     작은북 "탁" / 두구두구 / 솟아오르는 "슈우웅" / 심벌 "촤아앙"
  *   좌우 : -1 왼쪽 … 0 가운데 … 1 오른쪽
@@ -29,10 +28,9 @@
     C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880, B5: 987.77,
     C6: 1046.5, D6: 1174.66, E6: 1318.51, G6: 1567.98, A6: 1760, C7: 2093, D7: 2349.32, E7: 2637.02
   };
-
+  // 연속으로 맞힐수록 한 음씩 올라갑니다 (도 레 미 솔 라)
+  var COMBO = [N.C5, N.D5, N.E5, N.G5, N.A5];
   var UP = 1.1225; // 한 음 위 (승급 소리에서 조를 올릴 때)
-  // 연속으로 맞힐 때 고양이 목소리 높이 (1 = 보통)
-  var MEOW_UP = [1, 1.06, 1.12, 1.19, 1.26];
 
   /*
    * 소리 목록. 각 소리는 "어떤 악기를 언제 울릴지"를 적은 함수입니다.
@@ -44,12 +42,12 @@
       k.marimba(N.G6, 0, 0.12, 0.12);
       k.click(0, 0.05);
     },
-    /* 맞혔을 때 : 고양이 "냥!". 연속으로 맞히면 목소리가 조금씩 높아집니다 */
+    /* 맞혔을 때 : 맑은 "통-똥". 연속으로 맞히면 음이 점점 올라갑니다 */
     correct: function (k, streak) {
-      var step = Math.max(0, Math.min((streak || 1) - 1, MEOW_UP.length - 1));
-      var p = MEOW_UP[step];
-      k.meow(0, 0.85, p, 0.3, (Math.random() - 0.5) * 0.3);
-      k.bell(N.C6 * 2 * p, 0.05, 0.02, 0.35); // 아주 살짝 반짝
+      var f = COMBO[Math.max(0, Math.min((streak || 1) - 1, COMBO.length - 1))];
+      k.marimba(f, 0, 0.32);
+      k.marimba(f * 1.5, 0.06, 0.24);
+      k.bell(f * 2, 0.06, 0.05, 0.6);
     },
     /* 틀렸을 때 : 낮게 "둥-둥" */
     wrong: function (k) {
@@ -333,50 +331,6 @@
       riser: function (t, dur, vol) {
         k.swoosh(t, dur, vol, 300, 7000);
         voice({ f: 200, slide: 1200, t: t, vol: vol * 0.25, a: dur * 0.8, dur: dur * 0.2, type: 'sawtooth', lp: 900, lpEnd: 5000, lpT: dur });
-      },
-      /* 고양이 "냥" : 목소리처럼 들리게 거르개 두 개로 모음 소리를 만듭니다.
-         처음엔 입을 다문 "ㄴ" 소리로 시작해 "야"로 열렸다가 "앙"으로 닫힙니다. p 는 음 높이 배수 */
-      meow: function (t, vol, p, dur, pan) {
-        p = p || 1;
-        dur = dur || 0.3;
-        var tt = t0 + t, peak = tt + dur * 0.32, end = tt + dur;
-        var osc = c.createOscillator(), lfo = c.createOscillator(), lg = c.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(560 * p, tt);
-        osc.frequency.linearRampToValueAtTime(840 * p, peak);
-        osc.frequency.exponentialRampToValueAtTime(600 * p, end);
-        lfo.frequency.value = 7; // 살짝 떨리는 목소리
-        lg.gain.value = 9 * p;
-        lfo.connect(lg);
-        lg.connect(osc.frequency);
-        var mix = c.createGain();
-        // [시작, 가장 열림, 끝 주파수, 날카로움, 크기]
-        [[420, 1050, 640, 5, 1], [1500, 2250, 1400, 7, 0.55], [3000, 3400, 2900, 8, 0.15]].forEach(function (fm) {
-          var bp = c.createBiquadFilter();
-          bp.type = 'bandpass';
-          bp.Q.value = fm[3];
-          bp.frequency.setValueAtTime(fm[0] * p, tt);
-          bp.frequency.linearRampToValueAtTime(fm[1] * p, peak);
-          bp.frequency.exponentialRampToValueAtTime(fm[2] * p, end);
-          var bg = c.createGain();
-          bg.gain.value = fm[4];
-          osc.connect(bp);
-          bp.connect(bg);
-          bg.connect(mix);
-        });
-        var g = c.createGain();
-        g.gain.setValueAtTime(0.0001, tt);
-        g.gain.exponentialRampToValueAtTime(vol, tt + 0.035);
-        g.gain.setValueAtTime(vol, tt + dur * 0.5);
-        g.gain.exponentialRampToValueAtTime(0.0001, end);
-        mix.connect(g);
-        panned(g, pan);
-        // 속에 깔리는 맑은 음 (더 귀엽게)
-        voice({ f: 560 * p * 2, slide: 600 * p * 2, slideT: dur, t: t + 0.02, vol: vol * 0.08, a: 0.04, dur: dur * 0.75, pan: pan });
-        osc.start(tt);
-        lfo.start(tt);
-        osc.stop(end + 0.05);
-        lfo.stop(end + 0.05);
       },
       crash: function (t, vol, dur) {
         hiss(t, 'highpass', 5000, 0, 0.7, 0.004, vol, dur || 1.6);
