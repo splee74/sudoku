@@ -1980,6 +1980,12 @@
   function shareUrl() {
     return C.SHARE_URL || location.href.split(/[?#]/)[0];
   }
+  function copyText(all) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(all);
+    } catch (e) { /* 막힘 */ }
+    return Promise.reject(new Error('clipboard'));
+  }
   function shareText(s) {
     return [
       '🐱 스도쿠 승급전',
@@ -2056,9 +2062,19 @@
     if (canShareFiles()) {
       var btn = $('btn-share');
       btn.disabled = true;
+      var all = text + String.fromCharCode(10) + url;
+      // 카카오톡은 사진과 글을 함께 받으면 글(링크)을 버리는 일이 많아서, 링크를 미리 복사해 두고
+      copyText(all).catch(function () {});
       (shareShot || captureResult()).then(function (file) {
         btn.disabled = false;
-        return navigator.share({ files: [file], title: '스도쿠 승급전', text: text + String.fromCharCode(10) + url });
+        return navigator.share({ files: [file], title: '스도쿠 승급전', text: all }).then(function () {
+          // 사진을 보낸 뒤 : 친구가 눌러서 바로 들어올 수 있게 게임 링크도 보내기
+          showModal(['사진을 보냈어요! 📸', '친구가 눌러서 바로 들어올 수 있게', '게임 링크도 보낼까요?', '(링크는 복사도 해 두었어요)']
+            .join(String.fromCharCode(10)),
+            '🔗 링크 보내기', '괜찮아요', function () {
+              shareTextOnly(text, url);
+            });
+        });
       }).catch(function (e) {
         btn.disabled = false;
         if (e && e.name === 'AbortError') return; // 공유 창을 그냥 닫음
@@ -2074,13 +2090,9 @@
       return;
     }
     var all = text + String.fromCharCode(10) + url;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(all).then(function () {
-        appToast('기록을 복사했어요. 카톡 대화창에 붙여 넣어 보내 주세요');
-      }, function () { appToast('이 기기에서는 공유할 수 없어요'); });
-    } else {
-      appToast('이 기기에서는 공유할 수 없어요');
-    }
+    copyText(all).then(function () {
+      appToast('기록과 게임 링크를 복사했어요. 카톡 대화창에 붙여 넣어 보내 주세요');
+    }, function () { appToast('이 기기에서는 공유할 수 없어요'); });
   }
   $('btn-share').addEventListener('click', shareResult);
 

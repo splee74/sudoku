@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v54 → 'v54'
-    VERSION: 'v54',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v55 → 'v55'
+    VERSION: 'v55',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -64,9 +64,10 @@
 
     /*
      * 결과 창의 "카톡으로 친구에게 자랑하기" : 결과 창을 그림으로 찍어 휴대폰 공유 창으로 보냅니다
-     *   SHARE_URL : 그림 아래와 글에 적을 게임 주소 (비워 두면 지금 게임 주소)
+     *   SHARE_URL : 친구에게 보낼 게임 주소 (그림 아래와 링크에 씀)
+     *               앱을 깐 친구는 이 주소를 누르면 앱이 열리고(assetlinks, store/README.md), 안 깐 친구는 인터넷 창에서 바로 게임이 열림
      */
-    SHARE_URL: '',
+    SHARE_URL: 'https://splee74.github.io/sudoku/',
 
     /*
      * 오늘의 퍼즐 (계단 오르기) : 한 판을 깨면 같은 난이도의 다음 단계가 이어서 나옵니다. 밤 12시에 1단계부터 다시.
