@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v57 → 'v57'
-    VERSION: 'v57',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v58 → 'v58'
+    VERSION: 'v58',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -75,7 +75,7 @@
      *                             → [앱 설정 > 플랫폼 > Web] 사이트 도메인에 https://splee74.github.io 등록
      *                  (JavaScript 키는 원래 웹페이지에 보이는 키라 여기 적어도 괜찮습니다. 등록한 도메인에서만 동작)
      */
-    KAKAO_JS_KEY: '',
+    KAKAO_JS_KEY: '7bc4f4b406f6cf06e93984a5e256be63',
 
     /*
      * 오늘의 퍼즐 (계단 오르기) : 한 판을 깨면 같은 난이도의 다음 단계가 이어서 나옵니다. 밤 12시에 1단계부터 다시.
