@@ -462,14 +462,23 @@
       var mk = key.slice(0, 7), count = monthDays(data, mk), goals = C.DAILY_MONTH_GOALS || [];
       if (!d.crowns) d.crowns = {};
       for (var i = 0; i < goals.length; i++) {
-        if (count >= goals[i].days && num(d.crowns[mk], 0) < i + 1) {
+        if (count >= goalDays(goals[i], mk) && num(d.crowns[mk], 0) < i + 1) {
           d.crowns[mk] = i + 1;
           addItem(data, 'hint', num(goals[i].hints, 0));
-          month = { level: i + 1, days: goals[i].days, hints: num(goals[i].hints, 0), goal: goals[i] };
+          month = { level: i + 1, days: goalDays(goals[i], mk), hints: num(goals[i].hints, 0), goal: goals[i] };
         }
       }
     }
     return { stairs: d.stairs, bonus: bonus, month: month };
+  }
+  /*
+   * 그 달의 목표 날 수 : 목표가 그 달의 날 수보다 크면 그 달의 날 수로 줄입니다
+   * (2월 금왕관은 30일이 아니라 28일, 윤년이면 29일)
+   */
+  function goalDays(goal, mk) {
+    var p = mk.split('-');
+    var len = new Date(Number(p[0]), Number(p[1]), 0).getDate();
+    return Math.min(num(goal.days, 0), len);
   }
   /* 그 날 오른 단계 수 (달력) */
   function dayStairs(data, key) {
@@ -756,6 +765,7 @@
     stairsToBonus: stairsToBonus,
     recordStair: recordStair,
     dayStairs: dayStairs,
+    goalDays: goalDays,
     monthDays: monthDays,
     monthCrown: monthCrown,
     crownCounts: crownCounts,

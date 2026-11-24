@@ -1111,7 +1111,7 @@
     }
     // 목표 막대와 왕관
     var goals = C.DAILY_MONTH_GOALS || [];
-    var top = goals.length ? goals[goals.length - 1].days : 30;
+    var top = goals.length ? Progress.goalDays(goals[goals.length - 1], calMonth) : 30;
     var count = Progress.monthDays(data, calMonth), level = Progress.monthCrown(data, calMonth);
     $('cal-fill').style.width = Math.min(100, (count / top) * 100) + '%';
     var goal = $('cal-goal');
@@ -1120,17 +1120,18 @@
     goals.forEach(function (g, i) {
       var mk = document.createElement('span');
       mk.className = 'cal-mark' + (level > i ? ' got' : '');
-      mk.style.left = (g.days / top) * 100 + '%';
-      mk.innerHTML = crownSvg(g.crown) + '<b>' + g.days + '</b>';
+      var gd = Progress.goalDays(g, calMonth);
+      mk.style.left = (gd / top) * 100 + '%';
+      mk.innerHTML = crownSvg(g.crown) + '<b>' + gd + '</b>';
       goal.appendChild(mk);
     });
     var t = $('cal-goal-t');
     t.innerHTML = '';
     var next = null;
-    for (var gi = 0; gi < goals.length; gi++) if (count < goals[gi].days) { next = goals[gi]; break; }
+    for (var gi = 0; gi < goals.length; gi++) if (count < Progress.goalDays(goals[gi], calMonth)) { next = goals[gi]; break; }
     t.appendChild(document.createTextNode((calMonth === thisMonth ? '이번 달 ' : m + '월에 ') + count + '일 했어요'));
     if (calMonth === thisMonth && next) {
-      t.appendChild(document.createTextNode('\n' + (next.days - count) + '일 더 하면 '));
+      t.appendChild(document.createTextNode('\n' + (Progress.goalDays(next, calMonth) - count) + '일 더 하면 '));
       var bb = document.createElement('b');
       bb.textContent = next.name + '왕관 + 💡 힌트 ' + next.hints + '개';
       t.appendChild(bb);
