@@ -1278,7 +1278,8 @@
 
   /* ---------------- 판 만들기 ---------------- */
   /*
-   * 판이 처음 나타날 때 : 칸이 왼쪽 위부터 대각선으로 차례차례 펼쳐지고, 숫자가 위에서 톡톡 떨어집니다.
+   * 판이 처음 나타날 때 : 판은 바로 보이고, 숫자만 왼쪽 위부터 대각선으로 차례차례 톡톡 떨어집니다.
+   * 빠르기를 바꾸려면 아래 step (한 줄 대각선마다 기다리는 시간, ms) 숫자를 고치세요.
    * 새 판을 만들면 introPending 이 켜지고, 게임 화면이 실제로 보일 때 한 번 틉니다.
    */
   var introPending = false, introTimer = 0;
@@ -1287,10 +1288,10 @@
     introPending = false;
     var board = $('board');
     if (S.Effects.reduced()) return;
-    var n = game.size, step = n <= 4 ? 70 : n <= 6 ? 45 : 32;
+    var n = game.size, step = n <= 4 ? 120 : n <= 6 ? 85 : 60;
     for (var i = 0; i < cellEls.length; i++) {
       var r = Math.floor(i / n), c = i % n;
-      cellEls[i].style.setProperty('--id', ((r + c) * step + 80) + 'ms');
+      cellEls[i].style.setProperty('--id', ((r + c) * step + 150) + 'ms');
     }
     window.clearTimeout(introTimer);
     board.classList.remove('intro');
@@ -1298,7 +1299,7 @@
     board.classList.add('intro');
     introTimer = window.setTimeout(function () {
       board.classList.remove('intro');
-    }, (2 * (n - 1)) * step + 900);
+    }, (2 * (n - 1)) * step + 1100);
   }
 
   function buildBoard() {
