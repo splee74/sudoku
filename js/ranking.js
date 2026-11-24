@@ -1,7 +1,7 @@
 /*
  * 랭킹 : 오늘 · 주간 · 월간 · 명예의 전당.
  *
- *   오늘의 날쌘냥    오늘의 퍼즐을 푼 시간 (빠를수록 위)      밤 12시에 새로 시작
+ *   오늘의 계단왕    오늘의 퍼즐 계단을 오른 단계 수 (많을수록 위)  밤 12시에 새로 시작
  *   이번 주 부지런냥  이번 주(월~일)에 모은 점수               월요일 0시(한국 시간)에 새로 시작
  *   이달의 왕냥이    이번 달에 모은 점수                       1일 0시(한국 시간)에 새로 시작
  *   냥이 명예의 전당 지난 달들의 1~3위 + 가장 높은 등급을 처음 찍은 사람들
@@ -15,7 +15,7 @@
  * Firestore 에 저장하는 곳 (보안 규칙은 firestore.rules)
  *   players/{uid}                 { nick, at }                닉네임
  *   boards/{판}/rows/{uid}         { nick, grade, v, crown, at } 랭킹 한 줄
- *      판 이름 : d_2026-11-23 (오늘) · w_2026-11-23 (그 주 월요일) · m_2026-11 (달)
+ *      판 이름 : s_2026-11-23 (오늘 계단) · w_2026-11-23 (그 주 월요일) · m_2026-11 (달)
  *               뒤에 _g3 이 붙으면 그 등급 묶음만 (3 = 등급 순서)
  *   hall/{등급id}/rows/{uid}       { nick, at }                가장 높은 등급을 처음 찍은 사람
  */
@@ -28,11 +28,11 @@
   var CREATE_MAX = 300000; // 처음 올릴 때 한 번에 올릴 수 있는 점수 (보안 규칙과 같게)
   var STEP_MAX = 60000; // 그 뒤로 한 번에 더할 수 있는 점수 (보안 규칙과 같게)
   var GAP_MS = 11000; // 같은 줄을 다시 올리려면 기다리는 시간 (보안 규칙은 10초)
-  var DAILY_MIN = 60; // 오늘의 퍼즐 최소 시간(초) (보안 규칙과 같게)
+  var STAIR_MAX = 1000; // 하루에 오를 수 있는 단계 수 (보안 규칙과 같게)
   var MONTHS_IN_HALL = 6; // 명예의 전당에 보여 줄 지난 달 수
 
   var BOARD = {
-    day: { title: '오늘의 날쌘냥', icon: '⚡', note: '오늘의 퍼즐을 가장 빨리 푼 순서예요. 밤 12시에 새로 시작해요.', low: true },
+    day: { title: '오늘의 계단왕', icon: '🪜', note: '오늘의 퍼즐 계단을 가장 높이 오른 순서예요. 밤 12시에 새로 시작해요.' },
     week: { title: '이번 주 부지런냥', icon: '🐾', note: '이번 주(월~일)에 모은 점수예요. 월요일 0시에 새로 시작해요.\n상위 10%에 들면 다음 주에 힌트 1장을 받아요.' },
     month: { title: '이달의 왕냥이', icon: '👑', note: '이번 달에 모은 점수예요. 1일 0시에 새로 시작해요.\n1~3위는 👑 왕냥이 배지와 힌트 3장을 받아요.' },
     hall: { title: '냥이 명예의 전당', icon: '🏛️', note: '한 번 이름이 오르면 사라지지 않아요.' }
@@ -57,17 +57,12 @@
   }
   function dayKey() { return S.Progress.dateKey(); } // 오늘의 퍼즐과 같은 날짜 (이 기기 기준)
   function boardId(kind, key, g) {
-    return (kind === 'day' ? 'd_' : kind === 'week' ? 'w_' : 'm_') + key + (g == null ? '' : '_g' + g);
+    return (kind === 'day' ? 's_' : kind === 'week' ? 'w_' : 'm_') + key + (g == null ? '' : '_g' + g);
   }
 
   /* ---------------- 보여 주기 도우미 ---------------- */
   function fmtScore(n) { return Math.floor(n || 0).toLocaleString('ko-KR'); }
-  function fmtTime(sec) {
-    sec = Math.floor(sec || 0);
-    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
-    return (h ? h + ':' + two(m) : m) + ':' + two(s);
-  }
-  function fmtValue(kind, v) { return kind === 'day' ? fmtTime(v) : fmtScore(v) + '점'; }
+  function fmtValue(kind, v) { return kind === 'day' ? fmtScore(v) + '단계' : fmtScore(v) + '점'; }
   function el(tag, cls, text) {
     var e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -101,7 +96,7 @@
   function D() { return hooks.data(); }
   function R() {
     var d = D();
-    if (!d.rank) d.rank = { wk: '', ws: 0, mk: '', ms: 0, dk: '', dv: 0, nick: '', g: -1, checked: {}, crowns: 0, tops: 0, hall: false };
+    if (!d.rank) d.rank = { wk: '', ws: 0, mk: '', ms: 0, dk: '', dv: 0, sk: '', sv: 0, nick: '', g: -1, checked: {}, crowns: 0, tops: 0, hall: false };
     return d.rank;
   }
   function user() { return S.Account && S.Account.user(); }
@@ -123,12 +118,12 @@
     }
     later();
   }
-  /* 오늘의 퍼즐을 풀면 (ui.js) */
-  function addDaily(d, key, seconds) {
+  /* 오늘의 퍼즐 한 단계를 오르면 (ui.js) : n = 오늘 오른 단계 수 */
+  function addStairs(d, key, n) {
     var r = d.rank;
-    if (r.dk !== key || !r.dv || seconds < r.dv) {
-      r.dk = key;
-      r.dv = Math.max(DAILY_MIN, Math.floor(seconds));
+    if (r.sk !== key || n > r.sv) {
+      r.sk = key;
+      r.sv = Math.min(STAIR_MAX, Math.floor(n));
     }
     later();
   }
@@ -206,8 +201,8 @@
       var same = cur && cur.nick === r.nick && cur.crown === crown;
       var next;
       if (kind === 'day') {
-        if (cur && cur.v <= value && same) return false;
-        next = cur ? Math.min(cur.v, value) : value;
+        if (cur && cur.v >= value && same) return false;
+        next = cur ? Math.max(cur.v, value) : value;
       } else {
         if (cur && cur.v >= value && same) return false;
         next = cur ? Math.min(value, cur.v + STEP_MAX) : Math.min(value, CREATE_MAX);
@@ -236,7 +231,7 @@
         // 등급 묶음이 바뀌었으면 예전 묶음의 이번 기간 줄은 지웁니다
         if (r.g >= 0 && r.g !== g) {
           var old = r.g;
-          [['week', r.wk], ['month', r.mk], ['day', r.dk]].forEach(function (b) {
+          [['week', r.wk], ['month', r.mk], ['day', r.sk]].forEach(function (b) {
             if (!b[1]) return;
             var id = boardId(b[0], b[1], old);
             delete server[id];
@@ -254,7 +249,7 @@
         }
         if (r.ws > 0) { go(boardId('week', r.wk), 'week', r.ws); go(boardId('week', r.wk, g), 'week', r.ws); }
         if (r.ms > 0) { go(boardId('month', r.mk), 'month', r.ms); go(boardId('month', r.mk, g), 'month', r.ms); }
-        if (r.dk === dayKey() && r.dv > 0) { go(boardId('day', r.dk), 'day', r.dv); go(boardId('day', r.dk, g), 'day', r.dv); }
+        if (r.sk === dayKey() && r.sv > 0) { go(boardId('day', r.sk), 'day', r.sv); go(boardId('day', r.sk, g), 'day', r.sv); }
         jobs.push(claimHall());
         return Promise.all(jobs).then(function () {
           if (more) later(GAP_MS);
@@ -323,7 +318,7 @@
       var r = R(), g = r.g >= 0 ? r.g : null, jobs = [];
       jobs.push(fb.db.collection('players').doc(uid).delete());
       jobs.push(fb.db.collection('hall').doc(topGrade().id).collection('rows').doc(uid).delete());
-      [['week', r.wk], ['month', r.mk], ['day', r.dk]].forEach(function (b) {
+      [['week', r.wk], ['month', r.mk], ['day', r.sk]].forEach(function (b) {
         if (!b[1]) return;
         jobs.push(rows(boardId(b[0], b[1])).doc(uid).delete());
         if (g != null) jobs.push(rows(boardId(b[0], b[1], g)).doc(uid).delete());
@@ -527,12 +522,13 @@
     card.appendChild(head);
     var me = data && data.me;
     if (!me) {
+      var climbed = S.Progress.stairs(D(), dayKey()) > 0;
       var why = kind === 'day'
-        ? (S.Progress.dailyDone(D(), dayKey()) ? '기록을 올리는 중이에요…' : '오늘의 퍼즐을 풀면 순위가 생겨요')
+        ? (climbed ? '기록을 올리는 중이에요…' : '오늘의 퍼즐 1단계를 깨면 순위가 생겨요')
         : '이번 ' + (kind === 'week' ? '주' : '달') + '에 한 판을 끝내면 순위가 생겨요';
       card.appendChild(el('p', 'rk-me-t', why));
-      if (kind === 'day' && !S.Progress.dailyDone(D(), dayKey())) {
-        var pb = el('button', 'btn btn-primary', '오늘의 퍼즐 풀기');
+      if (kind === 'day' && !climbed) {
+        var pb = el('button', 'btn btn-primary', '계단 오르러 가기');
         pb.type = 'button';
         pb.setAttribute('data-rank-daily', '1');
         card.appendChild(pb);
@@ -612,7 +608,7 @@
       meCard(kind, data);
       var list = $('rank-list');
       list.innerHTML = '';
-      if (!data.list.length) return status(kind === 'day' ? '아직 오늘의 퍼즐을 푼 사람이 없어요. 첫 번째가 되어 보세요!' : '아직 아무도 없어요. 첫 번째가 되어 보세요!');
+      if (!data.list.length) return status(kind === 'day' ? '아직 오늘 계단을 오른 사람이 없어요. 첫 번째가 되어 보세요!' : '아직 아무도 없어요. 첫 번째가 되어 보세요!');
       var u = user();
       data.list.forEach(function (x, i) { list.appendChild(rowEl(kind, x, i + 1, u && x.uid === u.uid)); });
     }).catch(function (e) {
@@ -730,7 +726,7 @@
     start: start,
     render: render,
     addScore: addScore,
-    addDaily: addDaily,
+    addStairs: addStairs,
     sync: sync,
     checkRewards: checkRewards,
     forget: forget,

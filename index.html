@@ -13,13 +13,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=42">
-  <link rel="stylesheet" href="css/skins.css?v=42">
-  <link rel="stylesheet" href="css/screens.css?v=42">
-  <link rel="stylesheet" href="css/about.css?v=42">
-  <link rel="stylesheet" href="css/fx.css?v=42">
+  <link rel="stylesheet" href="css/style.css?v=43">
+  <link rel="stylesheet" href="css/skins.css?v=43">
+  <link rel="stylesheet" href="css/screens.css?v=43">
+  <link rel="stylesheet" href="css/about.css?v=43">
+  <link rel="stylesheet" href="css/fx.css?v=43">
   <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=42">
+  <link rel="stylesheet" href="css/dark.css?v=43">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -283,6 +283,7 @@
           <span class="time">
             <span class="timer" id="game-timer" aria-label="걸린 시간">00:00</span>
             <button type="button" class="pause-btn music-btn" data-music aria-label="배경 음악"></button>
+            <button type="button" class="pause-btn view-btn" id="btn-view" aria-label="글씨 크기와 화면" aria-expanded="false">Aa</button>
             <button type="button" class="pause-btn bag-btn" data-open="items" id="btn-bag" aria-label="아이템 가방">
               <span aria-hidden="true">🎒</span><i class="bag-count" id="bag-count" hidden>0</i>
             </button>
@@ -290,6 +291,27 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>
             </button>
           </span>
+        </div>
+
+        <!-- 글씨 크기 · 화면 밝기 · 판 색 (Aa 단추) -->
+        <div class="view-pop" id="view-pop" role="dialog" aria-label="글씨 크기와 화면" hidden>
+          <div class="view-row view-skins" id="view-skins"></div>
+          <div class="view-row">
+            <span class="view-lbl">화면 밝기</span>
+            <div class="view-seg" id="view-theme">
+              <button type="button" data-view-theme="auto">자동</button>
+              <button type="button" data-view-theme="light">밝게</button>
+              <button type="button" data-view-theme="dark">어둡게</button>
+            </div>
+          </div>
+          <div class="view-row">
+            <span class="view-lbl">글씨 크기</span>
+            <div class="view-seg view-font" id="view-font">
+              <button type="button" data-view-font="s" aria-label="작게">A</button>
+              <button type="button" data-view-font="m" aria-label="보통">A</button>
+              <button type="button" data-view-font="l" aria-label="크게">A</button>
+            </div>
+          </div>
         </div>
 
         <!-- board-fit : 휴대폰에서 남는 공간을 다 차지하고, 그 안에 들어가는 가장 큰 정사각형으로 판을 그립니다 -->
@@ -431,10 +453,12 @@
       <section class="ab-sec">
         <h2><span class="ab-ico" aria-hidden="true">⭐</span>점수는 이렇게 올라갑니다</h2>
         <div class="ab-score">
-          <div class="ab-card ab-pt"><b>×3</b><span>틀리지 않고 연속으로 맞히면 점점 커져 <em>최대 3배</em></span></div>
-          <div class="ab-card ab-pt"><b>+α</b><span>한 줄이나 상자 하나를 완성하면 <em>보너스</em></span></div>
-          <div class="ab-card ab-pt"><b>🏁</b><span>판을 깨면 <em>완성 보너스</em></span></div>
-          <div class="ab-card ab-pt"><b>💎</b><span>한 번도 안 틀리면 <em>보너스 더</em></span></div>
+          <div class="ab-card ab-pt"><b>×5</b><span>틀리지 않고 연속으로 맞히면 점점 커져 <em>최대 5배</em>, 10연속마다 <em>콤보 보너스</em></span></div>
+          <div class="ab-card ab-pt"><b>⚡</b><span>8초 안에 또 맞히면 <em>빠른 손</em></span></div>
+          <div class="ab-card ab-pt"><b>+α</b><span>줄 · 상자 완성, 한 숫자를 다 채우면 <em>보너스</em></span></div>
+          <div class="ab-card ab-pt"><b>🏁</b><span>판을 깨면 <em>완성 · 시간 · 최고 콤보 보너스</em></span></div>
+          <div class="ab-card ab-pt"><b>💎</b><span>안 틀리면, 힌트 없이 깨면 <em>보너스 더</em></span></div>
+          <div class="ab-card ab-pt"><b>🪜</b><span>오늘의 퍼즐은 <em>단계가 높을수록</em> 더 많이</span></div>
         </div>
         <p class="ab-note">등급이 높을수록 한 칸의 점수가 큽니다. 등급별 최고 점수와 모은 점수는 "내 기록"에서 볼 수 있어요.</p>
       </section>
@@ -534,6 +558,8 @@
           <p class="result-num" id="result-time">00:00</p>
         </div>
         <p class="card-sub" id="result-detail"></p>
+        <!-- 점수 내역 (칸 점수 · 콤보 · 시간 보너스 …) -->
+        <ol class="score-rows" id="result-rows" hidden></ol>
       </div>
 
       <div class="card">
@@ -681,10 +707,12 @@
         <section class="rb-sec" id="rb-score">
           <h3><span class="ab-ico" aria-hidden="true">⭐</span>점수</h3>
           <div class="ab-score rb-score">
-            <div class="ab-card ab-pt"><b>×3</b><span>연속으로 맞히면 점점 커져 <em>최대 3배</em></span></div>
-            <div class="ab-card ab-pt"><b>+α</b><span>줄 · 상자 완성 <em>보너스</em></span></div>
-            <div class="ab-card ab-pt"><b>🏁</b><span>판을 깨면 <em>완성 보너스</em></span></div>
-            <div class="ab-card ab-pt"><b>💎</b><span>안 틀리면 <em>보너스 더</em></span></div>
+            <div class="ab-card ab-pt"><b>×5</b><span>연속으로 맞히면 <em>최대 5배</em> · 10연속마다 <em>콤보 보너스</em></span></div>
+            <div class="ab-card ab-pt"><b>⚡</b><span>8초 안에 또 맞히면 <em>빠른 손</em></span></div>
+            <div class="ab-card ab-pt"><b>+α</b><span>줄 · 상자 · 숫자 완성 <em>보너스</em></span></div>
+            <div class="ab-card ab-pt"><b>🏁</b><span>판을 깨면 <em>완성 · 시간 · 콤보 보너스</em></span></div>
+            <div class="ab-card ab-pt"><b>💎</b><span>안 틀리면 · 힌트 없이 <em>보너스 더</em></span></div>
+            <div class="ab-card ab-pt"><b>🪜</b><span>오늘의 퍼즐 <em>높은 단계</em>일수록 더</span></div>
           </div>
           <p class="rb-note">⬆ 등급이 높을수록 한 칸 점수가 커요 · 힌트로 채운 칸은 점수가 없어요</p>
         </section>
@@ -706,8 +734,10 @@
         <section class="rb-sec" id="rb-daily">
           <h3><span class="ab-ico" aria-hidden="true">📅</span>오늘의 퍼즐</h3>
           <ul class="ab-list">
-            <li><span aria-hidden="true">🗓️</span><p><b>하루에 한 판</b>같은 날에는 모두에게 같은 퍼즐이 나와요.</p></li>
-            <li><span aria-hidden="true">🛡️</span><p><b>등급에는 영향 없음</b>실패해도 풀 때까지 다시 도전할 수 있어요.</p></li>
+            <li><span aria-hidden="true">🪜</span><p><b>계단 오르기</b>한 판을 깨면 같은 난이도의 다음 단계가 이어서 나와요. 밤 12시에 1단계부터 다시 시작해요.</p></li>
+            <li><span aria-hidden="true">🎁</span><p><b>5단계마다 선물</b>5단계를 오를 때마다 힌트 3개를 받아요. 높이 오를수록 단계 보너스 점수도 커져요.</p></li>
+            <li><span aria-hidden="true">👑</span><p><b>달력과 왕관</b>한 달에 10일 · 20일 · 30일을 하면 동 · 은 · 금왕관과 힌트 3 · 5 · 10개를 받아요. 왕관은 왕관 진열장에 모여요.</p></li>
+            <li><span aria-hidden="true">🛡️</span><p><b>등급에는 영향 없음</b>실패해도 같은 단계를 다시 도전할 수 있어요.</p></li>
             <li><span aria-hidden="true">🔥</span><p><b>연속 일수</b>매일 빠지지 않고 풀면 쌓여요.</p></li>
             <li><span aria-hidden="true">↩️</span><p><b>승급전은 그대로</b>하던 승급전 판은 남아 있어서 돌아오면 이어서 해요.</p></li>
           </ul>
@@ -833,6 +863,59 @@
     </div>
   </div>
 
+  <!-- 오늘의 퍼즐 : 달력 + 계단 오르기 -->
+  <div class="overlay" id="stairs" hidden>
+    <div class="modal-box stairs-box" role="dialog" aria-modal="true" aria-labelledby="stairs-title">
+      <button type="button" class="stairs-x" id="stairs-close" aria-label="닫기">✕</button>
+      <p class="stairs-kicker">오늘의 퍼즐</p>
+      <h2 class="stairs-title" id="stairs-title">계단 오르기</h2>
+
+      <!-- 이번 달 달력 -->
+      <section class="cal" aria-label="오늘의 퍼즐 달력">
+        <div class="cal-head">
+          <button type="button" class="cal-nav" id="cal-prev" aria-label="지난 달">‹</button>
+          <b class="cal-month" id="cal-month"></b>
+          <button type="button" class="cal-nav" id="cal-next" aria-label="다음 달">›</button>
+        </div>
+        <div class="cal-goal" id="cal-goal" aria-hidden="true">
+          <div class="cal-track"><i id="cal-fill"></i></div>
+        </div>
+        <p class="cal-goal-t" id="cal-goal-t"></p>
+        <div class="cal-week" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+        <ol class="cal-grid" id="cal-grid"></ol>
+        <button type="button" class="cal-crowns" id="cal-crowns" data-open="crowns"></button>
+      </section>
+
+      <!-- 오늘 오른 계단 -->
+      <section class="stairs-today" aria-label="오늘 오른 계단">
+        <div class="stairs-steps" id="stairs-steps" aria-hidden="true"></div>
+        <p class="stairs-info" id="stairs-info"></p>
+        <p class="stairs-reset" id="stairs-reset"></p>
+        <button type="button" class="btn btn-primary stairs-go" id="stairs-go">1단계 도전</button>
+      </section>
+    </div>
+  </div>
+
+  <!-- 왕관 진열장 : 달마다 오늘의 퍼즐을 한 날 수와 받은 왕관 -->
+  <div class="overlay overlay-top" id="sheet-crowns" hidden>
+    <div class="sheet-box" role="dialog" aria-modal="true" aria-labelledby="crowns-title">
+      <div class="sheet-head">
+        <h2 id="crowns-title">👑 왕관 진열장</h2>
+        <button type="button" class="sheet-close" data-close aria-label="닫기">✕</button>
+      </div>
+      <div class="sheet-body">
+        <div class="crown-year">
+          <button type="button" class="cal-nav" id="crown-prev" aria-label="지난 해">‹</button>
+          <b id="crown-year">2026</b>
+          <button type="button" class="cal-nav" id="crown-next" aria-label="다음 해">›</button>
+        </div>
+        <p class="crown-sum" id="crown-sum"></p>
+        <ol class="crown-shelf" id="crown-shelf"></ol>
+        <p class="sheet-note">한 달에 오늘의 퍼즐을 10일 하면 동왕관, 20일이면 은왕관, 30일이면 금왕관이에요. 달마다 왕관 모양이 달라요.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- 확인 창 -->
   <div class="overlay overlay-top" id="modal" hidden>
     <div class="modal-box" role="dialog" aria-modal="true">
@@ -849,21 +932,21 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=42"></script>
-  <script src="js/engine.js?v=42"></script>
-  <script src="js/game.js?v=42"></script>
-  <script src="js/progress.js?v=42"></script>
-  <script src="js/settings.js?v=42"></script>
-  <script src="js/skins.js?v=42"></script>
-  <script src="js/sound.js?v=42"></script>
-  <script src="js/music.js?v=42"></script>
-  <script src="js/effects.js?v=42"></script>
-  <script src="js/badges.js?v=42"></script>
-  <script src="js/shop.js?v=42"></script>
-  <script src="js/account.js?v=42"></script>
-  <script src="js/ranking.js?v=42"></script>
-  <script src="js/tutorial.js?v=42"></script>
-  <script src="js/hero.js?v=42"></script>
-  <script src="js/ui.js?v=42"></script>
+  <script src="js/config.js?v=43"></script>
+  <script src="js/engine.js?v=43"></script>
+  <script src="js/game.js?v=43"></script>
+  <script src="js/progress.js?v=43"></script>
+  <script src="js/settings.js?v=43"></script>
+  <script src="js/skins.js?v=43"></script>
+  <script src="js/sound.js?v=43"></script>
+  <script src="js/music.js?v=43"></script>
+  <script src="js/effects.js?v=43"></script>
+  <script src="js/badges.js?v=43"></script>
+  <script src="js/shop.js?v=43"></script>
+  <script src="js/account.js?v=43"></script>
+  <script src="js/ranking.js?v=43"></script>
+  <script src="js/tutorial.js?v=43"></script>
+  <script src="js/hero.js?v=43"></script>
+  <script src="js/ui.js?v=43"></script>
 </body>
 </html>

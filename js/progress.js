@@ -57,8 +57,13 @@
         streak: 0, // 하루도 안 빠지고 연속으로 푼 날 수
         bestStreak: 0,
         total: 0, // 지금까지 푼 횟수
-        score: 0, // 마지막으로 푼 날의 점수
-        seconds: 0 // 마지막으로 푼 날의 걸린 시간(초)
+        score: 0, // 마지막으로 푼 날에 모은 점수
+        seconds: 0, // 마지막으로 푼 날의 첫 판 걸린 시간(초)
+        stairKey: '', // 계단을 오른 날짜
+        stairs: 0, // 그날 오른 단계 수 (밤 12시에 0부터)
+        bestStairs: 0, // 하루에 가장 높이 오른 단계 수
+        days: {}, // 달력 : { '2026-11-24': 그날 오른 단계 수 }
+        crowns: {} // 달마다 받은 왕관 : { '2026-11': 1 동 · 2 은 · 3 금 } (C.DAILY_MONTH_GOALS 순서)
       },
       // 통계 (내 기록 창과 배지에 씁니다)
       stats: freshStats(),
@@ -82,18 +87,19 @@
   /*
    * 랭킹에 올릴 기록 (js/ranking.js 가 씀)
    *   wk/ws : 이번 주(월요일 날짜)와 이번 주에 모은 점수,  mk/ms : 이번 달과 이번 달 점수
-   *   dk/dv : 오늘의 퍼즐을 푼 날과 걸린 시간(초)
+   *   dk/dv : (예전) 오늘의 퍼즐을 푼 날과 걸린 시간(초)
+   *   sk/sv : 오늘의 퍼즐 계단을 오른 날과 오른 단계 수
    *   nick : 랭킹에 보일 닉네임,  checked : 상을 확인한 지난 기간,  crowns : 월간 1~3위 횟수,  tops : 주간 상위 10% 횟수
    *   hall : 가장 높은 등급 달성을 명예의 전당에 올렸는지,  g : 마지막으로 기록을 올린 등급 묶음
    */
   function freshRank() {
-    return { wk: '', ws: 0, mk: '', ms: 0, dk: '', dv: 0, nick: '', g: -1, checked: {}, crowns: 0, tops: 0, hall: false };
+    return { wk: '', ws: 0, mk: '', ms: 0, dk: '', dv: 0, sk: '', sv: 0, nick: '', g: -1, checked: {}, crowns: 0, tops: 0, hall: false };
   }
   function cleanRank(r) {
     var out = freshRank();
     if (!r || typeof r !== 'object') return out;
-    ['wk', 'mk', 'dk', 'nick'].forEach(function (k) { if (typeof r[k] === 'string') out[k] = r[k]; });
-    ['ws', 'ms', 'dv', 'crowns', 'tops'].forEach(function (k) { out[k] = num(r[k], 0); });
+    ['wk', 'mk', 'dk', 'sk', 'nick'].forEach(function (k) { if (typeof r[k] === 'string') out[k] = r[k]; });
+    ['ws', 'ms', 'dv', 'sv', 'crowns', 'tops'].forEach(function (k) { out[k] = num(r[k], 0); });
     if (r.checked && typeof r.checked === 'object') for (var k in r.checked) out.checked[k] = 1;
     out.hall = r.hall === true;
     out.g = typeof r.g === 'number' && r.g >= 0 ? Math.floor(r.g) : -1;
@@ -141,6 +147,14 @@
     };
   }
 
+  /* { 날짜: 숫자 } 모양만 남깁니다 */
+  function cleanMap(m, re) {
+    var out = {};
+    if (!m || typeof m !== 'object') return out;
+    for (var k in m) if (re.test(k) && num(m[k], 0) > 0) out[k] = num(m[k], 0);
+    return out;
+  }
+
   function num(v, fallback) {
     return typeof v === 'number' && isFinite(v) && v >= 0 ? Math.floor(v) : fallback;
   }
@@ -170,6 +184,20 @@
             data.daily.total = num(sd.total, 0);
             data.daily.score = num(sd.score, 0);
             data.daily.seconds = num(sd.seconds, 0);
+            data.daily.stairKey = typeof sd.stairKey === 'string' ? sd.stairKey : '';
+            data.daily.stairs = num(sd.stairs, 0);
+            data.daily.bestStairs = num(sd.bestStairs, 0);
+            data.daily.days = cleanMap(sd.days, /^\d{4}-\d{2}-\d{2}$/);
+            data.daily.crowns = cleanMap(sd.crowns, /^\d{4}-\d{2}$/);
+            // 계단이 생기기 전에 오늘의 퍼즐을 푼 날 : 1단계를 오른 것으로 칩니다
+            if (!data.daily.stairKey && data.daily.last) {
+              data.daily.stairKey = data.daily.last;
+              data.daily.stairs = 1;
+              data.daily.bestStairs = Math.max(1, data.daily.bestStairs);
+            }
+            if (data.daily.stairKey && data.daily.stairs > 0 && !data.daily.days[data.daily.stairKey]) {
+              data.daily.days[data.daily.stairKey] = data.daily.stairs;
+            }
           }
           var st = saved.stats;
           if (st && typeof st === 'object') {
@@ -376,10 +404,19 @@
     if (last === today || last === dayBefore(today)) return data.daily.streak;
     return guardNeed(data, last, data.daily.streak, today) ? data.daily.streak : 0;
   }
-  /* 오늘의 퍼즐 성공 처리. 반환 : { streak: 연속 일수, guarded: 쓴 보호권 장 수 } */
+  /*
+   * 오늘의 퍼즐 한 단계 성공 처리 (연속 일수는 그날 첫 단계에서만 올라감)
+   * 반환 : { streak: 연속 일수, guarded: 쓴 보호권 장 수, first: 오늘 처음 깬 판인지 }
+   */
   function recordDaily(data, key, seconds, score) {
     var d = data.daily;
-    if (d.last === key) return { streak: d.streak, guarded: 0 };
+    if (d.last === key) {
+      if (typeof score === 'number' && score > 0) {
+        d.score += score;
+        data.totalScore += score;
+      }
+      return { streak: d.streak, guarded: 0, first: false };
+    }
     var cont = d.last === dayBefore(key);
     var guarded = cont ? 0 : guardNeed(data, d.last, d.streak, key);
     if (guarded) data.items.guard -= guarded;
@@ -390,7 +427,69 @@
     d.score = score || 0;
     d.seconds = seconds || 0;
     if (typeof score === 'number' && score > 0) data.totalScore += score;
-    return { streak: d.streak, guarded: guarded };
+    return { streak: d.streak, guarded: guarded, first: true };
+  }
+
+  /* 오늘 오른 단계 수 (날짜가 바뀌면 0) */
+  function stairs(data, today) {
+    return data.daily.stairKey === today ? data.daily.stairs : 0;
+  }
+  /* 다음 선물(힌트권)까지 남은 단계 수 */
+  function stairsToBonus(n) {
+    var every = Math.max(1, C.DAILY.bonusEvery || 5);
+    return every - (n % every);
+  }
+  /*
+   * 한 단계를 올랐을 때. bonusEvery 단계마다 힌트권을 줍니다.
+   * 반환 : { stairs: 오늘 오른 단계 수, bonus: 받은 힌트권 수 }
+   */
+  function recordStair(data, key) {
+    var d = data.daily;
+    if (d.stairKey !== key) {
+      d.stairKey = key;
+      d.stairs = 0;
+    }
+    d.stairs++;
+    if (d.stairs > d.bestStairs) d.bestStairs = d.stairs;
+    if (!d.days) d.days = {};
+    d.days[key] = d.stairs;
+    var every = Math.max(1, C.DAILY.bonusEvery || 5);
+    var bonus = d.stairs % every === 0 ? num(C.DAILY.bonusHints, 0) : 0;
+    if (bonus) addItem(data, 'hint', bonus);
+    // 그달 첫 단계를 깬 날 : 달력 보상 (10일 · 20일 · 30일)
+    var month = null;
+    if (d.stairs === 1) {
+      var mk = key.slice(0, 7), count = monthDays(data, mk), goals = C.DAILY_MONTH_GOALS || [];
+      if (!d.crowns) d.crowns = {};
+      for (var i = 0; i < goals.length; i++) {
+        if (count >= goals[i].days && num(d.crowns[mk], 0) < i + 1) {
+          d.crowns[mk] = i + 1;
+          addItem(data, 'hint', num(goals[i].hints, 0));
+          month = { level: i + 1, days: goals[i].days, hints: num(goals[i].hints, 0), goal: goals[i] };
+        }
+      }
+    }
+    return { stairs: d.stairs, bonus: bonus, month: month };
+  }
+  /* 그 날 오른 단계 수 (달력) */
+  function dayStairs(data, key) {
+    return num(data.daily.days && data.daily.days[key], 0);
+  }
+  /* 그 달('2026-11')에 오늘의 퍼즐을 한 날 수 */
+  function monthDays(data, mk) {
+    var n = 0, days = data.daily.days || {};
+    for (var k in days) if (k.slice(0, 7) === mk && days[k] > 0) n++;
+    return n;
+  }
+  /* 그 달에 받은 왕관 (0 없음 · 1 동 · 2 은 · 3 금) */
+  function monthCrown(data, mk) {
+    return num(data.daily.crowns && data.daily.crowns[mk], 0);
+  }
+  /* 지금까지 받은 왕관 수 (달마다 가장 좋은 것 하나) : [동, 은, 금] */
+  function crownCounts(data) {
+    var out = [0, 0, 0], cr = data.daily.crowns || {};
+    for (var k in cr) if (cr[k] >= 1 && cr[k] <= 3) out[cr[k] - 1]++;
+    return out;
   }
 
   /*
@@ -453,6 +552,19 @@
     });
     if (other.stats.best9 && (!out.stats.best9 || other.stats.best9 < out.stats.best9)) out.stats.best9 = other.stats.best9;
     out.daily.bestStreak = Math.max(num(out.daily.bestStreak, 0), num(other.daily.bestStreak, 0));
+    out.daily.bestStairs = Math.max(num(out.daily.bestStairs, 0), num(other.daily.bestStairs, 0));
+    ['days', 'crowns'].forEach(function (f) {
+      if (!out.daily[f]) out.daily[f] = {};
+      var src = other.daily[f] || {};
+      for (var dk in src) out.daily[f][dk] = Math.max(num(out.daily[f][dk], 0), num(src[dk], 0));
+    });
+    var os = other.daily.stairKey || '';
+    if (os > (out.daily.stairKey || '')) {
+      out.daily.stairKey = os;
+      out.daily.stairs = num(other.daily.stairs, 0);
+    } else if (os && os === out.daily.stairKey) {
+      out.daily.stairs = Math.max(num(out.daily.stairs, 0), num(other.daily.stairs, 0));
+    }
     for (k in other.gradeStats) {
       var o = other.gradeStats[k], m = out.gradeStats[k];
       if (!m) { out.gradeStats[k] = o; continue; }
@@ -480,6 +592,8 @@
       else if (rb[f[0]] === ra[f[0]]) ra[f[1]] = Math.max(ra[f[1]], rb[f[1]]);
     });
     if (rb.dk > ra.dk || (rb.dk === ra.dk && rb.dv && (!ra.dv || rb.dv < ra.dv))) { ra.dk = rb.dk; ra.dv = rb.dv; }
+    if (rb.sk > ra.sk) { ra.sk = rb.sk; ra.sv = rb.sv; }
+    else if (rb.sk === ra.sk) ra.sv = Math.max(ra.sv, rb.sv);
     if (!ra.nick) ra.nick = rb.nick;
     for (k in rb.checked) ra.checked[k] = 1;
     ra.crowns = Math.max(ra.crowns, rb.crowns);
@@ -638,6 +752,13 @@
     dailyDone: dailyDone,
     dailyStreak: dailyStreak,
     recordDaily: recordDaily,
+    stairs: stairs,
+    stairsToBonus: stairsToBonus,
+    recordStair: recordStair,
+    dayStairs: dayStairs,
+    monthDays: monthDays,
+    monthCrown: monthCrown,
+    crownCounts: crownCounts,
     recordStats: recordStats,
     merge: merge,
     parse: parse,

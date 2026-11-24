@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v42 → 'v42'
-    VERSION: 'v42',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v43 → 'v43'
+    VERSION: 'v43',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -63,12 +63,23 @@
     LOGIN_PROVIDERS: ['google'],
 
     /*
-     * 오늘의 퍼즐 : 하루에 한 판, 같은 날에는 모든 사람에게 같은 퍼즐이 나옵니다.
+     * 오늘의 퍼즐 (계단 오르기) : 한 판을 깨면 같은 난이도의 다음 단계가 이어서 나옵니다. 밤 12시에 1단계부터 다시.
+     *   같은 날 같은 단계는 모든 사람에게 같은 퍼즐이 나옵니다.
      *   givens, level : 등급 목록과 같은 뜻 (채워진 숫자 개수, 어려운 정도)
+     *   bonusEvery, bonusHints : bonusEvery 단계를 오를 때마다 힌트권 bonusHints 장
      *   points        : 점수 크기 (등급 순서와 같은 뜻. 5면 다섯 번째 등급 "영웅"과 같은 점수)
      *   seed          : 이 숫자를 바꾸면 날짜별 퍼즐이 전부 달라집니다 (보통은 건드리지 마세요)
      */
-    DAILY: { name: '오늘의 퍼즐', size: 9, boxRows: 3, boxCols: 3, givens: 36, level: 1, points: 5, color: '#c2452d', seed: 7 },
+    DAILY: { name: '오늘의 퍼즐', size: 9, boxRows: 3, boxCols: 3, givens: 36, level: 1, points: 5, color: '#c2452d', seed: 7, bonusEvery: 5, bonusHints: 3 },
+    /*
+     * 오늘의 퍼즐 달력 보상 : 한 달 동안 오늘의 퍼즐(1단계 이상)을 한 날 수가 days 가 되면
+     * 그 달의 왕관(동·은·금)과 힌트권 hints 장을 줍니다.
+     */
+    DAILY_MONTH_GOALS: [
+      { days: 10, hints: 3, crown: 'bronze', name: '동' },
+      { days: 20, hints: 5, crown: 'silver', name: '은' },
+      { days: 30, hints: 10, crown: 'gold', name: '금' }
+    ],
 
     /*
      * 개인 아이템 (출석 보상으로 받고, 게임 중에 🎒 가방 단추로 씁니다)
@@ -133,13 +144,28 @@
      *   숫자를 맞히면 기본 점수를 받고, 틀리지 않고 연속으로 맞히면 점점 커집니다.
      *   힌트로 채운 칸은 점수가 없고, 한 칸은 한 번만 점수를 받습니다.
      */
+    /*
+     * 점수 (모두 "기본 점수 × 숫자" 로 셉니다. 기본 점수 = BASE × 등급 순서, 오늘의 퍼즐은 DAILY.points)
+     *   칸마다     : 기본 점수 + 연속 콤보 + 빠른 손 + 줄·상자 완성 + 숫자 완성 + 콤보 고비
+     *   판을 깨면  : 완성 + 무결점 + 힌트 없이 + 시간 + 최고 콤보 + 오늘의 퍼즐 단계
+     */
     SCORE: {
       BASE: 10, // 등급 한 단계마다 늘어나는 기본 점수
       COMBO_STEP: 0.5, // 연속으로 맞힐 때마다 기본 점수의 이만큼씩 더 받음
-      COMBO_MAX: 4, // 연속 보너스가 쌓이는 최대 횟수 (4면 최대 3배)
-      UNIT_BONUS: 2, // 줄·상자 하나를 완성하면 기본 점수 × 이만큼 보너스
+      COMBO_MAX: 8, // 연속 보너스가 쌓이는 최대 횟수 (8이면 최대 5배)
+      COMBO_MILESTONE: 10, // 10연속 · 20연속 … 마다 기본 점수 × 이만큼 × (10의 몇 배인지)
+      SPEED_SEC: 8, // 바로 전 정답에서 이 시간(초) 안에 또 맞히면 "빠른 손"
+      SPEED_BONUS: 1, // 빠른 손 : 기본 점수 × 이만큼
+      UNIT_BONUS: 3, // 줄·상자 하나를 완성하면 기본 점수 × 이만큼 보너스
+      NUMBER_BONUS: 5, // 한 숫자(예: 7)를 판에 다 채우면 기본 점수 × 이만큼
       CLEAR_BONUS: 10, // 판을 깨면 기본 점수 × 이만큼 보너스
-      PERFECT_BONUS: 5 // 한 번도 안 틀리고 깨면 기본 점수 × 이만큼 추가 보너스
+      PERFECT_BONUS: 10, // 한 번도 안 틀리고 깨면 기본 점수 × 이만큼 추가 보너스
+      NOHINT_BONUS: 8, // 힌트 없이 깨면 기본 점수 × 이만큼
+      TIME_PER_CELL: 15, // 시간 보너스 기준 : 빈칸 하나에 이 시간(초)
+      TIME_STEP: 10, // 기준보다 이 시간(초)만큼 빠를 때마다 기본 점수 × 1
+      TIME_MAX: 40, // 시간 보너스 최대 (기본 점수 × 이만큼)
+      BEST_COMBO: 1, // 이번 판 최고 콤보 × 기본 점수 × 이만큼 (5연속 이상일 때)
+      STAGE_BONUS: 2 // 오늘의 퍼즐 : (단계 - 1) × 기본 점수 × 이만큼
     },
 
     /*

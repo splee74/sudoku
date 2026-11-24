@@ -16,14 +16,17 @@
   }
 
   /*
-   * 오늘의 퍼즐을 만듭니다. dateKey 는 '2026-11-13' 같은 날짜.
-   * 날짜가 같으면 누가 만들어도 똑같은 판이 나옵니다.
+   * 오늘의 퍼즐 stage 단계를 만듭니다. dateKey 는 '2026-11-13' 같은 날짜.
+   * 날짜와 단계가 같으면 누가 만들어도 똑같은 판이 나옵니다.
    */
-  function createDaily(dateKey) {
+  function createDaily(dateKey, stage) {
     var spec = C.DAILY;
-    var seed = Number(dateKey.replace(/-/g, '')) * 31 + spec.seed;
+    stage = Math.max(1, Math.floor(stage || 1));
+    var seed = Number(dateKey.replace(/-/g, '')) * 31 + spec.seed + stage * 7919;
     var gen = E.generatePuzzle(spec, spec.givens, spec.level, E.seeded(seed));
-    return build(spec, gen, -1, 'daily', dateKey);
+    var st = build(spec, gen, -1, 'daily', dateKey);
+    st.stage = stage;
+    return st;
   }
 
   function build(grade, gen, gradeIndex, gradeId, dateKey) {
@@ -39,6 +42,7 @@
       gradeIndex: gradeIndex, // 등급 순서 (오늘의 퍼즐은 -1)
       gradeId: gradeId,
       daily: dateKey, // 오늘의 퍼즐이면 날짜, 아니면 빈 글자
+      stage: 0, // 오늘의 퍼즐 몇 단계인지 (승급전은 0)
       size: grade.size,
       boxRows: grade.boxRows,
       boxCols: grade.boxCols,
@@ -59,17 +63,33 @@
       scored: scored, // 이미 점수를 받은 칸 (되돌렸다 다시 넣어도 두 번 받지 못하게)
       lastGain: 0, // 방금 받은 점수
       clearBonus: 0, // 판을 깨고 받은 보너스
+      clearParts: [], // 판을 깨고 받은 보너스 내역 [[이름, 점수], …]
+      tally: freshTally(), // 이번 판 칸 점수 내역
+      bestStreak: 0, // 이번 판 최고 콤보
+      lastHitMs: -1, // 바로 전 정답을 넣은 시각 (걸린 시간 기준, 빠른 손에 씀)
       status: 'playing' // 'playing' | 'won' | 'lost'
     };
   }
 
+  /* 칸 점수 내역 : 기본 · 연속 콤보 · 빠른 손 · 줄·상자 완성 · 숫자 완성 · 콤보 고비 */
+  function freshTally() {
+    return { cell: 0, combo: 0, speed: 0, unit: 0, number: 0, milestone: 0 };
+  }
+
   /* 점수제가 생기기 전에 저장된 판을 불러왔을 때 빠진 값을 채웁니다. */
   function upgrade(st) {
+    if (!Array.isArray(st.clearParts)) st.clearParts = [];
+    if (!st.tally || typeof st.tally !== 'object') st.tally = freshTally();
+    var ft = freshTally();
+    for (var tk in ft) if (typeof st.tally[tk] !== 'number') st.tally[tk] = 0;
+    if (typeof st.bestStreak !== 'number') st.bestStreak = 0;
+    if (typeof st.lastHitMs !== 'number') st.lastHitMs = -1;
     if (typeof st.score !== 'number') st.score = 0;
     if (typeof st.streak !== 'number') st.streak = 0;
     if (typeof st.lastGain !== 'number') st.lastGain = 0;
     if (typeof st.clearBonus !== 'number') st.clearBonus = 0;
     if (typeof st.daily !== 'string') st.daily = '';
+    if (typeof st.stage !== 'number') st.stage = 0;
     if (typeof st.extraHints !== 'number') st.extraHints = 0;
     if (typeof st.itemsUsed !== 'number') st.itemsUsed = 0;
     st.double = st.double === true;
@@ -101,25 +121,63 @@
     return (rowOk ? 1 : 0) + (colOk ? 1 : 0) + (boxOk ? 1 : 0);
   }
 
-  /* 맞힌 칸의 점수를 더합니다. 반환 : 이번에 받은 점수 */
+  /*
+   * 맞힌 칸의 점수를 더합니다. 반환 : 이번에 받은 점수
+   * st.lastParts 에 이번 칸의 덤 내역을 남깁니다 (화면에 "콤보 · 빠른 손" 처럼 보여 줄 때 씀)
+   */
   function award(st, idx) {
+    st.lastParts = [];
     if (st.scored[idx]) return 0;
     st.scored[idx] = true;
     st.streak++;
-    var base = basePoints(st);
-    var gain = base + Math.round(base * C.SCORE.COMBO_STEP * Math.min(st.streak - 1, C.SCORE.COMBO_MAX));
-    gain += base * C.SCORE.UNIT_BONUS * unitsDone(st, idx);
-    if (st.double) gain *= 2; // 점수 2배권
+    if (st.streak > st.bestStreak) st.bestStreak = st.streak;
+    var K = C.SCORE, base = basePoints(st), mul = st.double ? 2 : 1;
+    var parts = { cell: base };
+    parts.combo = Math.round(base * K.COMBO_STEP * Math.min(st.streak - 1, K.COMBO_MAX));
+    parts.speed = st.lastHitMs >= 0 && st.elapsedMs - st.lastHitMs <= K.SPEED_SEC * 1000 ? base * K.SPEED_BONUS : 0;
+    parts.unit = base * K.UNIT_BONUS * unitsDone(st, idx);
+    parts.number = placedCount(st, st.solution[idx]) === st.size ? base * K.NUMBER_BONUS : 0;
+    parts.milestone = st.streak % 10 === 0 ? base * K.COMBO_MILESTONE * (st.streak / 10) : 0;
+    st.lastHitMs = st.elapsedMs;
+    var gain = 0;
+    for (var k in parts) {
+      parts[k] *= mul; // 점수 2배권
+      st.tally[k] += parts[k];
+      gain += parts[k];
+    }
+    if (parts.combo && st.streak >= 3) st.lastParts.push(st.streak + '콤보');
+    if (parts.speed) st.lastParts.push('빠른 손');
+    if (parts.number) st.lastParts.push('숫자 완성');
+    if (parts.milestone) st.lastParts.push(st.streak + '연속!');
     st.score += gain;
     return gain;
   }
 
-  /* 판을 다 채웠을 때 : 성공 처리와 완성 보너스 */
+  /* 판을 다 채웠을 때 : 성공 처리와 완성 보너스 (내역은 st.clearParts) */
   function finishWin(st) {
     st.status = 'won';
-    var base = basePoints(st);
-    st.clearBonus = base * C.SCORE.CLEAR_BONUS + (st.mistakes === 0 ? base * C.SCORE.PERFECT_BONUS : 0);
-    if (st.double) st.clearBonus *= 2;
+    var K = C.SCORE, base = basePoints(st), mul = st.double ? 2 : 1;
+    var blanks = 0;
+    for (var i = 0; i < st.cells.length; i++) if (!st.fixed[i] || st.hinted[i]) blanks++;
+    var sec = Math.floor(st.elapsedMs / 1000);
+    var hints = C.MAX_HINTS - st.hintsLeft + (st.extraHints || 0);
+    var timeSteps = Math.floor(Math.max(0, blanks * K.TIME_PER_CELL - sec) / K.TIME_STEP);
+    var list = [
+      ['완성 보너스', base * K.CLEAR_BONUS],
+      ['무결점', st.mistakes === 0 ? base * K.PERFECT_BONUS : 0],
+      ['힌트 없이', hints === 0 ? base * K.NOHINT_BONUS : 0],
+      ['시간 보너스', base * Math.min(K.TIME_MAX, timeSteps)],
+      ['최고 ' + st.bestStreak + '콤보', st.bestStreak >= 5 ? base * K.BEST_COMBO * st.bestStreak : 0],
+      [st.stage + '단계 보너스', st.daily && st.stage > 1 ? base * K.STAGE_BONUS * (st.stage - 1) : 0]
+    ];
+    st.clearParts = [];
+    st.clearBonus = 0;
+    for (var j = 0; j < list.length; j++) {
+      if (!list[j][1]) continue;
+      var v = list[j][1] * mul;
+      st.clearParts.push([list[j][0], v]);
+      st.clearBonus += v;
+    }
     st.score += st.clearBonus;
   }
 

@@ -6,7 +6,7 @@
 (function () {
   var S = window.SUDOKU;
   var C = S.Config, Game = S.Game, Progress = S.Progress, Engine = S.Engine, Settings = S.Settings;
-  var SHEETS = ['rules', 'settings', 'grades', 'items', 'stars'];
+  var SHEETS = ['rules', 'settings', 'grades', 'items', 'stars', 'crowns'];
 
   function $(id) {
     return document.getElementById(id);
@@ -187,7 +187,7 @@
   }
   /* 무언가 창이 떠 있으면 시간이 멈추고 키보드 입력도 받지 않습니다 */
   function overlayOpen() {
-    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || !$('login-ask').hidden || !$('nick').hidden || S.Tutorial.isOpen();
+    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || !$('stairs').hidden || !$('login-ask').hidden || !$('nick').hidden || S.Tutorial.isOpen();
   }
   function openSheet(name) {
     if (name === 'stars' && !C.SHOP_ENABLED) return; // 상점을 껐으면 별 충전 창도 열지 않음
@@ -200,6 +200,10 @@
     }
     if (name === 'items') renderItems();
     if (name === 'stars') renderStars();
+    if (name === 'crowns') {
+      crownYear = Number(Progress.dateKey().slice(0, 4));
+      renderCrowns();
+    }
     var sheet = $('sheet-' + name);
     sheet.hidden = false;
     sheet.querySelector('.sheet-body').scrollTop = 0;
@@ -306,10 +310,9 @@
 
     // 오늘의 퍼즐 카드
     $('home-daily-date').textContent = dayLabel(today);
-    var dailyLive = (isDaily() && game.status === 'playing') ||
-      (Game.isValidSaved(data.dailyGame) && data.dailyGame.daily === today);
-    $('home-daily-btn').textContent = Progress.dailyDone(data, today) ? '완료 ✓' : dailyLive ? '이어서 하기' : '플레이';
-    $('home-daily').classList.toggle('done', Progress.dailyDone(data, today));
+    var climbed = Progress.stairs(data, today);
+    $('home-daily-btn').textContent = dailyLive(today) ? (climbed + 1) + '단계 이어서' : climbed ? (climbed + 1) + '단계 도전' : '플레이';
+    $('home-daily').classList.remove('done');
 
     // 내 등급 카드
     var card = $('home-grade');
@@ -379,12 +382,8 @@
 
   /* 홈의 "오늘의 퍼즐" 카드 */
   function homeDaily() {
-    if (isDaily() && game.status === 'playing') return showScreen('game');
-    var today = Progress.dateKey();
-    if (Progress.dailyDone(data, today)) return pressDaily(); // 이미 풀었다는 안내
-    persist();
-    startDaily(today);
-    showScreen('game');
+    if (ending) return;
+    openStairs();
   }
 
   /* ---------------- 내 기록 화면 ---------------- */
@@ -443,9 +442,9 @@
         ['grid', '푼 날', dd.total + '일'],
         ['fire', '지금 연속', Progress.dailyStreak(data, today) + '일'],
         ['flag', '가장 긴 연속', dd.bestStreak + '일'],
-        ['thumb', '완벽한 승리', dailyGs.perfect || 0],
-        ['clock', '최고 시간', dailyGs.bestSec ? formatTime(dailyGs.bestSec * 1000) : '-'],
-        ['star', Progress.dailyDone(data, today) ? '오늘 점수' : '오늘 퍼즐', Progress.dailyDone(data, today) ? formatScore(dd.score) : '아직']
+        ['avg', '오늘 계단', Progress.stairs(data, today) + '단계'],
+        ['star', '최고 계단', (dd.bestStairs || 0) + '단계'],
+        ['thumb', '받은 왕관', (function (c) { return c[0] + c[1] + c[2] ? '금' + c[2] + ' 은' + c[1] + ' 동' + c[0] : '0'; })(Progress.crownCounts(data))]
       ];
     }
     var box = $('record-cards');
@@ -828,8 +827,7 @@
       chip.textContent = C.DAILY.name;
       chip.disabled = true;
       $('gradebar-label').textContent = '';
-      var streak = Progress.dailyStreak(data, today);
-      $('grade-text').textContent = dayLabel(game.daily) + (streak > 0 ? ' · 연속 ' + streak + '일' : '');
+      $('grade-text').textContent = dayLabel(game.daily) + ' · ' + (game.stage || 1) + '단계';
       $('grade-dots').innerHTML = '';
       $('btn-daily').textContent = '승급전으로';
       $('btn-new').textContent = '승급전으로 돌아가기';
@@ -842,7 +840,7 @@
     chip.disabled = false;
     chip.setAttribute('aria-label', grade.name + (C.FREE_GRADE_SELECT ? ' (눌러서 등급 고르기)' : ' (눌러서 승급 미션 보기)'));
     $('gradebar-label').textContent = '내 등급';
-    $('btn-daily').textContent = '오늘의 퍼즐' + (Progress.dailyDone(data, today) ? ' ✓' : '');
+    $('btn-daily').textContent = '오늘의 퍼즐' + (Progress.stairs(data, today) ? ' ' + Progress.stairs(data, today) + '단계' : '');
     $('btn-new').textContent = '새 게임';
     if (next) {
       $('grade-text').textContent = missionShort();
@@ -951,26 +949,312 @@
   function pressDaily() {
     if (ending) return;
     if (isDaily()) return leaveDaily();
-    var today = Progress.dateKey();
-    if (Progress.dailyDone(data, today)) {
-      var dd = data.daily;
-      showModal(
-        '오늘의 퍼즐은 이미 풀었어요!\n' + formatScore(dd.score) + '점 · ' + formatTime(dd.seconds * 1000) +
-          '\n연속 ' + dd.streak + '일째 · 내일 새 퍼즐이 나와요',
-        '확인', '');
-      return;
-    }
-    persist(); // 하던 승급전 판은 그대로 두었다가, 돌아오면 이어서 합니다
-    startDaily(today);
+    openStairs();
   }
 
+  /* 오늘 이어서 할 단계 판이 있는가? (하던 판이 있으면 그 판, 없으면 오늘 오른 단계 + 1 판) */
+  function dailyLive(today) {
+    var stage = Progress.stairs(data, today) + 1;
+    if (isDaily() && game.status === 'playing' && game.daily === today) return true;
+    var g = data.dailyGame;
+    return Game.isValidSaved(g) && g.daily === today && (g.stage || stage) === stage;
+  }
+
+  /* 오늘의 퍼즐 : 오늘 오른 단계 + 1 단계 판을 엽니다 (밤 12시가 지나면 1단계부터) */
   function startDaily(today) {
     S.Effects.stop();
     $('result').hidden = true;
+    var stage = Progress.stairs(data, today) + 1;
     var saved = data.dailyGame;
-    if (Game.isValidSaved(saved) && saved.daily === today) beginGame(saved);
-    else beginGame(Game.createDaily(today));
+    if (Game.isValidSaved(saved) && saved.daily === today && (saved.stage || stage) === stage) {
+      saved.stage = stage;
+      beginGame(saved);
+    } else {
+      beginGame(Game.createDaily(today, stage));
+    }
     persist();
+  }
+
+  /* ---------------- 오늘의 퍼즐 창 : 달력 + 계단 ---------------- */
+  var calMonth = ''; // 달력에 보이는 달 '2026-11'
+  var stairsDay = ''; // 창을 그린 날짜 (밤 12시가 지나면 다시 그림)
+  var stairsTimer = 0;
+  var CROWN = {
+    bronze: ['#e09a5f', '#9c5a2b'],
+    silver: ['#dfe5ec', '#8d98a5'],
+    gold: ['#ffd23f', '#c98a00']
+  };
+  function crownSvg(tier) {
+    var c = CROWN[tier] || CROWN.gold;
+    return '<svg viewBox="0 0 32 26" aria-hidden="true">' +
+      '<path d="M3 8.5l7 6 6-11.5 6 11.5 7-6-2.6 13H5.6Z" fill="' + c[0] + '" stroke="' + c[1] + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+      '<rect x="5" y="20.5" width="22" height="4" rx="1.4" fill="' + c[1] + '"/>' +
+      '<circle cx="16" cy="3" r="2.2" fill="' + c[1] + '"/><circle cx="3" cy="8" r="1.9" fill="' + c[1] + '"/><circle cx="29" cy="8" r="1.9" fill="' + c[1] + '"/>' +
+      '<circle cx="16" cy="15" r="2" fill="#fff" opacity="0.8"/></svg>';
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function monthStep(mk, n) {
+    var p = mk.split('-'), y = +p[0], m = +p[1] + n;
+    while (m < 1) { m += 12; y--; }
+    while (m > 12) { m -= 12; y++; }
+    return y + '-' + pad2(m);
+  }
+  /* 달력을 거슬러 볼 수 있는 가장 앞 달 (기록이 있는 첫 달) */
+  function firstMonth(today) {
+    var first = today.slice(0, 7), days = data.daily.days || {};
+    for (var k in days) if (k.slice(0, 7) < first) first = k.slice(0, 7);
+    return first;
+  }
+
+  function openStairs() {
+    calMonth = Progress.dateKey().slice(0, 7);
+    renderStairs();
+    $('stairs').hidden = false;
+    window.clearInterval(stairsTimer);
+    stairsTimer = window.setInterval(tickStairs, 1000);
+    $('stairs').querySelector('.stairs-box').scrollTop = 0;
+    try { $('stairs-go').focus({ preventScroll: true }); } catch (e) { /* 예전 브라우저 */ }
+  }
+  function closeStairs() {
+    $('stairs').hidden = true;
+    window.clearInterval(stairsTimer);
+    lastTick = Date.now();
+    if (screen === 'home') renderHome();
+    if (screen === 'game') renderGame();
+  }
+  function tickStairs() {
+    var today = Progress.dateKey();
+    if (today !== stairsDay) {
+      if (calMonth === stairsDay.slice(0, 7)) calMonth = today.slice(0, 7);
+      return renderStairs();
+    }
+    var now = new Date();
+    var left = Math.max(0, Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - now) / 1000));
+    $('stairs-reset').textContent = '밤 12시에 1단계부터 다시 · ' +
+      Math.floor(left / 3600) + ':' + pad2(Math.floor((left % 3600) / 60)) + ':' + pad2(left % 60) + ' 남음';
+  }
+
+  function renderStairs() {
+    var today = Progress.dateKey();
+    stairsDay = today;
+    var n = Progress.stairs(data, today);
+    var every = Math.max(1, C.DAILY.bonusEvery || 5);
+    var hints = C.DAILY.bonusHints || 0;
+    // 계단 : 지금 오르는 구간의 5칸 (마지막 칸에 선물)
+    var start = Math.floor(n / every) * every;
+    var box = $('stairs-steps');
+    box.innerHTML = '';
+    for (var i = 1; i <= every; i++) {
+      var stage = start + i;
+      var st = document.createElement('div');
+      st.className = 'step' + (stage <= n ? ' on' : stage === n + 1 ? ' now' : '');
+      st.style.height = Math.round(28 + (i - 1) * (72 / Math.max(1, every - 1))) + '%';
+      st.textContent = stage;
+      if (stage === n + 1) {
+        var me = document.createElement('span');
+        me.className = 'step-me';
+        me.textContent = '🐾';
+        st.appendChild(me);
+      }
+      if (i === every) {
+        var gift = document.createElement('span');
+        gift.className = 'step-gift';
+        gift.textContent = '🎁 💡' + hints;
+        st.appendChild(gift);
+      }
+      box.appendChild(st);
+    }
+    var info = $('stairs-info');
+    info.innerHTML = '';
+    var left = Progress.stairsToBonus(n);
+    if (n) {
+      info.appendChild(document.createTextNode('오늘 '));
+      var em = document.createElement('em');
+      em.textContent = n + '단계';
+      info.appendChild(em);
+      info.appendChild(document.createTextNode('까지 올랐어요\n'));
+    } else {
+      info.appendChild(document.createTextNode('깰 때마다 같은 난이도의 다음 단계가 나와요\n'));
+    }
+    info.appendChild(document.createTextNode(left + '단계 더 오르면 💡 힌트 ' + hints + '개'));
+    $('stairs-go').textContent = (n + 1) + '단계 ' + (dailyLive(today) ? '이어서 하기' : '도전');
+    renderCalendar(today);
+    tickStairs();
+  }
+
+  function renderCalendar(today) {
+    var thisMonth = today.slice(0, 7);
+    var p = calMonth.split('-'), y = +p[0], m = +p[1];
+    $('cal-month').textContent = y + '년 ' + m + '월';
+    $('cal-prev').disabled = calMonth <= firstMonth(today);
+    $('cal-next').disabled = calMonth >= thisMonth;
+    // 날짜 칸
+    var grid = $('cal-grid');
+    grid.innerHTML = '';
+    var lead = new Date(y, m - 1, 1).getDay(), last = new Date(y, m, 0).getDate();
+    for (var b = 0; b < lead; b++) grid.appendChild(document.createElement('li'));
+    for (var d = 1; d <= last; d++) {
+      var key = calMonth + '-' + pad2(d);
+      var v = Progress.dayStairs(data, key);
+      var li = document.createElement('li');
+      li.className = 'cal-d' + (v ? ' played' : '') + (key === today ? ' today' : '') + (key > today ? ' future' : '');
+      var num = document.createElement('b');
+      num.textContent = d;
+      li.appendChild(num);
+      if (v) {
+        var sm = document.createElement('small');
+        sm.textContent = v;
+        li.appendChild(sm);
+        li.setAttribute('aria-label', m + '월 ' + d + '일 ' + v + '단계');
+      }
+      grid.appendChild(li);
+    }
+    // 목표 막대와 왕관
+    var goals = C.DAILY_MONTH_GOALS || [];
+    var top = goals.length ? goals[goals.length - 1].days : 30;
+    var count = Progress.monthDays(data, calMonth), level = Progress.monthCrown(data, calMonth);
+    $('cal-fill').style.width = Math.min(100, (count / top) * 100) + '%';
+    var goal = $('cal-goal');
+    var old = goal.querySelectorAll('.cal-mark');
+    for (var o = 0; o < old.length; o++) goal.removeChild(old[o]);
+    goals.forEach(function (g, i) {
+      var mk = document.createElement('span');
+      mk.className = 'cal-mark' + (level > i ? ' got' : '');
+      mk.style.left = (g.days / top) * 100 + '%';
+      mk.innerHTML = crownSvg(g.crown) + '<b>' + g.days + '</b>';
+      goal.appendChild(mk);
+    });
+    var t = $('cal-goal-t');
+    t.innerHTML = '';
+    var next = null;
+    for (var gi = 0; gi < goals.length; gi++) if (count < goals[gi].days) { next = goals[gi]; break; }
+    t.appendChild(document.createTextNode((calMonth === thisMonth ? '이번 달 ' : m + '월에 ') + count + '일 했어요'));
+    if (calMonth === thisMonth && next) {
+      t.appendChild(document.createTextNode('\n' + (next.days - count) + '일 더 하면 '));
+      var bb = document.createElement('b');
+      bb.textContent = next.name + '왕관 + 💡 힌트 ' + next.hints + '개';
+      t.appendChild(bb);
+    } else if (level) {
+      t.appendChild(document.createTextNode(' · ' + goals[level - 1].name + '왕관을 받았어요'));
+    }
+    // 지금까지 받은 왕관
+    var cc = Progress.crownCounts(data);
+    var cr = $('cal-crowns');
+    cr.innerHTML = '';
+    cr.appendChild(document.createTextNode('내 왕관'));
+    [['gold', 2], ['silver', 1], ['bronze', 0]].forEach(function (x) {
+      var sp = document.createElement('span');
+      sp.innerHTML = crownSvg(x[0]);
+      sp.appendChild(document.createTextNode(String(cc[x[1]])));
+      cr.appendChild(sp);
+    });
+    var go = document.createElement('em');
+    go.textContent = '진열장 ›';
+    cr.appendChild(go);
+  }
+
+  /* ---------------- 왕관 진열장 ---------------- */
+  var crownYear = 0;
+  // 등급(0 없음 · 1 동 · 2 은 · 3 금)별 색 : 몸통, 테두리, 띠, 보석
+  var CROWN_TONE = [
+    { body: '#f4f6f9', edge: '#c3cbd5', band: '#e2e7ee', gems: ['#d3d9e1'] },
+    { body: '#e6a46e', edge: '#8f5326', band: '#bf7a43', gems: ['#fff1de', '#3c9a64', '#2f7bd6'] },
+    { body: '#e9eef3', edge: '#7c8896', band: '#c3ccd6', gems: ['#2f7bd6', '#e5533d', '#7c4dcc'] },
+    { body: '#ffd54a', edge: '#ad7a00', band: '#f0b000', gems: ['#e5533d', '#2f7bd6', '#2f9e5b'] }
+  ];
+  var CROWN_POINTS = [3, 5, 4, 7, 5, 3, 6, 4, 5, 3, 7, 5]; // 달마다 뾰족한 끝의 수
+  /*
+   * 달마다 모양이 다른 왕관 그림 (받침대 위에 놓임)
+   *   m : 0~11 (1월~12월),  level : 0~3,  label : 받침대 글씨 ('2/30')
+   */
+  function crownArt(m, level, label) {
+    var t = CROWN_TONE[level] || CROWN_TONE[0];
+    var n = CROWN_POINTS[m % 12], tip = m % 3, jewel = Math.floor(m / 3) % 4, round = m % 2 === 1;
+    var left = 14, right = 66, base = 46, out = [];
+    var xs = [], ys = [];
+    for (var i = 0; i < n; i++) {
+      var off = n > 1 ? Math.abs(i - (n - 1) / 2) / ((n - 1) / 2) : 0;
+      xs.push(left + (i * (right - left)) / (n - 1));
+      ys.push(14 + off * 9);
+    }
+    // 몸통 : 끝과 끝 사이가 파이거나(뾰족) 둥글게 파임
+    var d = 'M' + left + ' ' + base + ' L' + xs[0] + ' ' + ys[0];
+    for (var k = 1; k < n; k++) {
+      var mx = (xs[k - 1] + xs[k]) / 2;
+      if (round) d += ' Q' + mx + ' ' + (base + 2) + ' ' + xs[k] + ' ' + ys[k];
+      else d += ' L' + mx + ' 35 L' + xs[k] + ' ' + ys[k];
+    }
+    d += ' L' + right + ' ' + base + ' Z';
+    out.push('<path d="' + d + '" fill="' + t.body + '" stroke="' + t.edge + '" stroke-width="2" stroke-linejoin="round"/>');
+    out.push('<path d="M' + (left + 4) + ' 42 L' + (xs[0] + 2) + ' ' + (ys[0] + 8) + '" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.7"/>');
+    // 끝 장식 : 구슬 · 마름모 · 별
+    for (var q = 0; q < n; q++) {
+      var x = xs[q], y = ys[q] - 3, g = t.gems[q % t.gems.length];
+      if (tip === 0) out.push('<circle cx="' + x + '" cy="' + y + '" r="3.4" fill="' + g + '" stroke="' + t.edge + '" stroke-width="1.4"/>');
+      else if (tip === 1) out.push('<path d="M' + x + ' ' + (y - 4.5) + 'l3.5 4.5-3.5 4.5-3.5-4.5Z" fill="' + g + '" stroke="' + t.edge + '" stroke-width="1.3" stroke-linejoin="round"/>');
+      else out.push('<path d="M' + x + ' ' + (y - 5) + 'l1.5 3.2 3.4.4-2.5 2.3.7 3.4-3.1-1.7-3.1 1.7.7-3.4-2.5-2.3 3.4-.4Z" fill="' + g + '" stroke="' + t.edge + '" stroke-width="1.1" stroke-linejoin="round"/>');
+    }
+    // 띠와 보석
+    out.push('<rect x="11" y="' + base + '" width="58" height="10" rx="2.5" fill="' + t.band + '" stroke="' + t.edge + '" stroke-width="2"/>');
+    var cy = base + 5;
+    if (jewel === 0) {
+      for (var a = 0; a < 5; a++) out.push('<circle cx="' + (20 + a * 10) + '" cy="' + cy + '" r="2.4" fill="' + t.gems[a % t.gems.length] + '"/>');
+    } else if (jewel === 1) {
+      out.push('<ellipse cx="40" cy="' + cy + '" rx="6" ry="4" fill="' + t.gems[0] + '" stroke="' + t.edge + '" stroke-width="1.2"/>');
+      out.push('<circle cx="24" cy="' + cy + '" r="2.4" fill="' + t.gems[1 % t.gems.length] + '"/><circle cx="56" cy="' + cy + '" r="2.4" fill="' + t.gems[1 % t.gems.length] + '"/>');
+    } else if (jewel === 2) {
+      for (var b2 = 0; b2 < 4; b2++) out.push('<path d="M' + (22 + b2 * 12) + ' ' + (cy - 3.5) + 'l3 3.5-3 3.5-3-3.5Z" fill="' + t.gems[b2 % t.gems.length] + '"/>');
+    } else {
+      out.push('<path d="M14 ' + (cy - 2) + 'H66M14 ' + (cy + 2) + 'H66" stroke="' + t.edge + '" stroke-width="1.2" opacity="0.6"/>');
+      out.push('<circle cx="40" cy="' + cy + '" r="3.2" fill="' + t.gems[0] + '" stroke="' + t.edge + '" stroke-width="1"/>');
+    }
+    // 받침대
+    out.push('<path d="M16 62h48l-3 5H19Z" fill="#dfe4ea" stroke="#b9c2cc" stroke-width="1.2"/>');
+    out.push('<rect x="20" y="67" width="40" height="15" rx="2" fill="#eef1f5" stroke="#b9c2cc" stroke-width="1.2"/>');
+    out.push('<text x="40" y="78.5" text-anchor="middle" font-size="9.5" font-weight="800" fill="#3b4656">' + label + '</text>');
+    return '<svg viewBox="0 0 80 84" aria-hidden="true">' + out.join('') + '</svg>';
+  }
+
+  function renderCrowns() {
+    var today = Progress.dateKey();
+    var thisYear = Number(today.slice(0, 4)), thisMonth = Number(today.slice(5, 7));
+    var firstYear = Number(firstMonth(today).slice(0, 4));
+    if (crownYear > thisYear) crownYear = thisYear;
+    if (crownYear < firstYear) crownYear = firstYear;
+    $('crown-year').textContent = crownYear + '년';
+    $('crown-prev').disabled = crownYear <= firstYear;
+    $('crown-next').disabled = crownYear >= thisYear;
+    var goals = C.DAILY_MONTH_GOALS || [];
+    var shelf = $('crown-shelf');
+    shelf.innerHTML = '';
+    var last = crownYear === thisYear ? thisMonth : 12, got = 0;
+    for (var m = last; m >= 1; m--) {
+      var mk = crownYear + '-' + pad2(m);
+      var days = new Date(crownYear, m, 0).getDate();
+      var count = Progress.monthDays(data, mk), level = Progress.monthCrown(data, mk);
+      if (level) got++;
+      var li = document.createElement('li');
+      li.className = 'crown-item' + (level ? ' got lv' + level : '') + (mk === today.slice(0, 7) ? ' now' : '');
+      li.innerHTML = crownArt(m - 1, level, count + '/' + days);
+      var cap = document.createElement('span');
+      cap.className = 'crown-cap';
+      cap.textContent = m + '월' + (level ? ' · ' + goals[level - 1].name + '왕관' : '');
+      li.appendChild(cap);
+      li.setAttribute('aria-label', crownYear + '년 ' + m + '월 ' + count + '일' + (level ? ', ' + goals[level - 1].name + '왕관' : ''));
+      shelf.appendChild(li);
+    }
+    var cc = Progress.crownCounts(data);
+    $('crown-sum').textContent = crownYear + '년에 받은 왕관 ' + got + '개 · 모두 금 ' + cc[2] + ' · 은 ' + cc[1] + ' · 동 ' + cc[0];
+  }
+
+  /* 창의 "N단계 도전" 단추 */
+  function pressStairsGo() {
+    var today = Progress.dateKey();
+    closeStairs();
+    if (isDaily() && game.status === 'playing' && game.daily === today) return showScreen('game');
+    persist(); // 하던 승급전 판은 그대로 두었다가, 돌아오면 이어서 합니다
+    startDaily(today);
+    showScreen('game');
   }
 
   /* 오늘의 퍼즐에서 승급전으로 돌아갑니다 */
@@ -985,9 +1269,8 @@
   /* 결과 창의 "다시 하기" 단추 */
   function pressAgain() {
     if (!isDaily()) return launch();
-    if (game.status === 'won') return leaveDaily();
-    data.dailyGame = null; // 실패한 오늘의 퍼즐 : 같은 판을 처음부터 다시
-    startDaily(Progress.dateKey());
+    if (game.status !== 'won') data.dailyGame = null; // 실패한 단계 : 같은 판을 처음부터 다시
+    startDaily(Progress.dateKey()); // 깼으면 다음 단계 (밤 12시가 지났으면 1단계)
   }
 
   /* ---------------- 판 만들기 ---------------- */
@@ -1149,6 +1432,7 @@
       b.classList.toggle('on', showSame && hl === k);
       var leftN = Math.max(0, n - Game.placedCount(game, k));
       b.classList.toggle('done', leftN === 0);
+      b.disabled = leftN === 0; // 다 채운 숫자는 눌리지 않음 (되돌리기 등으로 빈자리가 생기면 다시 눌림)
       b.querySelector('.left').textContent = leftN > 0 ? leftN : '';
       b.setAttribute('aria-label', k + ', ' + (leftN > 0 ? leftN + '개 남음' : '다 채움'));
     }
@@ -1225,14 +1509,25 @@
     if (!cell) return;
     var r = cell.getBoundingClientRect(), w = wrap.getBoundingClientRect();
     var el = document.createElement('span');
-    el.className = 'gain';
+    el.className = 'gain' + (gain >= basePts() * 5 ? ' big' : '');
     el.textContent = '+' + formatScore(gain);
+    // 덤 내역 : "7콤보 · 빠른 손"
+    if (game.lastParts && game.lastParts.length) {
+      var sm = document.createElement('small');
+      sm.textContent = game.lastParts.join(' · ');
+      el.appendChild(sm);
+    }
     el.style.left = (r.left - w.left + r.width / 2) + 'px';
     el.style.top = (r.top - w.top + r.height / 2) + 'px';
     wrap.appendChild(el);
     window.setTimeout(function () {
       if (el.parentNode) el.parentNode.removeChild(el);
     }, 950);
+  }
+
+  /* 이번 판의 기본 점수 (큰 점수를 받았을 때 글씨를 키우는 데 씀) */
+  function basePts() {
+    return C.SCORE.BASE * (game.daily ? C.DAILY.points : game.gradeIndex + 1) * (game.double ? 2 : 1);
   }
 
   /* 맞는 숫자가 들어간 뒤 : 효과와 응원 메시지 */
@@ -1370,6 +1665,7 @@
 
   function pressDigit(d) {
     if (!playing() || d < 1 || d > game.size) return;
+    if (Game.placedCount(game, d) >= game.size) return; // 다 채운 숫자 (키보드로 눌러도 무시)
     if (magnifyPick) {
       magnifyPick = false;
       return applyMagnify(d);
@@ -1534,9 +1830,14 @@
     var res, scoreBefore = data.totalScore;
     if (finished.daily) {
       // 오늘의 퍼즐은 등급에 영향을 주지 않습니다
-      var firstToday = !Progress.dailyDone(data, finished.daily);
       res = won ? Progress.recordDaily(data, finished.daily, seconds, finished.score) : {};
-      if (won && firstToday) S.Ranking.addDaily(data, finished.daily, seconds); // 오늘의 날쌘냥 (처음 푼 기록만)
+      if (won) {
+        var up = Progress.recordStair(data, finished.daily); // 한 계단 오름 (5단계마다 힌트, 달력 보상)
+        res.stairs = up.stairs;
+        res.bonus = up.bonus;
+        res.month = up.month;
+        S.Ranking.addStairs(data, finished.daily, up.stairs); // 오늘의 계단왕
+      }
       data.dailyGame = null;
     } else {
       res = won ? Progress.recordWin(data, seconds, finished.score, finished) : Progress.recordLoss(data, finished.score);
@@ -1564,6 +1865,38 @@
     }, wait);
   }
 
+  /* 결과 창의 점수 내역 : 칸 점수(기본 · 콤보 · 빠른 손 …) + 판 완성 보너스 */
+  function renderScoreRows(g) {
+    var box = $('result-rows');
+    box.innerHTML = '';
+    box.hidden = !g;
+    if (!g) return;
+    var t = g.tally || {};
+    var rows = [
+      ['칸 점수', t.cell], ['연속 콤보', t.combo], ['빠른 손', t.speed], ['줄·상자 완성', t.unit],
+      ['숫자 완성', t.number], ['콤보 고비', t.milestone]
+    ];
+    if (!g.tally) rows = [['칸 점수', g.score - (g.clearBonus || 0)]]; // 예전에 시작한 판
+    (g.clearParts || []).forEach(function (p) { rows.push(p); });
+    rows.forEach(function (r) {
+      if (!r[1]) return;
+      var li = document.createElement('li');
+      var a = document.createElement('span');
+      a.textContent = r[0];
+      var b = document.createElement('b');
+      b.textContent = '+' + formatScore(r[1]);
+      li.appendChild(a);
+      li.appendChild(b);
+      box.appendChild(li);
+    });
+    if (g.double) {
+      var d = document.createElement('li');
+      d.className = 'x2';
+      d.textContent = '점수 2배권 적용';
+      box.appendChild(d);
+    }
+  }
+
   function renderResult(won, finished, before, res) {
     var grade = C.GRADES[data.gradeIndex];
     var next = C.GRADES[data.gradeIndex + 1];
@@ -1571,26 +1904,43 @@
     $('result-mark').className = 'result-mark' + (won ? '' : ' fail');
     $('result-title').textContent = won ? '성공!' : '실패';
     $('result-sub').textContent = won
-      ? (finished.daily ? dayLabel(finished.daily) + ' 오늘의 퍼즐을 풀었어요' : before.name + ' 한 판을 깼어요')
+      ? (finished.daily ? '오늘의 퍼즐 ' + (finished.stage || 1) + '단계를 깼어요' : before.name + ' 한 판을 깼어요')
       : '틀린 숫자가 ' + C.MAX_MISTAKES + '번 나왔어요';
     $('result-time').textContent = formatTime(finished.elapsedMs);
     $('result-score').textContent = formatScore(finished.score);
 
     var detail = '틀린 횟수 ' + finished.mistakes + '번 · 힌트 ' + (C.MAX_HINTS - finished.hintsLeft + (finished.extraHints || 0)) + '번 사용';
     if (finished.itemsUsed) detail += '\n아이템 ' + finished.itemsUsed + '개 사용';
-    if (won && finished.clearBonus > 0) detail += '\n완성 보너스 +' + formatScore(finished.clearBonus) + '점';
-    if (won && res.newBestScore) detail += ' · 최고 점수!';
-    if (won && res.newBest) detail += ' · 가장 빠른 기록!';
+    if (won && res.newBestScore) detail += '\n최고 점수!';
+    if (won && res.newBest) detail += (res.newBestScore ? ' · ' : '\n') + '가장 빠른 기록!';
     $('result-detail').textContent = detail;
+    renderScoreRows(won ? finished : null);
 
     var msg;
     if (finished.daily) {
-      msg = won
-        ? (res.guarded ? '🛡️ 보호권 ' + res.guarded + '장으로 연속 기록을 지켰어요\n' : '') + '연속 ' + res.streak + '일째 풀었어요!\n내일 새 퍼즐이 나와요'
-        : '등급에는 영향이 없어요\n풀 때까지 다시 도전할 수 있어요';
-      $('result-progress').textContent = msg;
-      $('result-dots').innerHTML = '';
-      $('btn-again').textContent = won ? '승급전 하기' : '다시 도전';
+      var lines = [];
+      if (won) {
+        if (res.first) lines.push((res.guarded ? '🛡️ 보호권 ' + res.guarded + '장으로 연속 기록을 지켰어요\n' : '') + '오늘의 퍼즐 연속 ' + res.streak + '일째!');
+        if (res.month) lines.push('👑 이번 달 ' + res.month.days + '일 달성!\n' + res.month.goal.name + '왕관과 💡 힌트 ' + res.month.hints + '개를 받았어요');
+        if (res.bonus) lines.push('🎁 ' + res.stairs + '단계 돌파! 💡 힌트 ' + res.bonus + '개를 받았어요');
+        else lines.push('다음 선물까지 ' + Progress.stairsToBonus(res.stairs) + '단계');
+        if (res.bonus || res.month) S.Sound.play('hint');
+      } else {
+        lines.push('등급에는 영향이 없어요\n같은 단계를 다시 도전할 수 있어요');
+      }
+      $('result-progress').textContent = lines.join('\n');
+      // 선물까지의 계단 동그라미
+      var dots = $('result-dots');
+      dots.innerHTML = '';
+      var every = Math.max(1, C.DAILY.bonusEvery || 5);
+      var n = Progress.stairs(data, finished.daily);
+      var on = n && n % every === 0 ? every : n % every;
+      for (var di = 0; di < every; di++) {
+        var dot = document.createElement('span');
+        dot.className = 'dot' + (di < on ? ' on' : '');
+        dots.appendChild(dot);
+      }
+      $('btn-again').textContent = won ? (n + 1) + '단계 도전' : '다시 도전';
       return;
     }
     $('btn-again').textContent = '다시 하기';
@@ -2074,6 +2424,76 @@
   $('btn-memo').addEventListener('click', pressMemo);
   $('btn-hint').addEventListener('click', pressHint);
   $('home-attend').addEventListener('click', openAttend);
+
+  /* 게임 화면 Aa 단추 : 글씨 크기 · 화면 밝기 · 판 색 */
+  function renderView() {
+    var sk = $('view-skins');
+    sk.innerHTML = '';
+    var now = S.Skins.current().id;
+    S.Skins.LIST.forEach(function (skin) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'view-skin';
+      b.setAttribute('data-view-skin', skin.id);
+      b.setAttribute('aria-label', skin.name);
+      b.setAttribute('aria-pressed', skin.id === now ? 'true' : 'false');
+      var sw = skin.swatch || {};
+      if (sw.image) b.style.backgroundImage = 'url(' + sw.image + ')';
+      else if (sw.cells) b.style.setProperty('--sw', 'linear-gradient(135deg, ' + sw.cells[0] + ' 0 50%, ' + sw.cells[4] + ' 50% 100%)');
+      sk.appendChild(b);
+    });
+    var marks = [['view-theme', 'data-view-theme', Settings.get('theme')], ['view-font', 'data-view-font', Settings.get('fontSize')]];
+    marks.forEach(function (m) {
+      var bs = $(m[0]).querySelectorAll('button');
+      for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', bs[i].getAttribute(m[1]) === m[2] ? 'true' : 'false');
+    });
+  }
+  function toggleView(open) {
+    var pop = $('view-pop');
+    if (open == null) open = pop.hidden;
+    if (open) renderView();
+    pop.hidden = !open;
+    $('btn-view').setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  $('btn-view').addEventListener('click', function (e) {
+    e.stopPropagation();
+    toggleView();
+  });
+  $('view-pop').addEventListener('click', function (e) {
+    e.stopPropagation();
+    var t = e.target.closest ? e.target.closest('button') : null;
+    if (!t) return;
+    if (t.hasAttribute('data-view-font')) Settings.setFont(t.getAttribute('data-view-font'));
+    else if (t.hasAttribute('data-view-theme')) S.Theme.apply(t.getAttribute('data-view-theme'));
+    else if (t.hasAttribute('data-view-skin')) S.Skins.apply(t.getAttribute('data-view-skin'));
+    else return;
+    S.Sound.play('memoOn');
+    renderView();
+  });
+  document.addEventListener('click', function (e) {
+    if (!$('view-pop').hidden && !e.target.closest('#view-pop')) toggleView(false);
+  });
+  $('stairs-go').addEventListener('click', pressStairsGo);
+  $('stairs-close').addEventListener('click', closeStairs);
+  $('stairs').addEventListener('click', function (e) {
+    if (e.target === $('stairs')) closeStairs();
+  });
+  $('crown-prev').addEventListener('click', function () {
+    crownYear--;
+    renderCrowns();
+  });
+  $('crown-next').addEventListener('click', function () {
+    crownYear++;
+    renderCrowns();
+  });
+  $('cal-prev').addEventListener('click', function () {
+    calMonth = monthStep(calMonth, -1);
+    renderCalendar(Progress.dateKey());
+  });
+  $('cal-next').addEventListener('click', function () {
+    calMonth = monthStep(calMonth, 1);
+    renderCalendar(Progress.dateKey());
+  });
   $('attend-ok').addEventListener('click', pressAttendOk);
   $('attend').addEventListener('click', function (e) {
     if (e.target === $('attend')) closeAttend();
@@ -2197,6 +2617,10 @@
       if (e.key === 'Escape') closeAttend();
       return;
     }
+    if (!$('stairs').hidden && !sheetOpen()) {
+      if (e.key === 'Escape') closeStairs();
+      return;
+    }
     if (sheetOpen()) {
       if (e.key === 'Escape') closeSheets();
       return;
@@ -2291,6 +2715,7 @@
     if (!$('login-ask').hidden) { closeLoginAsk(); return true; }
     if (!$('nick').hidden) { S.Ranking.closeNick(); return true; }
     if (sheetOpen()) { closeSheets(); return true; }
+    if (!$('stairs').hidden) { closeStairs(); return true; }
     if (!$('result').hidden) { $('btn-result-close').click(); return true; }
     return false;
   }
@@ -2370,6 +2795,7 @@
   /* 저장해 둔 스킨을 입힙니다 */
   S.Skins.apply(Settings.get('skin'));
   S.Theme.apply();
+  Settings.setFont();
   renderMusicBtns();
 
   /* 앱으로 열었는지 표시 (화면 꾸밈에서 앱만 다르게 할 때 씀) */

@@ -120,7 +120,49 @@ button.chip:disabled { cursor: default; }
 
 /* ---------- 게임 ---------- */
 .game { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.board-col { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.board-col { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+/* 판 글씨 크기 (게임 화면 Aa 단추) */
+:root[data-font="s"] { --cell-fs: 0.5; --note-fs: 0.66; }
+:root[data-font="l"] { --cell-fs: 0.76; --note-fs: 0.92; }
+
+/* Aa 단추와 그 창 */
+.view-btn { font-size: 17px; font-weight: 800; color: var(--ink); }
+.view-btn[aria-expanded="true"] { background: var(--sel); border-color: var(--accent); }
+.view-pop {
+  position: absolute; z-index: 6; top: 46px; right: 0;
+  width: min(330px, 100%);
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px; border-radius: 18px;
+  background: var(--surface); border: 1px solid var(--line);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  animation: rise 0.2s ease-out;
+}
+.view-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 10px; border-radius: 12px; background: var(--bg);
+}
+.view-lbl { font-size: 16px; font-weight: 700; white-space: nowrap; }
+.view-seg { display: flex; gap: 6px; }
+.view-seg button {
+  min-width: 48px; height: 40px; padding: 0 8px;
+  border: 2px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--ink); font-size: 15px; font-weight: 700;
+}
+.view-seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.view-font button { font-family: inherit; }
+.view-font button:nth-child(1) { font-size: 13px; }
+.view-font button:nth-child(2) { font-size: 18px; }
+.view-font button:nth-child(3) { font-size: 24px; }
+.view-skins { justify-content: flex-start; flex-wrap: wrap; background: none; padding: 0 2px; }
+.view-skin {
+  width: 38px; height: 38px; border-radius: 50%; padding: 0;
+  border: 2px solid var(--line); background: var(--sw, #fff) center / cover no-repeat;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent); font-size: 18px; font-weight: 900;
+}
+.view-skin[aria-pressed="true"] { border: 3px solid var(--accent); }
+.view-skin[aria-pressed="true"]::after { content: '✓'; text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
 .side { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 10px; }
 
 .info {
@@ -137,6 +179,8 @@ button.chip:disabled { cursor: default; }
 .score b { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
 /* 맞혔을 때 칸 위로 떠오르는 "+30" */
+.gain small { display: block; margin-top: 2px; font-size: 13px; text-align: center; }
+.gain.big { font-size: 32px; }
 .gain {
   position: absolute; z-index: 4;
   transform: translate(-50%, -50%);
@@ -193,7 +237,7 @@ button.chip:disabled { cursor: default; }
   background: var(--cell-bg, var(--surface));
   color: var(--given, var(--ink));
   font-size: 24px;
-  font-size: calc(100cqw / var(--n) * 0.62);
+  font-size: calc(100cqw / var(--n) * var(--cell-fs, 0.62));
   font-weight: 700;
   line-height: 1;
   display: flex; align-items: center; justify-content: center;
@@ -243,7 +287,7 @@ button.chip:disabled { cursor: default; }
   grid-template-columns: repeat(var(--cols), 1fr);
   align-items: center; justify-items: center;
   font-size: 10px;
-  font-size: calc(100cqw / var(--n) / var(--cols) * 0.78);
+  font-size: calc(100cqw / var(--n) / var(--cols) * var(--note-fs, 0.78));
   font-weight: 600;
   color: var(--ink-soft);
   pointer-events: none;
@@ -423,6 +467,16 @@ button.chip:disabled { cursor: default; }
 .result-sub { margin: -6px 0 0; font-size: 19px; color: var(--ink-soft); }
 .result-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px; }
 .result-stats .card-sub { grid-column: 1 / -1; }
+.score-rows {
+  grid-column: 1 / -1; list-style: none; margin: 8px 0 0; padding: 8px 4px 0;
+  border-top: 1px dashed var(--line);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px;
+  font-size: 15px; text-align: left;
+}
+.score-rows li { display: flex; justify-content: space-between; gap: 6px; color: var(--ink-soft); }
+.score-rows b { color: #d9480f; font-variant-numeric: tabular-nums; }
+.score-rows li.x2 { grid-column: 1 / -1; justify-content: center; font-weight: 700; color: #d9480f; }
+@media (max-width: 360px) { .score-rows { grid-template-columns: 1fr; } }
 .result-num { font-size: 36px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
 #result-score { color: #d9480f; }
 

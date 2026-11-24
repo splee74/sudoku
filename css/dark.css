@@ -115,3 +115,5 @@
 /* 나무판 · 알록달록의 밝은 노란 강조 단추 위에서는 숫자를 진하게 */
 :root[data-theme="dark"][data-skin="wood"] .num.on,
 :root[data-theme="dark"][data-skin="colorful"] .num.on { color: #1b5aa6; }
+
+:root[data-theme="dark"] .score-rows b { color: #ff9e5e; }

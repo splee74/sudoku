@@ -54,11 +54,23 @@
     values.skin = typeof saved.skin === 'string' ? saved.skin : 'default';
     // 화면 밝기 : 'auto' 휴대폰 따라가기 · 'light' 밝게 · 'dark' 어둡게
     values.theme = THEMES.indexOf(saved.theme) >= 0 ? saved.theme : 'auto';
+    // 판의 글씨 크기 : 's' 작게 · 'm' 보통 · 'l' 크게
+    values.fontSize = FONTS.indexOf(saved.fontSize) >= 0 ? saved.fontSize : 'm';
     // 처음 하는 사람을 위한 따라 하기를 끝냈거나 건너뛰었는지
     values.tutorialDone = saved.tutorialDone === true;
   }
 
   var THEMES = ['auto', 'light', 'dark'];
+  var FONTS = ['s', 'm', 'l'];
+
+  /* 판의 글씨 크기를 저장하고 화면에 입힙니다 (<html data-font="s|m|l">, 글씨 크기는 css/style.css 의 --cell-fs) */
+  function setFont(id) {
+    if (FONTS.indexOf(id) >= 0) {
+      values.fontSize = id;
+      store();
+    }
+    if (typeof document !== 'undefined') document.documentElement.setAttribute('data-font', values.fontSize || 'm');
+  }
 
   function setTheme(id) {
     if (THEMES.indexOf(id) < 0) return;
@@ -90,5 +102,5 @@
 
   load();
 
-  S.Settings = { ITEMS: ITEMS, get: get, set: set, setSkin: setSkin, setTheme: setTheme, load: load };
+  S.Settings = { ITEMS: ITEMS, get: get, set: set, setSkin: setSkin, setTheme: setTheme, setFont: setFont, load: load };
 })(typeof window !== 'undefined' ? window : globalThis);
