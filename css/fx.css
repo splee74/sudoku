@@ -204,3 +204,21 @@ body { overflow-x: clip; }
   .cell.last-one { animation: none; box-shadow: inset 0 0 0 3px #f2b632; }
   .fx-combo { animation: fx-fade 1.2s ease-in forwards; transform: translate(-50%, -50%); }
 }
+
+/* ---------- 판이 처음 나타날 때 (js/ui.js 의 playIntro) ----------
+   칸이 왼쪽 위부터 대각선 물결로 펼쳐지고, 숫자가 위에서 톡 떨어지며 살짝 튕깁니다 */
+.board.intro .cell { animation: intro-cell 0.34s var(--id, 0s) ease-out backwards; }
+.board.intro .cell .val { display: inline-block; animation: intro-val 0.5s calc(var(--id, 0s) + 90ms) cubic-bezier(.3, 1.55, .5, 1) backwards; }
+.board.intro .cell .notes { animation: intro-cell 0.34s var(--id, 0s) ease-out backwards; }
+@keyframes intro-cell {
+  from { opacity: 0; transform: scale(0.55); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes intro-val {
+  0% { opacity: 0; transform: translateY(-70%) scale(0.3); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board.intro .cell, .board.intro .cell .val, .board.intro .cell .notes { animation: none; }
+}

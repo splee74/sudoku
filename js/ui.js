@@ -251,6 +251,7 @@
     if (name === 'game') {
       renderGradeBar();
       renderGame();
+      playIntro();
     } else {
       hideToast();
     }
@@ -877,6 +878,7 @@
     startTimer();
     S.Hero.setGrade(data.gradeIndex); // 오늘의 퍼즐도 내 등급 캐릭터
     S.Hero.reset();
+    playIntro(); // 게임 화면에서 새 판을 열면 바로 (홈에서 열면 게임 화면으로 넘어갈 때)
   }
 
   /* 하던 판을 저장합니다. 승급전 판과 오늘의 퍼즐은 따로 저장합니다. */
@@ -1275,7 +1277,32 @@
   }
 
   /* ---------------- 판 만들기 ---------------- */
+  /*
+   * 판이 처음 나타날 때 : 칸이 왼쪽 위부터 대각선으로 차례차례 펼쳐지고, 숫자가 위에서 톡톡 떨어집니다.
+   * 새 판을 만들면 introPending 이 켜지고, 게임 화면이 실제로 보일 때 한 번 틉니다.
+   */
+  var introPending = false, introTimer = 0;
+  function playIntro() {
+    if (!introPending || screen !== 'game' || !game) return;
+    introPending = false;
+    var board = $('board');
+    if (S.Effects.reduced()) return;
+    var n = game.size, step = n <= 4 ? 70 : n <= 6 ? 45 : 32;
+    for (var i = 0; i < cellEls.length; i++) {
+      var r = Math.floor(i / n), c = i % n;
+      cellEls[i].style.setProperty('--id', ((r + c) * step + 80) + 'ms');
+    }
+    window.clearTimeout(introTimer);
+    board.classList.remove('intro');
+    void board.offsetWidth; // 움직임을 처음부터 다시 틀기 위한 한 줄
+    board.classList.add('intro');
+    introTimer = window.setTimeout(function () {
+      board.classList.remove('intro');
+    }, (2 * (n - 1)) * step + 900);
+  }
+
   function buildBoard() {
+    introPending = true;
     var n = game.size;
     var board = $('board');
     board.innerHTML = '';
