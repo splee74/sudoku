@@ -259,13 +259,13 @@
     window.scrollTo(0, 0);
   }
 
-  /* 배경 음악 (js/music.js) : 게임 화면은 잔잔한 곡, 나머지 화면(시작 그림 포함)은 대문 곡.
+  /* 배경 음악 (js/music.js, audio/bgm01.mp3) : 모든 화면에서 같은 곡이 끊기지 않고 이어집니다.
      시작 그림이 뜰 때부터 틀어 봅니다. 설치한 앱은 크롬이 바로 소리를 내 주고,
      인터넷 창처럼 막혀 있으면 화면을 처음 만지는 순간 이어서 나옵니다 (music.js 가 깨움) */
   function playMusic() {
     if (!S.Music) return;
     if (!Settings.get('music')) return S.Music.stop();
-    S.Music.play(splashDone && screen === 'game' ? 'game' : 'title');
+    S.Music.play();
   }
 
   /* 화면마다 있는 작은 음악 단추 🔊/🔇 (index.html 의 data-music) : 설정의 '배경 음악'과 같은 스위치 */
@@ -2891,7 +2891,7 @@
       sp.hidden = true;
     }, 400);
     S.Sound.play('memoOn'); // 누를 때 짧은 소리 (설정에서 효과음을 끄면 안 남)
-    playMusic(); // 대문 음악
+    playMusic(); // 배경 음악
     /* 처음 켠 사람에게는 따라 하기를 먼저 보여 줍니다 (한 판이라도 해 본 사람은 건너뜀) */
     if (!Settings.get('tutorialDone') && data.totalGames === 0 && !data.daily.total) openTutorial();
     else window.setTimeout(maybeAttend, 450);
