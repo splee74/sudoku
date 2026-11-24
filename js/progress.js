@@ -78,6 +78,7 @@
       // 가지고 있는 아이템 개수 : { 아이템id: 개수 } (목록은 js/config.js 의 ITEMS)
       items: freshItems(),
       starterGiven: false, // 처음 시작 선물(START_ITEMS)을 받았는지
+      gifts: {}, // 받은 선물 : { 선물id: 1 } (C.ITEM_GIFTS)
       itemsReset: 0, // 아이템을 START_ITEMS 로 되돌린 차례 (C.ITEM_RESET 보다 작으면 한 번 되돌림)
       stars: 0, // 가진 별 (상점에서 아이템을 살 때 씀)
       rank: freshRank() // 랭킹 (js/ranking.js)
@@ -239,6 +240,7 @@
           }
           data.starterGiven = saved.starterGiven === true;
           data.itemsReset = num(saved.itemsReset, 0);
+          if (saved.gifts && typeof saved.gifts === 'object') for (var gk in saved.gifts) data.gifts[gk] = 1;
           data.stars = num(saved.stars, 0);
           data.rank = cleanRank(saved.rank);
         }
@@ -247,7 +249,36 @@
       data = fresh();
     }
     giveStarter(data);
+    // 선물을 받았으면 바로 저장 (안 그러면 켤 때마다 다시 받음)
+    if (giveGifts(data)) {
+      try { Storage.set(SAVE_KEY, JSON.stringify(data)); } catch (e2) { /* 저장 실패는 조용히 */ }
+    }
     return data;
+  }
+
+  /* 아직 받지 않은 선물(C.ITEM_GIFTS)을 줍니다. 받은 글은 takeGifts() 로 한 번 가져감 */
+  var giftNotes = [];
+  function giveGifts(data) {
+    var given = false;
+    if (!data.gifts) data.gifts = {};
+    (C.ITEM_GIFTS || []).forEach(function (g) {
+      if (!g || !g.id || data.gifts[g.id]) return;
+      var items = g.items || {};
+      for (var i = 0; i < C.ITEMS.length; i++) {
+        var id = C.ITEMS[i].id;
+        var n = num(items[id], num(items['*'], 0));
+        if (n) addItem(data, id, n);
+      }
+      data.gifts[g.id] = 1;
+      given = true;
+      if (g.text && giftNotes.indexOf(g.text) < 0) giftNotes.push(g.text);
+    });
+    return given;
+  }
+  function takeGifts() {
+    var out = giftNotes;
+    giftNotes = [];
+    return out;
   }
 
   function save(data) {
@@ -264,6 +295,7 @@
     Storage.remove(SAVE_KEY);
     var d = fresh();
     giveStarter(d);
+    giveGifts(d);
     return d;
   }
 
@@ -593,6 +625,8 @@
     for (k in other.items || {}) out.items[k] = Math.max(num(out.items[k], 0), num(other.items[k], 0));
     out.starterGiven = !!(out.starterGiven || other.starterGiven);
     out.itemsReset = Math.max(num(out.itemsReset, 0), num(other.itemsReset, 0));
+    if (!out.gifts) out.gifts = {};
+    for (k in other.gifts || {}) out.gifts[k] = 1;
     out.stars = Math.max(num(out.stars, 0), num(other.stars, 0));
     // 랭킹 : 같은 기간이면 점수가 큰 쪽, 다른 기간이면 더 최근 기간
     var ra = cleanRank(out.rank), rb = cleanRank(other.rank);
@@ -764,6 +798,7 @@
     stairs: stairs,
     stairsToBonus: stairsToBonus,
     recordStair: recordStair,
+    takeGifts: takeGifts,
     dayStairs: dayStairs,
     goalDays: goalDays,
     monthDays: monthDays,

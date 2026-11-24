@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v44 → 'v44'
-    VERSION: 'v44',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v45 → 'v45'
+    VERSION: 'v45',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -103,6 +103,15 @@
     START_ITEMS: { hint: 3, time: 3, shield: 3 },
     // 이 숫자를 1 올리면, 이미 하던 사람도 가진 아이템이 한 번 START_ITEMS 로 되돌아갑니다 (모은 별은 그대로)
     ITEM_RESET: 1,
+    /*
+     * 모두에게 한 번씩 주는 선물 (가진 아이템에 더해 줌. 받은 사람은 다시 받지 않음)
+     *   id    : 선물 이름 (한 번 정하면 바꾸지 마세요. 새 선물은 새 id 로 한 줄 더)
+     *   items : { 아이템id: 개수 }  ('*' 는 모든 아이템)
+     *   text  : 받을 때 보이는 글
+     */
+    ITEM_GIFTS: [
+      { id: 'test-2026-11-24', items: { '*': 3 }, text: '🎁 시험 기간 선물!\n모든 아이템을 3개씩 드려요' }
+    ],
 
     /*
      * 상점 (js/shop.js) : 별(⭐)로 아이템을 삽니다.

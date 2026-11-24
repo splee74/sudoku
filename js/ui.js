@@ -2383,7 +2383,18 @@
 
   /* 그날 처음 열었으면 출석 창을 띄웁니다 (다른 창이 떠 있거나 게임 중이면 다음에) */
   function maybeAttend() {
-    if (!splashDone || Progress.attendDone(data) || overlayOpen() || screen === 'game') return;
+    if (!splashDone || overlayOpen() || screen === 'game') return;
+    // 모두에게 주는 선물 (js/config.js 의 ITEM_GIFTS) : 받았다고 먼저 알려 줌
+    var gifts = Progress.takeGifts();
+    if (gifts.length) {
+      S.Sound.play('hint');
+      S.Effects.confetti(1200);
+      return showModal(gifts.join('\n\n'), '고마워요', '', function () {
+        if (screen === 'home') renderHome();
+        window.setTimeout(maybeAttend, 300);
+      });
+    }
+    if (Progress.attendDone(data)) return;
     openAttend();
   }
 
