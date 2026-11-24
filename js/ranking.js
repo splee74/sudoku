@@ -504,6 +504,11 @@
       return;
     }
     if (!r.nick) {
+      // 로그인만 하고 닉네임을 안 정한 사람 : 랭킹 화면에 오면 (앱을 켤 때마다 한 번) 닉네임 창을 바로 띄웁니다
+      if (!askedNick && nickLoaded === u.uid && $('nick').hidden) {
+        askedNick = true;
+        window.setTimeout(function () { if (!R().nick && user()) openNick('remind'); }, 300);
+      }
       card.appendChild(el('p', 'rk-me-t', '닉네임을 정하면 랭킹에 올라가요'));
       card.appendChild(el('p', 'rk-me-s', '구글 계정의 실제 이름은 보이지 않아요.'));
       var nb = el('button', 'btn btn-primary', '닉네임 정하기');
@@ -658,11 +663,33 @@
   }
 
   /* ---------------- 닉네임 창 ---------------- */
-  function openNick() {
+  /* 로그인 버튼을 누른 뒤 닉네임이 없으면 바로 닉네임 창을 띄우려고 표시해 둡니다
+     (페이지를 옮겨 가는 로그인 방식도 있어서 sessionStorage 에 적어 둠) */
+  var ASK_KEY = 'sudoku-ask-nick';
+  var NICK_TEXT = '랭킹에 보일 이름이에요. 2~10글자로, 한글 · 영어 · 숫자를 쓸 수 있어요. 구글 계정의 실제 이름은 보이지 않아요.';
+  var askedNick = false; // 이번에 앱을 켠 뒤 닉네임 창을 이미 띄웠는지
+  function markAsk(on) {
+    try {
+      if (on) root.sessionStorage.setItem(ASK_KEY, '1');
+      else root.sessionStorage.removeItem(ASK_KEY);
+    } catch (e) { /* 막힌 브라우저 : 그냥 넘어감 */ }
+  }
+  function wantAsk() {
+    try { return root.sessionStorage.getItem(ASK_KEY) === '1'; } catch (e) { return false; }
+  }
+
+  /* afterLogin : true = 로그인하자마자, 'remind' = 랭킹 화면에서 다시 권할 때 (안내 문구를 바꿈) */
+  function openNick(afterLogin) {
     var box = $('nick');
+    askedNick = true;
     $('nick-input').value = R().nick || '';
     $('nick-err').textContent = '';
-    $('nick-title').textContent = R().nick ? '닉네임 바꾸기' : '닉네임 정하기';
+    $('nick-title').textContent = afterLogin === true ? '마지막으로 닉네임을 정해 주세요!' : afterLogin === 'remind' ? '닉네임을 정해 주세요!' : R().nick ? '닉네임 바꾸기' : '닉네임 정하기';
+    $('nick-text').textContent = afterLogin === true
+      ? '로그인됐어요! 닉네임까지 정해야 랭킹에 내 이름이 올라가요. 2~10글자로, 한글 · 영어 · 숫자를 쓸 수 있어요.'
+      : afterLogin === 'remind'
+        ? '아직 닉네임이 없어서 랭킹에 내 이름이 안 보여요. 2~10글자로, 한글 · 영어 · 숫자를 쓸 수 있어요.'
+        : NICK_TEXT;
     box.hidden = false;
     window.setTimeout(function () { $('nick-input').focus(); }, 50);
   }
@@ -700,7 +727,7 @@
       if (tb) { tab = tb.getAttribute('data-rank-tab'); return render(); }
       var sc = t.closest('[data-rank-scope]');
       if (sc) { scope = sc.getAttribute('data-rank-scope'); return render(); }
-      if (t.closest('[data-rank-nick]')) return openNick();
+      if (t.closest('[data-rank-nick]')) return openNick(false);
       if (t.closest('[data-rank-daily]') && hooks.playDaily) return hooks.playDaily();
     });
     $('nick-ok').addEventListener('click', submitNick);
@@ -712,7 +739,14 @@
     });
     if (S.Account) {
       S.Account.onChange(function (st, u) {
-        if (st === 'in' && u) loadNick().then(function () { if (hooks.refresh) hooks.refresh(); });
+        if (st === 'busy') markAsk(true); // 로그인 버튼을 누름
+        if (st === 'in' && u) loadNick().then(function () {
+          if (hooks.refresh) hooks.refresh();
+          // 방금 로그인했는데 닉네임이 없으면 바로 정하게 합니다
+          if (wantAsk() && !R().nick && $('nick').hidden) openNick(true);
+          markAsk(false);
+        });
+        if (st === 'error' || st === 'out') markAsk(false);
         if (st === 'out' || st === 'deleted') { server = {}; bad = {}; nickLoaded = ''; for (var id in cache) delete cache[id]; }
         if (st === 'synced') {
           sync();

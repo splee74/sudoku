@@ -13,13 +13,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=48">
-  <link rel="stylesheet" href="css/skins.css?v=48">
-  <link rel="stylesheet" href="css/screens.css?v=48">
-  <link rel="stylesheet" href="css/about.css?v=48">
-  <link rel="stylesheet" href="css/fx.css?v=48">
+  <link rel="stylesheet" href="css/style.css?v=49">
+  <link rel="stylesheet" href="css/skins.css?v=49">
+  <link rel="stylesheet" href="css/screens.css?v=49">
+  <link rel="stylesheet" href="css/about.css?v=49">
+  <link rel="stylesheet" href="css/fx.css?v=49">
   <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=48">
+  <link rel="stylesheet" href="css/dark.css?v=49">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -275,6 +275,11 @@
         <div class="hero" id="hero" data-mood="base">
           <span class="hero-face" id="hero-face" role="img" aria-label="캐릭터"></span>
           <span class="hero-bubble" id="hero-bubble" aria-live="polite" hidden></span>
+          <!-- 음악 · 글씨 크기 단추 (좁은 휴대폰에서 점수 줄이 넘치지 않게 캐릭터 줄 오른쪽에 둡니다) -->
+          <span class="hero-tools">
+            <button type="button" class="pause-btn music-btn" data-music aria-label="배경 음악"></button>
+            <button type="button" class="pause-btn view-btn" id="btn-view" aria-label="글씨 크기와 화면" aria-expanded="false">Aa</button>
+          </span>
         </div>
         <div class="info">
           <span class="mistakes"><span class="lbl">틀림</span> <span id="game-marks" aria-hidden="true"></span>
@@ -282,8 +287,6 @@
           <span class="score" id="game-score-wrap">점수 <b id="game-score">0</b></span>
           <span class="time">
             <span class="timer" id="game-timer" aria-label="걸린 시간">00:00</span>
-            <button type="button" class="pause-btn music-btn" data-music aria-label="배경 음악"></button>
-            <button type="button" class="pause-btn view-btn" id="btn-view" aria-label="글씨 크기와 화면" aria-expanded="false">Aa</button>
             <button type="button" class="pause-btn bag-btn" data-open="items" id="btn-bag" aria-label="아이템 가방">
               <span aria-hidden="true">🎒</span><i class="bag-count" id="bag-count" hidden>0</i>
             </button>
@@ -603,7 +606,7 @@
     <div class="modal-box login-ask-box" role="dialog" aria-modal="true" aria-labelledby="nick-title">
       <div class="login-ask-art" aria-hidden="true">🐱</div>
       <h2 class="login-ask-title" id="nick-title">닉네임 정하기</h2>
-      <p class="login-ask-text">랭킹에 보일 이름이에요. 2~10글자로, 한글 · 영어 · 숫자를 쓸 수 있어요. 구글 계정의 실제 이름은 보이지 않아요.</p>
+      <p class="login-ask-text" id="nick-text">랭킹에 보일 이름이에요. 2~10글자로, 한글 · 영어 · 숫자를 쓸 수 있어요. 구글 계정의 실제 이름은 보이지 않아요.</p>
       <input class="nick-input" id="nick-input" type="text" maxlength="10" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="예) 날쌘고양이" aria-label="닉네임">
       <p class="nick-err" id="nick-err" role="status"></p>
       <div class="modal-actions">
@@ -932,21 +935,21 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=48"></script>
-  <script src="js/engine.js?v=48"></script>
-  <script src="js/game.js?v=48"></script>
-  <script src="js/progress.js?v=48"></script>
-  <script src="js/settings.js?v=48"></script>
-  <script src="js/skins.js?v=48"></script>
-  <script src="js/sound.js?v=48"></script>
-  <script src="js/music.js?v=48"></script>
-  <script src="js/effects.js?v=48"></script>
-  <script src="js/badges.js?v=48"></script>
-  <script src="js/shop.js?v=48"></script>
-  <script src="js/account.js?v=48"></script>
-  <script src="js/ranking.js?v=48"></script>
-  <script src="js/tutorial.js?v=48"></script>
-  <script src="js/hero.js?v=48"></script>
-  <script src="js/ui.js?v=48"></script>
+  <script src="js/config.js?v=49"></script>
+  <script src="js/engine.js?v=49"></script>
+  <script src="js/game.js?v=49"></script>
+  <script src="js/progress.js?v=49"></script>
+  <script src="js/settings.js?v=49"></script>
+  <script src="js/skins.js?v=49"></script>
+  <script src="js/sound.js?v=49"></script>
+  <script src="js/music.js?v=49"></script>
+  <script src="js/effects.js?v=49"></script>
+  <script src="js/badges.js?v=49"></script>
+  <script src="js/shop.js?v=49"></script>
+  <script src="js/account.js?v=49"></script>
+  <script src="js/ranking.js?v=49"></script>
+  <script src="js/tutorial.js?v=49"></script>
+  <script src="js/hero.js?v=49"></script>
+  <script src="js/ui.js?v=49"></script>
 </body>
 </html>

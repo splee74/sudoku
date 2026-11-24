@@ -789,8 +789,16 @@
   }
 
   /* ---------------- 응원 메시지 ---------------- */
-  /* ms : 보여 주는 시간 (안 적으면 1.6초), wide : 두 줄짜리 긴 안내 */
+  /* 게임 화면에서는 판을 가리지 않도록 캐릭터 말풍선으로 말합니다.
+     (캐릭터를 꺼 두었거나 다른 화면이면 판 위에 잠깐 띄웁니다)
+     ms : 보여 주는 시간 (안 적으면 1.6초), wide : 두 줄짜리 긴 안내 */
   function toast(msg, ms, wide) {
+    if (!wide && screen === 'game' && S.Hero && Settings.get('hero')) {
+      hideToast();
+      // 같은 순간의 캐릭터 반응(S.Hero.react)이 말풍선을 덮지 않게 한 박자 뒤에
+      window.setTimeout(function () { S.Hero.say(msg, (ms || 1600) + 800); }, 0);
+      return;
+    }
     var el = $('toast');
     el.textContent = msg;
     el.classList.toggle('toast-wide', !!wide);
@@ -1588,15 +1596,12 @@
     }
     if (!said.half && remaining === Math.floor(blanks / 2)) {
       said.half = true;
-      toast('절반 왔어요! 💪');
+      toast('절반 왔다냥! 💪');
     } else if (!said.near && blanks >= 12 && remaining === 3) {
       said.near = true;
-      toast('거의 다 왔어요! 🔥');
-    } else if (units.box) {
-      toast('상자 하나 완성! 👍');
-    } else if (units.line) {
-      toast('한 줄 완성! 👏');
+      toast('거의 다 왔다냥! 🔥');
     }
+    // 줄·상자 완성은 캐릭터가 따로 말해 줍니다 (S.Hero.react 'unit' / 'box')
   }
 
   /* 힌트 숫자 : 반짝이 가루가 도착하면(delay 뒤) 숫자가 빛나며 나타납니다 */
@@ -1783,7 +1788,7 @@
     if (target < 0) return;
     if (ticket) {
       Progress.useItem(data, 'hint');
-      toast('💡 힌트권 1장을 썼어요');
+      toast('💡 힌트권 1장 썼다냥');
     }
     S.Sound.play('hint');
     if (game.status === 'playing') S.Hero.react('hint', 1400);
@@ -1835,7 +1840,7 @@
     renderGame();
     S.Sound.play('hint');
     S.Effects.restart($('game-marks'), 'fx-heal');
-    toast('💖 되살아났어요! 틀림 1번을 지웠어요');
+    toast('💖 되살아났다냥! 틀림 1번 지웠다냥');
     S.Hero.react('revive', 1800);
   }
 
@@ -2221,23 +2226,23 @@
       // 숫자 단추를 눌러 둔 상태면 그 숫자를, 아니면 다음에 누르는 숫자를 찾습니다
       if (hl > 0 && Game.placedCount(game, hl) < game.size) return applyMagnify(hl);
       magnifyPick = true;
-      return toast('🔍 찾을 숫자 단추를 누르세요', 2200);
+      return toast('🔍 찾을 숫자 단추를 눌러 달라냥', 2200);
     }
     var ok = false;
     if (id === 'time') {
       var cut = Game.cutTime(game, C.TIME_ITEM_SEC * 1000);
       ok = cut > 0;
-      if (ok) toast('⏱️ ' + Math.round(cut / 1000) + '초 줄었어요!');
+      if (ok) toast('⏱️ ' + Math.round(cut / 1000) + '초 줄었다냥!');
     } else if (id === 'shield') {
       ok = Game.forgive(game);
-      if (ok) toast('🩹 틀린 횟수 1번을 지웠어요');
+      if (ok) toast('🩹 틀린 횟수 1번 지웠다냥');
     } else if (id === 'memo') {
       var cnt = Game.autoMemo(game);
       ok = cnt > 0;
-      toast(ok ? '✏️ 빈칸 ' + cnt + '곳에 메모했어요' : '이미 메모가 다 되어 있어요');
+      toast(ok ? '✏️ 빈칸 ' + cnt + '곳에 메모했다냥' : '이미 메모가 다 되어 있다냥');
     } else if (id === 'double') {
       ok = Game.useDouble(game);
-      if (ok) toast('✨ 이번 판 점수 2배!');
+      if (ok) toast('✨ 이번 판 점수 2배다냥!');
     }
     if (!ok) return;
     Progress.useItem(data, id);
@@ -2258,9 +2263,9 @@
   /* 돋보기 : 숫자 d가 들어갈 수 있는 칸을 몇 초 동안 보여 줍니다 */
   function applyMagnify(d) {
     if (!playing() || Progress.itemCount(data, 'magnify') <= 0) return;
-    if (Game.placedCount(game, d) >= game.size) return toast(d + '은(는) 이미 다 채웠어요');
+    if (Game.placedCount(game, d) >= game.size) return toast(d + '은(는) 이미 다 채웠다냥');
     var list = Game.spots(game, d);
-    if (!list.length) return toast('들어갈 자리를 찾지 못했어요');
+    if (!list.length) return toast('들어갈 자리를 못 찾았다냥');
     Progress.useItem(data, 'magnify');
     game.itemsUsed++;
     persist();
@@ -2270,7 +2275,7 @@
     renderGame();
     S.Sound.play('hint');
     S.Hero.react('item', 1400);
-    toast('🔍 ' + d + '이(가) 들어갈 수 있는 곳 ' + list.length + '군데');
+    toast('🔍 ' + d + '이(가) 들어갈 곳 ' + list.length + '군데다냥');
     spotTimer = window.setTimeout(function () {
       clearSpots();
       renderGame();
