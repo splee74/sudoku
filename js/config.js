@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v56 → 'v56'
-    VERSION: 'v56',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v57 → 'v57'
+    VERSION: 'v57',
 
     FAILS_TO_DEMOTE: 3, // 연속으로 이만큼 실패하면 강등
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -68,6 +68,14 @@
      *               앱을 깐 친구는 이 주소를 누르면 앱이 열리고(assetlinks, store/README.md), 안 깐 친구는 인터넷 창에서 바로 게임이 열림
      */
     SHARE_URL: 'https://splee74.github.io/sudoku/',
+    /*
+     *   KAKAO_JS_KEY : 카카오 개발자 사이트의 'JavaScript 키'. 넣으면 결과 그림 + "나도 도전하기" 링크 단추를
+     *                  카톡 메시지 한 통으로 바로 보냅니다. (비워 두면 휴대폰 공유 창 → 사진 보낸 뒤 링크 한 번 더)
+     *                  만드는 법 : developers.kakao.com → 내 애플리케이션 → 앱 만들기 → 앱 키의 JavaScript 키 복사
+     *                             → [앱 설정 > 플랫폼 > Web] 사이트 도메인에 https://splee74.github.io 등록
+     *                  (JavaScript 키는 원래 웹페이지에 보이는 키라 여기 적어도 괜찮습니다. 등록한 도메인에서만 동작)
+     */
+    KAKAO_JS_KEY: '',
 
     /*
      * 오늘의 퍼즐 (계단 오르기) : 한 판을 깨면 같은 난이도의 다음 단계가 이어서 나옵니다. 밤 12시에 1단계부터 다시.

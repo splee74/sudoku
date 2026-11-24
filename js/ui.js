@@ -2055,10 +2055,63 @@
       shareShot.catch(function () { shareShot = null; });
     }, 1600);
   }
+  /* 카카오톡 공유 (js/config.js 의 KAKAO_JS_KEY 가 있을 때) :
+     결과 그림을 카카오 서버에 올리고, 그림 + "나도 도전하기" 링크 단추가 붙은 메시지 한 통으로 보냅니다 */
+  var KAKAO_SDK = 'https://t1.kakaocdn.net/kakao_js_sdk/2.8.0/kakao.min.js';
+  /* 카톡 메시지 그림은 너무 길면 가운데가 잘려 보여서, 위쪽(성공 · 점수 · 시간)만 3:4 로 자릅니다 */
+  function cropTop(file) {
+    if (!window.createImageBitmap) return Promise.resolve(file);
+    return createImageBitmap(file).then(function (bmp) {
+      var w = bmp.width, h = Math.min(bmp.height, Math.round(w * 4 / 3));
+      var cv = document.createElement('canvas');
+      cv.width = w;
+      cv.height = h;
+      cv.getContext('2d').drawImage(bmp, 0, 0);
+      return new Promise(function (ok) {
+        cv.toBlob(function (b) { ok(b ? new File([b], 'sudoku-record.png', { type: 'image/png' }) : file); }, 'image/png');
+      });
+    });
+  }
+  function shareKakao(btn) {
+    var s = shareInfo, url = shareUrl();
+    var link = { mobileWebUrl: url, webUrl: url };
+    btn.disabled = true;
+    return Promise.all([loadScript(KAKAO_SDK, 'Kakao'), (shareShot || captureResult()).then(cropTop)]).then(function (v) {
+      var K = v[0], file = v[1];
+      if (!K.isInitialized()) K.init(C.KAKAO_JS_KEY);
+      return K.Share.uploadImage({ file: [file] }).then(function (res) {
+        var img = res.infos.original;
+        btn.disabled = false;
+        K.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: '🐱 ' + s.what + ' 클리어!',
+            description: '⭐ 점수 ' + s.score + ' · ⏱️ ' + s.time + (s.mistakes ? '' : ' (실수 0번!)') + '\n나보다 잘할 수 있어? 도전해 봐!',
+            imageUrl: img.url,
+            imageWidth: img.width,
+            imageHeight: img.height,
+            link: link
+          },
+          buttons: [{ title: '나도 도전하기', link: link }]
+        });
+      });
+    }).catch(function (e) {
+      btn.disabled = false;
+      throw e;
+    });
+  }
   function shareResult() {
     if (!shareInfo) return;
     var text = shareText(shareInfo), url = shareUrl();
     S.Sound.play('memoOn');
+    // 카카오 키가 있으면 그림 + 링크를 메시지 한 통으로. 안 되면 아래 휴대폰 공유 창으로
+    if (C.KAKAO_JS_KEY && !shareResult.kakaoFailed) {
+      shareKakao($('btn-share')).catch(function () {
+        shareResult.kakaoFailed = true;
+        shareResult();
+      });
+      return;
+    }
     if (canShareFiles()) {
       var btn = $('btn-share');
       btn.disabled = true;
