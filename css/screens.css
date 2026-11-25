@@ -151,7 +151,10 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 
 /* ---------- 홈 ---------- */
 /* 홈 화면은 스크롤 없이 한 화면에 꼭 맞게 (위 여백 8 + 아래 메뉴 76 + 여유) */
-.screen-home { height: calc(100dvh - 96px - env(safe-area-inset-bottom)); min-height: 520px; gap: 10px; }
+.screen-home { height: calc(100dvh - 96px - env(safe-area-inset-bottom)); min-height: 0; gap: 10px; }
+/* 홈 화면은 위아래로 밀어도 화면이 올라가지 않게 (스크롤 막기) */
+html:has(body[data-screen="home"]) { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body[data-screen="home"] { height: 100vh; height: 100dvh; overflow: hidden; overscroll-behavior: none; }
 .screen-home .hcard { min-height: 0; height: clamp(176px, 24dvh, 196px); }
 .screen-home .hcard-art { font-size: clamp(40px, 6dvh, 58px); }
 .screen-home .hcard-art.hcard-prog { font-size: 16px; }
