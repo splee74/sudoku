@@ -2,7 +2,10 @@
 
 재료 : img/home-dojo.webp (도장 마당), img/title.webp (제목 글씨),
        img/story/hero_v1.png (주인공 원본), img/char_list.png (사부 · 깜냥 원본)
-결과 : img/gate-dojo.webp (941×1672, 예전 대문 img/gate.webp 와 같은 크기라 css 배치는 그대로)
+결과 : img/gate-dojo.webp (941×1672, 예전 대문 img/gate.webp 와 같은 크기라 css 배치는 그대로) : 마당 + 제목
+       img/gate-cast.webp (배경 투명) : 주인공 · 사부 · 깜냥
+       인물은 따로 두고 css 가 "터치해서 시작하기" 단추 바로 위에 세웁니다.
+       (휴대폰은 대문 그림 아래가 잘릴 수 있어서, 그림에 같이 그리면 작은 화면에서 단추가 인물을 가림)
 """
 import os
 import sys
@@ -27,7 +30,7 @@ def fit_h(im, h):
     return im.resize((round(im.width * h / im.height), h), Image.LANCZOS)
 
 
-def shadow(canvas, cx, y, w):
+def shadow(canvas, cx, y, w):  # canvas : W×H 크기
     """발밑 그림자"""
     sh = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     ImageDraw.Draw(sh).ellipse((cx - w / 2, y - w * 0.09, cx + w / 2, y + w * 0.09), fill=(40, 25, 10, 120))
@@ -59,7 +62,8 @@ def main():
         td.line((0, y, W, y), fill=(255, 246, 228, int(110 * (1 - y / 560) ** 1.6)))
     canvas.alpha_composite(top)
 
-    # 3) 인물 : 사부(왼쪽 뒤) · 깜냥(오른쪽 뒤) · 주인공(가운데 앞)
+    # 3) 인물 : 사부(왼쪽 뒤) · 깜냥(오른쪽 뒤) · 주인공(가운데 앞) → 따로 gate-cast.webp 로
+    cast = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     cl = Image.open(p('img', 'char_list.png')).convert('RGBA')
     master = trim(ms.keep_main(cl.crop(ms.SHEET['master_base'])))
     kkam = trim(ms.keep_main(cl.crop(ms.SHEET['kkam_base'])))
@@ -70,12 +74,12 @@ def main():
     m = fit_h(master, 520)
     k = fit_h(kkam, 500)
     hr = fit_h(hero, 700)
-    shadow(canvas, 275, floor - 40, 240)
-    canvas.alpha_composite(m, (275 - m.width // 2 - 10, floor - 40 - m.height))
-    shadow(canvas, W - 270, floor - 40, 220)
-    canvas.alpha_composite(k, (W - 270 - k.width // 2 + 10, floor - 40 - k.height))
-    shadow(canvas, W // 2, floor, 360)
-    canvas.alpha_composite(hr, (W // 2 - hr.width // 2 + 10, floor - hr.height))
+    shadow(cast, 275, floor - 40, 240)
+    cast.alpha_composite(m, (275 - m.width // 2 - 10, floor - 40 - m.height))
+    shadow(cast, W - 270, floor - 40, 220)
+    cast.alpha_composite(k, (W - 270 - k.width // 2 + 10, floor - 40 - k.height))
+    shadow(cast, W // 2, floor, 360)
+    cast.alpha_composite(hr, (W // 2 - hr.width // 2 + 10, floor - hr.height))
 
     # 4) 제목 + 부제
     title = Image.open(p('img', 'title.webp')).convert('RGBA')
@@ -92,6 +96,9 @@ def main():
 
     canvas.convert('RGB').save(p('img', 'gate-dojo.webp'), 'WEBP', quality=84, method=6)
     print('img/gate-dojo.webp', W, H)
+    cast = cast.crop(cast.split()[3].point(lambda v: 255 if v > 8 else 0).getbbox())
+    cast.save(p('img', 'gate-cast.webp'), 'WEBP', quality=84, method=6)
+    print('img/gate-cast.webp', cast.width, cast.height, '(가로/세로 %.4f)' % (cast.width / cast.height))
 
 
 if __name__ == '__main__':

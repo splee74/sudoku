@@ -13,14 +13,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=66">
-  <link rel="stylesheet" href="css/skins.css?v=66">
-  <link rel="stylesheet" href="css/screens.css?v=66">
-  <link rel="stylesheet" href="css/about.css?v=66">
-  <link rel="stylesheet" href="css/fx.css?v=66">
-  <link rel="stylesheet" href="css/story.css?v=66">
+  <link rel="stylesheet" href="css/style.css?v=67">
+  <link rel="stylesheet" href="css/skins.css?v=67">
+  <link rel="stylesheet" href="css/screens.css?v=67">
+  <link rel="stylesheet" href="css/about.css?v=67">
+  <link rel="stylesheet" href="css/fx.css?v=67">
+  <link rel="stylesheet" href="css/story.css?v=67">
   <link rel="preload" as="image" href="img/gate-dojo.webp">
-  <link rel="stylesheet" href="css/dark.css?v=66">
+  <link rel="preload" as="image" href="img/gate-cast.webp">
+  <link rel="stylesheet" href="css/dark.css?v=67">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -46,6 +47,8 @@
   <div class="splash" id="splash">
     <button type="button" class="splash-music music-btn" data-music aria-label="배경 음악"></button>
     <div class="splash-art" id="splash-art" role="img" aria-label="스도쿠 승급전"></div>
+    <!-- 주인공 · 사부 · 깜냥 : 대문 그림과 따로 두어 늘 시작 단추 바로 위에 섬 (css/screens.css 의 .splash-cast) -->
+    <img class="splash-cast" src="img/gate-cast.webp" alt="" width="742" height="754" draggable="false">
     <!-- 시작 단추는 그림이 아니라 보이는 화면 아래쪽에 붙습니다 (휴대폰 아래 막대에 가리지 않게) -->
     <button type="button" class="splash-start" id="splash-start">터치해서 시작하기</button>
   </div>
@@ -933,23 +936,23 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=66"></script>
-  <script src="js/engine.js?v=66"></script>
-  <script src="js/game.js?v=66"></script>
-  <script src="js/progress.js?v=66"></script>
-  <script src="js/settings.js?v=66"></script>
-  <script src="js/skins.js?v=66"></script>
-  <script src="js/sound.js?v=66"></script>
-  <script src="js/music.js?v=66"></script>
-  <script src="js/effects.js?v=66"></script>
-  <script src="js/badges.js?v=66"></script>
-  <script src="js/shop.js?v=66"></script>
-  <script src="js/account.js?v=66"></script>
-  <script src="js/ranking.js?v=66"></script>
-  <script src="js/tutorial.js?v=66"></script>
-  <script src="js/story.js?v=66"></script>
-  <script src="js/hero.js?v=66"></script>
-  <script src="js/remind.js?v=66"></script>
-  <script src="js/ui.js?v=66"></script>
+  <script src="js/config.js?v=67"></script>
+  <script src="js/engine.js?v=67"></script>
+  <script src="js/game.js?v=67"></script>
+  <script src="js/progress.js?v=67"></script>
+  <script src="js/settings.js?v=67"></script>
+  <script src="js/skins.js?v=67"></script>
+  <script src="js/sound.js?v=67"></script>
+  <script src="js/music.js?v=67"></script>
+  <script src="js/effects.js?v=67"></script>
+  <script src="js/badges.js?v=67"></script>
+  <script src="js/shop.js?v=67"></script>
+  <script src="js/account.js?v=67"></script>
+  <script src="js/ranking.js?v=67"></script>
+  <script src="js/tutorial.js?v=67"></script>
+  <script src="js/story.js?v=67"></script>
+  <script src="js/hero.js?v=67"></script>
+  <script src="js/remind.js?v=67"></script>
+  <script src="js/ui.js?v=67"></script>
 </body>
 </html>

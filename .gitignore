@@ -17,6 +17,7 @@ img/*
 !img/home-dojo.webp
 # 시작 화면(대문) : tools/make_gate_dojo.py 가 만듦
 !img/gate-dojo.webp
+!img/gate-cast.webp
 # 이야기 그림 (tools/make_story.py 가 만듦). 원본 png 는 올리지 않음
 !img/story/
 img/story/*

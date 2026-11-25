@@ -20,7 +20,8 @@ body:not([data-screen="home"]) .slot-ad { display: none !important; }
 body:not([data-screen="game"]) { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 
-/* ---------- 시작 그림 (img/gate-dojo.webp, 941×1672 : 숫자도장 마당 + 제목 + 주인공 · 사부 · 깜냥. tools/make_gate_dojo.py 로 만듦) ----------
+/* ---------- 시작 그림 (img/gate-dojo.webp, 941×1672 : 숫자도장 마당 + 제목. tools/make_gate_dojo.py 로 만듦) ----------
+   인물(주인공 · 사부 · 깜냥)은 따로 img/gate-cast.webp 로 두고 아래 .splash-cast 가 시작 단추 바로 위에 세웁니다.
    휴대폰(세로로 긴 화면) : 그림이 화면을 꽉 채웁니다. 화면 비율이 그림과 다르면 양옆(또는 위아래)이 조금 잘립니다.
    가로로 넓은 화면(태블릿 · PC) : 그림 전체가 보이게 맞추고, 남는 곳은 같은 그림을 흐리게 깔아 채웁니다. */
 .splash {
@@ -28,6 +29,7 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
   background: #e9d9bd;            /* 그림이 뜨기 전 잠깐 보이는 마당 색 (manifest.json 의 background_color 와 같게) */
   overflow: hidden; cursor: pointer;
   transition: opacity 0.35s ease;
+  --start-fs: clamp(18px, 6.2vw, 28px);   /* 시작 단추 글씨 크기 (단추 높이 = 이 값 × 2.5) */
 }
 .splash::before {
   content: ""; position: absolute; inset: -40px;
@@ -48,9 +50,22 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 }
 .splash.out { opacity: 0; pointer-events: none; }
 /* 앱을 막 켰을 때 화면 크기가 자리 잡을 때까지 그림을 숨겼다가 부드럽게 띄움 (index.html 의 splash 바로 아래 글) */
-.splash.wait::before, .splash.wait .splash-art { opacity: 0; }
-.splash.ready::before, .splash.ready .splash-art { animation: splash-in 0.3s ease-out; }
+.splash.wait::before, .splash.wait .splash-art, .splash.wait .splash-cast { opacity: 0; }
+.splash.ready::before, .splash.ready .splash-art, .splash.ready .splash-cast { animation: splash-in 0.3s ease-out; }
 @keyframes splash-in { from { opacity: 0; } }
+
+/* 인물 (img/gate-cast.webp, 가로/세로 0.984) : 보이는 화면 아래 시작 단추 바로 위에 섭니다.
+   크기 : 대문 그림 너비의 79%. 그림 너비 = 화면 너비와 (화면 전체 높이 × 0.563) 중 큰 쪽 (양옆이 잘리는 휴대폰은 뒤쪽)
+   세로가 짧은 화면 : 제목 · 부제(그림 위쪽 27%)에 닿지 않을 만큼만 크게 */
+.splash-cast {
+  position: absolute; left: 50%; z-index: 1;
+  bottom: calc(6% + env(safe-area-inset-bottom, 0px) + var(--start-fs) * 2.5 - 8px);
+  transform: translateX(-50%);
+  width: auto; max-width: 96vw;
+  height: min(calc(max(78.9vw, 44.4vh) / 0.984), calc(96vw / 0.984), calc(94vh - env(safe-area-inset-bottom, 0px) - var(--start-fs) * 2.5 + 8px - 27vh));
+  height: min(calc(max(78.9vw, 44.4lvh) / 0.984), calc(96vw / 0.984), calc(94dvh - env(safe-area-inset-bottom, 0px) - var(--start-fs) * 2.5 + 8px - 27lvh));
+  pointer-events: none; -webkit-user-drag: none;
+}
 
 /* 시작 단추 : 화면 아래쪽 가운데 (휴대폰 아래 막대에 가리지 않게 safe-area 만큼 띄움) */
 .splash-start {
@@ -60,8 +75,8 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
   border: 3px solid #fff; border-radius: 999px;
   background: linear-gradient(#ffd54a, #f5a623);
   color: #6b3a00; font-family: inherit; font-weight: 900; line-height: 1; letter-spacing: 0.02em;
-  font-size: clamp(18px, 6.2vw, 28px);
-  z-index: 1;
+  font-size: var(--start-fs);
+  z-index: 2;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   box-shadow: 0 6px 0 #c97a12, 0 10px 22px rgba(60, 30, 0, 0.35);
   cursor: pointer;
@@ -69,7 +84,11 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 }
 @media (min-aspect-ratio: 2 / 3) {
   /* 가로로 넓은 화면 : 단추를 가운데 그림 너비(화면 높이 × 941/1672)에 맞춤 */
-  .splash-start { width: min(72vw, 380px, calc(100dvh * 0.405)); font-size: clamp(18px, calc(100dvh * 0.035), 28px); }
+  .splash { --start-fs: clamp(18px, calc(100dvh * 0.035), 28px); }
+  /* 그림이 화면 높이에 맞춰 가운데에만 있으므로, 인물도 그림 너비(화면 높이 × 0.563)의 79% 로 */
+  .splash-cast { height: min(calc(44.4vh / 0.984), calc(94vh - var(--start-fs) * 2.5 + 8px - 27vh)); }
+  .splash-cast { height: min(calc(44.4dvh / 0.984), calc(94dvh - var(--start-fs) * 2.5 + 8px - 27dvh)); }
+  .splash-start { width: min(72vw, 380px, calc(100dvh * 0.405)); }
 }
 .splash-start:focus-visible { outline: 3px solid #fff3b0; outline-offset: 4px; }
 .splash-start:active { animation: none; transform: scale(0.96); filter: brightness(0.9); }
