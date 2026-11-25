@@ -81,7 +81,9 @@
       gifts: {}, // 받은 선물 : { 선물id: 1 } (C.ITEM_GIFTS)
       itemsReset: 0, // 아이템을 START_ITEMS 로 되돌린 차례 (C.ITEM_RESET 보다 작으면 한 번 되돌림)
       stars: 0, // 가진 별 (상점에서 아이템을 살 때 씀)
-      rank: freshRank() // 랭킹 (js/ranking.js)
+      rank: freshRank(), // 랭킹 (js/ranking.js)
+      // 이야기 (js/story.js) : 본 장 { 0: 1, 1: 1 … } (0 = 도입부), 이미 하던 사람에게 '새 이야기' 안내를 했는지
+      story: { seen: {}, asked: false }
     };
   }
 
@@ -243,6 +245,11 @@
           if (saved.gifts && typeof saved.gifts === 'object') for (var gk in saved.gifts) data.gifts[gk] = 1;
           data.stars = num(saved.stars, 0);
           data.rank = cleanRank(saved.rank);
+          var so = saved.story;
+          if (so && typeof so === 'object') {
+            if (so.seen && typeof so.seen === 'object') for (var sk in so.seen) if (/^\d{1,2}$/.test(sk)) data.story.seen[sk] = 1;
+            data.story.asked = so.asked === true;
+          }
         }
       }
     } catch (e) {
@@ -643,6 +650,13 @@
     ra.tops = Math.max(ra.tops, rb.tops);
     ra.hall = ra.hall || rb.hall;
     out.rank = ra;
+    // 이야기 : 어느 쪽에서든 본 장은 본 것으로
+    var sa2 = out.story && typeof out.story === 'object' ? out.story : { seen: {}, asked: false };
+    var sb2 = other.story && typeof other.story === 'object' ? other.story : {};
+    if (!sa2.seen) sa2.seen = {};
+    for (k in sb2.seen || {}) sa2.seen[k] = 1;
+    sa2.asked = !!(sa2.asked || sb2.asked);
+    out.story = sa2;
     // 하던 판은 이 기기 것을 남깁니다
     out.game = a.game || null;
     out.dailyGame = a.dailyGame || null;

@@ -278,6 +278,8 @@ body[data-screen="game"]::after {
 /* 홈 화면에서는 길게 눌러도 글자 · 그림이 선택되거나 메뉴가 뜨지 않게 */
 .screen-home { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .screen-home .pill-btn { box-shadow: 0 3px 10px rgba(30, 30, 10, 0.25); }
+/* 플레이 방법 · 이야기 단추를 나란히 */
+.home-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .screen-home .top-row .pill, .screen-home .icon-btn { box-shadow: 0 2px 8px rgba(30, 30, 10, 0.18); }
 
 /* 오늘의 퍼즐 카드의 달력 그림 */

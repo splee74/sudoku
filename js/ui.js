@@ -187,7 +187,7 @@
   }
   /* 무언가 창이 떠 있으면 시간이 멈추고 키보드 입력도 받지 않습니다 */
   function overlayOpen() {
-    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || !$('stairs').hidden || !$('login-ask').hidden || !$('nick').hidden || S.Tutorial.isOpen();
+    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || !$('stairs').hidden || !$('login-ask').hidden || !$('nick').hidden || S.Tutorial.isOpen() || S.Story.isOpen() || S.Story.listOpen();
   }
   function openSheet(name) {
     if (name === 'stars' && !C.SHOP_ENABLED) return; // 상점을 껐으면 별 충전 창도 열지 않음
@@ -1918,6 +1918,12 @@
       data.game = null;
     }
     S.Ranking.addScore(data, data.totalScore - scoreBefore); // 이번 주 부지런냥 · 이달의 왕냥이
+    // 이야기 : 새 등급에 처음 오르면 그 장, 신 등급에서 처음 깨면 엔딩 (승급 창 · 결과 창 다음에 보여 줌)
+    storyNext = -1;
+    if (won && !finished.daily) {
+      if (res.promoted && !res.replay && data.gradeIndex >= 1 && data.gradeIndex <= 9 && !storySeen(data.gradeIndex)) storyNext = data.gradeIndex;
+      else if (C.GRADES.indexOf(before) === C.GRADES.length - 1 && !storySeen(10)) storyNext = 10;
+    }
     Progress.recordStats(data, finished, won);
     var newBadges = S.Badges.check(data);
     Progress.save(data);
@@ -1935,6 +1941,12 @@
       if (won && res.promoted && !res.replay) showPromo(res.grade);
       else {
         $('btn-again').focus();
+        if (storyNext === 10) {
+          storyNext = -1;
+          window.setTimeout(function () {
+            if (!S.Story.isOpen()) playStory(10, function () { $('btn-again').focus(); });
+          }, 1400);
+        }
       }
     }, wait);
   }
@@ -2238,6 +2250,49 @@
     $('result-progress').textContent = msg;
     if (next) renderDots($('result-dots'));
     else $('result-dots').innerHTML = '';
+  }
+
+  /* ---------------- 이야기 (js/story.js) ---------------- */
+  var storyNext = -1; // 판이 끝난 뒤 보여 줄 장 (-1 = 없음)
+  function storyState() {
+    if (!data.story || typeof data.story !== 'object') data.story = { seen: {}, asked: false };
+    if (!data.story.seen) data.story.seen = {};
+    return data.story;
+  }
+  function storySeen(i) { return !!storyState().seen[i]; }
+  function storyName() { return (data.rank && data.rank.nick) || ''; }
+  /* 한 장을 보여 주고 본 것으로 저장. 닫히면 then */
+  function playStory(i, then) {
+    storyState().seen[i] = 1;
+    Progress.save(data);
+    S.Story.open(i, { name: storyName(), onClose: function () {
+      lastTick = Date.now();
+      if (then) then();
+    } });
+  }
+  /* 다시 보기 목록에서 열 수 있는 장 : 본 장, 또는 이미 올라온 등급까지 (엔딩은 신에서 깬 적이 있으면) */
+  function storyOpenable(i) {
+    if (i === 0 || storySeen(i)) return true;
+    var top = C.GRADES.length - 1;
+    if (i <= top) return num0(data.stats && data.stats.maxPromoted) >= i;
+    return typeof data.bestTimes[C.GRADES[top].id] === 'number';
+  }
+  function num0(v) { return typeof v === 'number' && v > 0 ? v : 0; }
+  function storyLockText(i) {
+    var top = C.GRADES.length - 1;
+    if (i <= top) return C.GRADES[i].name + ' 등급이 되면 열려요';
+    return C.GRADES[top].name + ' 등급에서 한 판을 깨면 열려요';
+  }
+  /* 이야기가 생기기 전부터 하던 사람 : 한 번만 물어봄 → 그다음 출석 체크 */
+  function maybeStoryAsk() {
+    var st = storyState();
+    if (st.asked || storySeen(0)) { st.asked = true; return maybeAttend(); }
+    if (!splashDone || overlayOpen() || screen === 'game') return maybeAttend();
+    st.asked = true;
+    Progress.save(data);
+    showModal('📜 새 이야기가 생겼어요!\n「숫자 도장의 전설」을 볼까요?\n\n홈의 [📜 이야기] 단추로\n언제든 다시 볼 수 있어요.', '볼래요', '나중에',
+      function () { playStory(0, function () { window.setTimeout(maybeAttend, 300); }); },
+      function () { window.setTimeout(maybeAttend, 300); });
   }
 
   /* 따라 하기 (js/tutorial.js) : 끝나면 하던 판으로 돌아옵니다 */
@@ -2810,7 +2865,17 @@
     $('promo').hidden = true;
     S.Effects.stop();
     $('btn-again').focus();
-    maybeAskLogin(C.GRADES[data.gradeIndex]);
+    var after = function () { maybeAskLogin(C.GRADES[data.gradeIndex]); };
+    if (storyNext >= 1 && storyNext <= 9) {
+      var c = storyNext;
+      storyNext = -1;
+      playStory(c, function () { $('btn-again').focus(); after(); });
+      return;
+    }
+    after();
+  });
+  $('btn-story').addEventListener('click', function () {
+    S.Story.openList({ open: storyOpenable, lock: storyLockText, name: storyName() });
   });
   $('login-ask-later').addEventListener('click', closeLoginAsk);
   $('modal-ok').addEventListener('click', function () {
@@ -2906,6 +2971,16 @@
 
   /* PC 키보드 : 숫자, 화살표, 지우기(Backspace), 메모(M), 되돌리기(Z), 멈춤(P) */
   document.addEventListener('keydown', function (e) {
+    if (S.Story.isOpen()) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      S.Story.key(e.key);
+      if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape' || e.key === 'ArrowRight') e.preventDefault();
+      return;
+    }
+    if (S.Story.listOpen()) {
+      if (e.key === 'Escape') S.Story.closeList();
+      return;
+    }
     if (S.Tutorial.isOpen()) {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       S.Tutorial.key(e.key);
@@ -3011,6 +3086,8 @@
 
   /* 가장 위에 떠 있는 창 하나를 닫습니다. 닫은 게 있으면 true */
   function closeTopOverlay() {
+    if (S.Story.isOpen()) { S.Story.close(); return true; }
+    if (S.Story.listOpen()) { S.Story.closeList(); return true; }
     if (S.Tutorial && S.Tutorial.isOpen()) { S.Tutorial.close(); return true; }
     if (!$('modal').hidden) { closeModal(false); return true; }
     if (!$('attend').hidden) { closeAttend(); return true; }
@@ -3162,8 +3239,11 @@
     S.Sound.play('memoOn'); // 누를 때 짧은 소리 (설정에서 효과음을 끄면 안 남)
     playMusic(); // 배경 음악
     /* 처음 켠 사람에게는 따라 하기를 먼저 보여 줍니다 (한 판이라도 해 본 사람은 건너뜀) */
-    if (!Settings.get('tutorialDone') && data.totalGames === 0 && !data.daily.total) openTutorial();
-    else window.setTimeout(maybeAttend, 450);
+    if (!Settings.get('tutorialDone') && data.totalGames === 0 && !data.daily.total) {
+      storyState().asked = true; // 처음 온 사람은 도입부를 바로 보므로 '새 이야기' 안내는 필요 없음
+      if (storySeen(0)) openTutorial();
+      else playStory(0, openTutorial);
+    } else window.setTimeout(maybeStoryAsk, 450);
   }
   $('splash').addEventListener('click', leaveSplash);
   $('splash-start').focus();

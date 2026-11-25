@@ -15,6 +15,11 @@ img/*
 !img/title.webp
 # 홈 배경 (이야기 속 숫자도장 마당)
 !img/home-dojo.webp
+# 이야기 그림 (tools/make_story.py 가 만듦). 원본 png 는 올리지 않음
+!img/story/
+img/story/*
+!img/story/bg-*.webp
+!img/story/c/
 !img/about/
 # 고양이 아이콘 (tools/make_icons.py 가 원본 img/cat_icon_img01.png, img/cat_icon_img02.png 에서 잘라 냄. 원본은 올리지 않음)
 !img/icons/
