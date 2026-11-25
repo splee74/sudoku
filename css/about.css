@@ -1,17 +1,7 @@
 /* ============================================================
-   설명 글 (홈 화면 아래) : 카드 · 작은 판 그림 · 화면 미리 보기
+   플레이 방법 창 : 카드 · 작은 판 그림
    색은 css/style.css 의 색 이름(--surface, --ink …)을 써서 다크 모드에도 맞습니다.
    ============================================================ */
-.about {
-  max-width: 820px; margin: 36px auto 0;
-  font-size: 18px; line-height: 1.6;
-  display: flex; flex-direction: column; gap: 34px;
-}
-.about p { margin: 0; }
-.about h2 {
-  display: flex; align-items: center; gap: 10px;
-  margin: 0 0 14px; font-size: 24px; line-height: 1.3;
-}
 .ab-ico {
   flex: none; width: 42px; height: 42px; border-radius: 12px;
   background: var(--surface); border: 1px solid var(--line);
@@ -22,38 +12,33 @@
   padding: 16px; margin: 0;
   box-shadow: 0 2px 8px rgba(40, 30, 10, 0.05);
 }
-.ab-lead { margin: -4px 0 14px !important; font-size: 19px; }
-.ab-note { margin-top: 12px !important; color: var(--ink-soft); font-size: 16px; }
-
 /* ---------- 맨 위 소개 ---------- */
-.ab-hero {
-  display: grid; grid-template-columns: 1fr; gap: 18px; align-items: center;
+.rb-intro {
   background: linear-gradient(150deg, var(--surface), color-mix(in srgb, var(--accent) 12%, var(--surface)));
-  border: 1px solid var(--line); border-radius: 24px;
-  padding: 22px 20px;
+  border-radius: 20px; padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
 }
+.rb-intro .ab-kicker { align-self: flex-start; margin: 0 !important; }
+.rb-intro-t { color: var(--ink-soft); font-size: 15.5px; line-height: 1.5; }
+.rb-intro-t b { display: block; color: var(--ink); font-size: 19px; line-height: 1.35; margin-bottom: 4px; }
 .ab-kicker {
-  display: inline-block; margin-bottom: 8px !important;
+  display: inline-block;
   background: var(--accent); color: var(--accent-ink);
   border-radius: 999px; padding: 2px 12px; font-size: 15px; font-weight: 700;
 }
-.ab-hero h1 { margin: 0 0 10px; font-size: 27px; line-height: 1.35; letter-spacing: -0.5px; }
-.ab-hero-text > p:not(.ab-kicker) { color: var(--ink-soft); }
-.ab-chips { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.ab-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .ab-chips li {
   background: var(--bg); border: 1px solid var(--line); border-radius: 999px;
-  padding: 4px 12px; font-size: 15px; font-weight: 700; white-space: nowrap;
+  padding: 3px 10px; font-size: 13.5px; font-weight: 700; white-space: nowrap;
 }
 
-/* ---------- 스도쿠란 ---------- */
-.ab-intro { display: flex; flex-direction: column; gap: 12px; }
 .ab-callout {
   background: color-mix(in srgb, #ffd35c 22%, var(--surface));
   border-left: 5px solid #e3a600; border-radius: 10px;
   padding: 10px 14px; font-size: 17px;
 }
 
-/* ---------- 하는 방법 : 작은 판 세 개 ---------- */
+/* ---------- 기본 규칙 : 작은 판 세 개 ---------- */
 .ab-rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .ab-rule { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 8px; text-align: center; }
 .ab-rule figcaption { font-size: 15px; line-height: 1.4; }
@@ -118,21 +103,6 @@
 .ab-pt em { font-style: normal; font-weight: 800; color: var(--ink); }
 :root[data-theme="dark"] .ab-pt b { color: #ff9e5e; }
 
-/* ---------- 승급전 : 등급 사다리 ---------- */
-.ab-split { display: grid; grid-template-columns: 1fr 190px; gap: 18px; align-items: start; }
-.ab-split-rev { grid-template-columns: 190px 1fr; align-items: center; }
-.ab-split-main { min-width: 0; }
-.ab-ladder {
-  list-style: none; margin: 0 0 12px; padding: 0;
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
-}
-.ab-ladder li {
-  background: var(--c); color: #fff; border-radius: 12px;
-  padding: 7px 2px 5px; text-align: center; line-height: 1.2;
-  display: flex; flex-direction: column;
-}
-.ab-ladder b { font-size: 17px; }
-.ab-ladder span { font-size: 12px; opacity: 0.85; }
 .ab-updown { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .ab-up, .ab-down { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; }
 .ab-up span, .ab-down span { font-size: 24px; }
@@ -140,16 +110,6 @@
 .ab-up small, .ab-down small { color: var(--ink-soft); font-size: 14px; }
 .ab-up { border-left: 5px solid #2f8a55; }
 .ab-down { border-left: 5px solid var(--wrong); }
-
-/* ---------- 휴대폰 화면 그림 ---------- */
-.ab-phone { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.ab-phone img {
-  width: 100%; height: auto; display: block;
-  border-radius: 22px; border: 6px solid #26241f;
-  box-shadow: 0 10px 24px rgba(40, 30, 10, 0.22);
-  background: var(--surface);
-}
-.ab-phone figcaption { font-size: 15px; font-weight: 700; color: var(--ink-soft); text-align: center; }
 
 /* ---------- 오늘의 퍼즐 ---------- */
 .ab-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
@@ -161,42 +121,9 @@
 .ab-list p { font-size: 15.5px; color: var(--ink-soft); line-height: 1.45; }
 .ab-list b { display: block; font-size: 17px; color: var(--ink); }
 
-/* ---------- 화면 미리 보기 (휴대폰에서는 옆으로 밀어서 보기) ---------- */
-.ab-gallery {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-}
-
-/* ---------- 휴대폰 화면 ---------- */
-@media (max-width: 640px) {
-  .about { gap: 30px; font-size: 17px; }
-  .about h2 { font-size: 22px; }
-  .ab-hero h1 { font-size: 24px; }
-  .ab-rules { gap: 6px; }
-  .ab-rule { padding: 10px 4px; }
-  .ab-rule figcaption { font-size: 13.5px; }
-  .ab-rule small { font-size: 12px; }
-  .ab-score { grid-template-columns: repeat(2, 1fr); }
-  .ab-split, .ab-split-rev { grid-template-columns: 1fr; }
-  .ab-split .ab-phone, .ab-split-rev .ab-phone { width: 62%; max-width: 220px; justify-self: center; }
-  .ab-split-rev .ab-phone { order: 2; }
-  .ab-gallery {
-    display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
-    margin: 0 -12px; padding: 4px 12px 10px;
-    scrollbar-width: none;
-  }
-  .ab-gallery::-webkit-scrollbar { display: none; }
-  .ab-gallery .ab-phone { flex: 0 0 46%; scroll-snap-align: start; }
-}
+/* 좁은 화면 */
 @media (max-width: 380px) {
   .ab-tips { grid-template-columns: 1fr; }
-  .ab-ladder { grid-template-columns: repeat(5, 1fr); gap: 4px; }
-  .ab-ladder b { font-size: 15px; }
-}
-
-/* ---------- 넓은 화면 ---------- */
-@media (min-width: 700px) {
-  .ab-hero { padding: 28px 30px; }
-  .ab-hero h1 { font-size: 30px; }
 }
 
 /* ============================================================
@@ -309,3 +236,12 @@
 .rb-badges { display: flex; flex-direction: column; gap: 6px; text-align: center; }
 .rb-badge-row { font-size: 28px; letter-spacing: 6px; }
 .rbook .grade-list { margin-top: 0; }
+
+/* 요령 */
+.rbook .ab-tips { gap: 8px; }
+.rbook .ab-tip { padding: 12px; }
+.rbook .ab-tip-i { font-size: 24px; }
+.rbook .ab-tip b { font-size: 16px; }
+.rbook .ab-tip p { font-size: 14px; line-height: 1.45; }
+.rbook .ab-rule small { font-size: 12px; margin-top: 4px; }
+.rbook .ab-callout { font-size: 15px; padding: 8px 12px; }

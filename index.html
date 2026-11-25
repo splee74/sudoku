@@ -13,15 +13,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=67">
-  <link rel="stylesheet" href="css/skins.css?v=67">
-  <link rel="stylesheet" href="css/screens.css?v=67">
-  <link rel="stylesheet" href="css/about.css?v=67">
-  <link rel="stylesheet" href="css/fx.css?v=67">
-  <link rel="stylesheet" href="css/story.css?v=67">
+  <link rel="stylesheet" href="css/style.css?v=68">
+  <link rel="stylesheet" href="css/skins.css?v=68">
+  <link rel="stylesheet" href="css/screens.css?v=68">
+  <link rel="stylesheet" href="css/about.css?v=68">
+  <link rel="stylesheet" href="css/fx.css?v=68">
+  <link rel="stylesheet" href="css/story.css?v=68">
   <link rel="preload" as="image" href="img/gate-dojo.webp">
   <link rel="preload" as="image" href="img/gate-cast.webp">
-  <link rel="stylesheet" href="css/dark.css?v=67">
+  <link rel="stylesheet" href="css/dark.css?v=68">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -174,7 +174,7 @@
 
       <div class="home-hero">
         <!-- 제목은 그림 (길게 눌러도 글자가 선택되지 않게). 다시 만들기 : python tools/make_title.py -->
-        <div class="home-title"><img src="img/title.webp" alt="스도쿠 승급전" width="885" height="196" draggable="false"></div>
+        <h1 class="home-title"><img src="img/title.webp" alt="스도쿠 승급전" width="885" height="196" draggable="false"></h1>
         <div class="home-pills">
           <button type="button" class="pill-btn" data-open="rules">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01"/></svg>
@@ -382,135 +382,13 @@
 
     <!-- [다음 버전 자리] 광고 배너가 들어갈 곳 -->
     <div class="slot slot-ad" id="slot-ad-middle" hidden></div>
-
-    <!-- ================= 설명 글 (인터넷 창으로 열었을 때 홈 화면 아래에 보임, 앱에서는 숨김) =================
-         꾸밈은 css/about.css. 글을 고칠 때는 문장만 바꾸면 됩니다. -->
-    <article class="about" aria-labelledby="about-title">
-
-      <!-- 맨 위 소개 -->
-      <header class="ab-hero">
-        <div class="ab-hero-text">
-          <p class="ab-kicker">무료 · 설치 없이 바로</p>
-          <h1 id="about-title">스도쿠 승급전,<br>하수에서 시작해 한 단계씩 올라가세요</h1>
-          <p>작은 4×4 판에서 규칙을 익히고, 판을 깰 때마다 등급이 올라가며 점점 큰 판에 도전합니다.</p>
-          <ul class="ab-chips">
-            <li>🧩 매번 새 퍼즐</li>
-            <li>✅ 정답은 늘 하나</li>
-            <li>📴 인터넷 없이도</li>
-            <li>🌙 다크 모드</li>
-          </ul>
-        </div>
-      </header>
-
-      <!-- 스도쿠란 -->
-      <section class="ab-sec">
-        <h2><span class="ab-ico" aria-hidden="true">🤔</span>스도쿠는 어떤 놀이인가요</h2>
-        <div class="ab-card ab-intro">
-          <p>빈칸에 숫자를 채워 넣는 <b>숫자 퍼즐</b>입니다. 어느 칸에 어떤 숫자가 들어갈 수 있는지 차근차근 따져 보는 놀이라서, 하루에 한두 판씩 풀면 집중력을 기르는 데 좋습니다.</p>
-          <p class="ab-callout">💡 <b>계산은 전혀 필요 없어요!</b> 덧셈 뺄셈 없이 "어디에 무엇이 빠졌나"만 찾으면 됩니다.</p>
-        </div>
-      </section>
-
-      <!-- 하는 방법 -->
-      <section class="ab-sec">
-        <h2><span class="ab-ico" aria-hidden="true">📏</span>하는 방법</h2>
-        <p class="ab-lead">판을 숫자로 가득 채우면 성공! 지킬 약속은 <b>세 가지</b>뿐입니다.</p>
-        <div class="ab-rules">
-          <figure class="ab-card ab-rule">
-            <div class="mini" aria-hidden="true"><i class="on">1</i><i class="on br">2</i><i class="on ask">?</i><i class="on">4</i><i class="bb">3</i><i class="br bb"></i><i class="bb">1</i><i class="bb">2</i><i>2</i><i class="br"></i><i>4</i><i>3</i><i></i><i class="br">3</i><i>2</i><i></i></div>
-            <figcaption><b>가로줄</b>에 같은 숫자는 한 번만<small>1, 2, 4가 있으니 빈칸은 3</small></figcaption>
-          </figure>
-          <figure class="ab-card ab-rule">
-            <div class="mini" aria-hidden="true"><i class="on">1</i><i class="br">2</i><i></i><i>4</i><i class="on bb">3</i><i class="br bb"></i><i class="bb">1</i><i class="bb">2</i><i class="on">2</i><i class="br"></i><i>4</i><i>3</i><i class="on ask">?</i><i class="br">3</i><i>2</i><i></i></div>
-            <figcaption><b>세로줄</b>에 같은 숫자는 한 번만<small>1, 3, 2가 있으니 빈칸은 4</small></figcaption>
-          </figure>
-          <figure class="ab-card ab-rule">
-            <div class="mini" aria-hidden="true"><i>1</i><i class="br">2</i><i></i><i>4</i><i class="bb">3</i><i class="br bb"></i><i class="bb">1</i><i class="bb">2</i><i>2</i><i class="br"></i><i class="on">4</i><i class="on">3</i><i></i><i class="br">3</i><i class="on">2</i><i class="on ask">?</i></div>
-            <figcaption><b>굵은 선 상자</b> 안에도 한 번만<small>4, 3, 2가 있으니 빈칸은 1</small></figcaption>
-          </figure>
-        </div>
-        <ol class="ab-steps">
-          <li><span class="ab-step-n">1</span><span class="ab-step-i" aria-hidden="true">👆</span><b>빈칸 누르기</b></li>
-          <li><span class="ab-step-n">2</span><span class="ab-step-i" aria-hidden="true">🔢</span><b>숫자 단추 누르기</b></li>
-          <li><span class="ab-step-n">3</span><span class="ab-step-i" aria-hidden="true">❌</span><b>3번 틀리면 실패</b></li>
-        </ol>
-      </section>
-
-      <!-- 요령 -->
-      <section class="ab-sec">
-        <h2><span class="ab-ico" aria-hidden="true">🧭</span>처음 하는 분을 위한 요령</h2>
-        <div class="ab-tips">
-          <div class="ab-card ab-tip"><span class="ab-tip-i" aria-hidden="true">🎯</span><b>거의 다 찬 곳부터</b><p>빈칸이 한두 개만 남은 줄이나 상자는 빠진 숫자가 금방 보입니다.</p></div>
-          <div class="ab-card ab-tip"><span class="ab-tip-i" aria-hidden="true">🔍</span><b>숫자 하나를 따라가기</b><p>숫자 단추를 누르면 판의 같은 숫자가 모두 표시됩니다. 그 숫자가 들어갈 자리가 한 곳뿐인지 찾아보세요.</p></div>
-          <div class="ab-card ab-tip"><span class="ab-tip-i" aria-hidden="true">✏️</span><b>헷갈리면 메모</b><p>들어갈 수 있는 숫자를 작게 적어 두면, 다른 칸이 채워질 때마다 후보가 줄어 답이 드러납니다.</p></div>
-          <div class="ab-card ab-tip"><span class="ab-tip-i" aria-hidden="true">🙅</span><b>찍지 마세요</b><p>정답은 하나뿐이라 모든 칸은 따져서 알 수 있습니다. 정말 막히면 힌트를 쓰세요.</p></div>
-        </div>
-      </section>
-
-      <!-- 점수 -->
-      <section class="ab-sec">
-        <h2><span class="ab-ico" aria-hidden="true">⭐</span>점수는 이렇게 올라갑니다</h2>
-        <div class="ab-score">
-          <div class="ab-card ab-pt"><b>×5</b><span>틀리지 않고 연속으로 맞히면 점점 커져 <em>최대 5배</em>, 10연속마다 <em>콤보 보너스</em></span></div>
-          <div class="ab-card ab-pt"><b>⚡</b><span>8초 안에 또 맞히면 <em>빠른 손</em></span></div>
-          <div class="ab-card ab-pt"><b>+α</b><span>줄 · 상자 완성, 한 숫자를 다 채우면 <em>보너스</em></span></div>
-          <div class="ab-card ab-pt"><b>🏁</b><span>판을 깨면 <em>완성 · 시간 · 최고 콤보 보너스</em></span></div>
-          <div class="ab-card ab-pt"><b>💎</b><span>안 틀리면, 힌트 없이 깨면 <em>보너스 더</em></span></div>
-          <div class="ab-card ab-pt"><b>🪜</b><span>오늘의 퍼즐은 <em>단계가 높을수록</em> 더 많이</span></div>
-        </div>
-        <p class="ab-note">등급이 높을수록 한 칸의 점수가 큽니다. 등급별 최고 점수와 모은 점수는 "내 기록"에서 볼 수 있어요.</p>
-      </section>
-
-      <!-- 승급전 -->
-      <section class="ab-sec">
-        <h2><span class="ab-ico" aria-hidden="true">🏆</span>승급전은 이렇게 진행됩니다</h2>
-        <div class="ab-split">
-          <div class="ab-split-main">
-            <ol class="ab-ladder" aria-label="등급 10단계"><li style="--c:#6f7f8c"><b>하수</b><span>4×4</span></li><li style="--c:#4d8558"><b>평민</b><span>6×6</span></li><li style="--c:#2f6aa8"><b>중수</b><span>9×9</span></li><li style="--c:#6a4fa3"><b>고수</b><span>9×9</span></li><li style="--c:#a3477f"><b>영웅</b><span>9×9</span></li><li style="--c:#b0562f"><b>지존</b><span>9×9</span></li><li style="--c:#a07a1f"><b>초인</b><span>9×9</span></li><li style="--c:#8c2f2f"><b>패왕</b><span>9×9</span></li><li style="--c:#3d3a6b"><b>대왕</b><span>9×9</span></li><li style="--c:#1f1f1f"><b>신</b><span>9×9</span></li></ol>
-            <div class="ab-updown">
-              <div class="ab-card ab-up"><span aria-hidden="true">⬆️</span><b>미션 깨면 승급</b><small>등급마다 승급 미션</small></div>
-              <div class="ab-card ab-down"><span aria-hidden="true">⬇️</span><b>3번 연속 실패면 강등</b><small>하수 밑으로는 안 내려가요</small></div>
-            </div>
-            <p class="ab-note">등급 이름을 누르면 승급과 상관없이 하고 싶은 등급을 골라서 할 수 있습니다. 내 등급과 기록은 이 기기에 저장되어 다음에도 그대로 이어집니다.</p>
-          </div>
-          <figure class="ab-phone"><img src="img/about/promo.webp" alt="영웅 승급 축하 화면" width="360" height="640" loading="lazy"><figcaption>승급하면 축하해 드려요</figcaption></figure>
-        </div>
-      </section>
-
-      <!-- 오늘의 퍼즐 -->
-      <section class="ab-sec">
-        <h2><span class="ab-ico" aria-hidden="true">📅</span>오늘의 퍼즐</h2>
-        <div class="ab-split ab-split-rev">
-          <figure class="ab-phone"><img src="img/about/home.webp" alt="오늘의 퍼즐 카드가 있는 홈 화면" width="360" height="640" loading="lazy"><figcaption>홈 화면 왼쪽 위 카드</figcaption></figure>
-          <ul class="ab-list">
-            <li><span aria-hidden="true">🗓️</span><p><b>매일 새 9×9 퍼즐 하나</b>같은 날에는 모든 사람이 같은 퍼즐을 풀어요.</p></li>
-            <li><span aria-hidden="true">👨‍👩‍👧</span><p><b>가족·친구와 견주기</b>같은 퍼즐이니 점수와 시간을 비교해 보세요.</p></li>
-            <li><span aria-hidden="true">🛡️</span><p><b>등급에는 영향 없음</b>실패해도 괜찮아요. 풀 때까지 다시 도전할 수 있어요.</p></li>
-            <li><span aria-hidden="true">🔥</span><p><b>연속 기록</b>하루도 빠지지 않고 풀면 연속 일수가 쌓여요.</p></li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- 화면 미리 보기 -->
-      <section class="ab-sec">
-        <h2><span class="ab-ico" aria-hidden="true">📱</span>이렇게 생겼어요</h2>
-        <div class="ab-gallery">
-          <figure class="ab-phone"><img src="img/about/game.webp" alt="9×9 게임 화면" width="360" height="640" loading="lazy"><figcaption>큰 글씨, 큰 단추</figcaption></figure>
-          <figure class="ab-phone"><img src="img/about/wood.webp" alt="나무판 스킨" width="360" height="640" loading="lazy"><figcaption>10가지 판 꾸미기</figcaption></figure>
-          <figure class="ab-phone"><img src="img/about/dark.webp" alt="다크 모드 화면" width="360" height="640" loading="lazy"><figcaption>눈이 편한 다크 모드</figcaption></figure>
-          <figure class="ab-phone"><img src="img/about/badges.webp" alt="배지 모음 화면" width="360" height="640" loading="lazy"><figcaption>다섯 단계 배지 모으기</figcaption></figure>
-        </div>
-      </section>
-    </article>
-
-    <!-- [다음 버전 자리] 광고 배너가 들어갈 곳 -->
     <div class="slot slot-ad" id="slot-ad-bottom" hidden></div>
   </main>
 
   <!-- ================= 맨 아래 ================= -->
   <footer class="site-foot">
     <div class="foot-links">
-      <button type="button" class="link" data-open="rules">규칙</button>
+      <button type="button" class="link" data-open="rules">플레이 방법</button>
       <button type="button" class="link" data-tab="record">내 기록</button>
       <button type="button" class="link" data-open="settings">설정</button>
       <a class="link" href="privacy.html">개인정보처리방침</a>
@@ -627,14 +505,28 @@
     </div>
   </div>
 
-  <!-- 규칙 창 : 카드 · 작은 판 그림으로 꾸민 규칙 (꾸밈은 css/about.css 의 "규칙 창") -->
+  <!-- 플레이 방법 창 : 소개 · 규칙 · 요령 · 점수 · 승급 · 오늘의 퍼즐 · 아이템을 한곳에 (꾸밈은 css/about.css) -->
   <div class="overlay" id="sheet-rules" hidden>
     <div class="sheet-box" role="dialog" aria-modal="true" aria-labelledby="rules-title">
       <div class="sheet-head">
-        <h2 id="rules-title">스도쿠 규칙</h2>
+        <h2 id="rules-title">플레이 방법</h2>
         <button type="button" class="sheet-close" data-close aria-label="닫기">✕</button>
       </div>
       <div class="sheet-body rbook">
+
+        <!-- 소개 -->
+        <header class="ab-card rb-intro">
+          <p class="ab-kicker">무료 · 설치 없이 바로</p>
+          <p class="rb-intro-t"><b>하수에서 시작해 한 단계씩 올라가는 스도쿠</b>작은 4×4 판에서 규칙을 익히고, 판을 깰 때마다 등급이 올라 점점 큰 판에 도전해요.</p>
+          <p class="ab-callout">💡 <b>계산은 전혀 필요 없어요!</b> 덧셈 뺄셈 없이 "어디에 무엇이 빠졌나"만 찾으면 돼요.</p>
+          <ul class="ab-chips">
+            <li>🧩 매번 새 퍼즐</li>
+            <li>✅ 정답은 늘 하나</li>
+            <li>📴 인터넷 없이도</li>
+            <li>🎨 판 꾸미기 10가지</li>
+            <li>🌙 다크 모드</li>
+          </ul>
+        </header>
 
         <!-- 따라 하기 -->
         <button type="button" class="rb-tut" id="btn-tutorial">
@@ -647,6 +539,7 @@
         <nav class="rb-jump" aria-label="규칙 바로 가기">
           <button type="button" data-jump="rb-basic">기본 규칙</button>
           <button type="button" data-jump="rb-how">하는 방법</button>
+          <button type="button" data-jump="rb-tips">요령</button>
           <button type="button" data-jump="rb-score">점수</button>
           <button type="button" data-jump="rb-grade">승급</button>
           <button type="button" data-jump="rb-daily">오늘의 퍼즐</button>
@@ -661,15 +554,15 @@
           <div class="ab-rules">
             <figure class="ab-card ab-rule">
               <div class="mini" aria-hidden="true"><i class="on">1</i><i class="on br">2</i><i class="on ask">?</i><i class="on">4</i><i class="bb">3</i><i class="br bb"></i><i class="bb">1</i><i class="bb">2</i><i>2</i><i class="br"></i><i>4</i><i>3</i><i></i><i class="br">3</i><i>2</i><i></i></div>
-              <figcaption><b>가로줄</b><br>같은 숫자 한 번만</figcaption>
+              <figcaption><b>가로줄</b><br>같은 숫자 한 번만<small>1·2·4가 있으니 ?는 3</small></figcaption>
             </figure>
             <figure class="ab-card ab-rule">
               <div class="mini" aria-hidden="true"><i class="on">1</i><i class="br">2</i><i></i><i>4</i><i class="on bb">3</i><i class="br bb"></i><i class="bb">1</i><i class="bb">2</i><i class="on">2</i><i class="br"></i><i>4</i><i>3</i><i class="on ask">?</i><i class="br">3</i><i>2</i><i></i></div>
-              <figcaption><b>세로줄</b><br>같은 숫자 한 번만</figcaption>
+              <figcaption><b>세로줄</b><br>같은 숫자 한 번만<small>1·3·2가 있으니 ?는 4</small></figcaption>
             </figure>
             <figure class="ab-card ab-rule">
               <div class="mini" aria-hidden="true"><i>1</i><i class="br">2</i><i></i><i>4</i><i class="bb">3</i><i class="br bb"></i><i class="bb">1</i><i class="bb">2</i><i>2</i><i class="br"></i><i class="on">4</i><i class="on">3</i><i></i><i class="br">3</i><i class="on">2</i><i class="on ask">?</i></div>
-              <figcaption><b>굵은 선 상자</b><br>같은 숫자 한 번만</figcaption>
+              <figcaption><b>굵은 선 상자</b><br>같은 숫자 한 번만<small>4·3·2가 있으니 ?는 1</small></figcaption>
             </figure>
           </div>
           <div class="rb-sizes">
@@ -707,6 +600,17 @@
           </div>
         </section>
 
+        <!-- 요령 -->
+        <section class="rb-sec" id="rb-tips">
+          <h3><span class="ab-ico" aria-hidden="true">🧭</span>처음 하는 분을 위한 요령</h3>
+          <div class="ab-tips">
+            <div class="ab-card ab-tip"><span class="ab-tip-i" aria-hidden="true">🎯</span><b>거의 다 찬 곳부터</b><p>빈칸이 한두 개만 남은 줄이나 상자는 빠진 숫자가 금방 보여요.</p></div>
+            <div class="ab-card ab-tip"><span class="ab-tip-i" aria-hidden="true">🔍</span><b>숫자 하나 따라가기</b><p>숫자 단추를 누르면 판의 같은 숫자가 모두 표시돼요. 그 숫자가 갈 자리가 한 곳뿐인지 찾아보세요.</p></div>
+            <div class="ab-card ab-tip"><span class="ab-tip-i" aria-hidden="true">✏️</span><b>헷갈리면 메모</b><p>들어갈 수 있는 숫자를 작게 적어 두면, 칸이 채워질수록 후보가 줄어 답이 드러나요.</p></div>
+            <div class="ab-card ab-tip"><span class="ab-tip-i" aria-hidden="true">🙅</span><b>찍지 마세요</b><p>정답은 하나뿐이라 모든 칸은 따져서 알 수 있어요. 정말 막히면 힌트를 쓰세요.</p></div>
+          </div>
+        </section>
+
         <!-- 점수 -->
         <section class="rb-sec" id="rb-score">
           <h3><span class="ab-ico" aria-hidden="true">⭐</span>점수</h3>
@@ -731,6 +635,7 @@
           <ul class="rb-tips">
             <li><span aria-hidden="true">🎚️</span><p><b>등급 이름</b>을 누르면 승급과 상관없이 원하는 등급을 골라서 할 수 있어요.</p></li>
             <li><span aria-hidden="true">⚠️</span><p>숫자를 넣은 뒤 <b>새 게임</b>을 누르면 하던 판은 실패로 기록돼요.</p></li>
+            <li><span aria-hidden="true">📊</span><p>등급별 최고 점수와 모은 점수는 아래 메뉴의 <b>내 기록</b>에서 볼 수 있어요.</p></li>
           </ul>
         </section>
 
@@ -755,6 +660,7 @@
         <section class="rb-sec" id="rb-items">
           <h3><span class="ab-ico" aria-hidden="true">🎁</span>출석 체크와 아이템</h3>
           <ul class="ab-list">
+            <li><span aria-hidden="true">🎉</span><p><b>시작 선물</b>처음 시작하면 힌트권 · 시간 단축권 · 실수 지우개를 3장씩 드려요.</p></li>
             <li><span aria-hidden="true">📅</span><p><b>하루 한 번 출석</b>홈 화면 위쪽에서 출석하면 아이템을 받아요. 7일째에는 큰 선물!</p></li>
             <li><span aria-hidden="true">🎒</span><p><b>게임 중에 쓰기</b>시간 옆 가방 단추를 눌러 써요.</p></li>
             <li><span aria-hidden="true">💡</span><p><b>힌트권</b>힌트 3번을 다 쓰면 힌트 단추가 힌트권으로 바뀌어요.</p></li>
@@ -936,23 +842,23 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=67"></script>
-  <script src="js/engine.js?v=67"></script>
-  <script src="js/game.js?v=67"></script>
-  <script src="js/progress.js?v=67"></script>
-  <script src="js/settings.js?v=67"></script>
-  <script src="js/skins.js?v=67"></script>
-  <script src="js/sound.js?v=67"></script>
-  <script src="js/music.js?v=67"></script>
-  <script src="js/effects.js?v=67"></script>
-  <script src="js/badges.js?v=67"></script>
-  <script src="js/shop.js?v=67"></script>
-  <script src="js/account.js?v=67"></script>
-  <script src="js/ranking.js?v=67"></script>
-  <script src="js/tutorial.js?v=67"></script>
-  <script src="js/story.js?v=67"></script>
-  <script src="js/hero.js?v=67"></script>
-  <script src="js/remind.js?v=67"></script>
-  <script src="js/ui.js?v=67"></script>
+  <script src="js/config.js?v=68"></script>
+  <script src="js/engine.js?v=68"></script>
+  <script src="js/game.js?v=68"></script>
+  <script src="js/progress.js?v=68"></script>
+  <script src="js/settings.js?v=68"></script>
+  <script src="js/skins.js?v=68"></script>
+  <script src="js/sound.js?v=68"></script>
+  <script src="js/music.js?v=68"></script>
+  <script src="js/effects.js?v=68"></script>
+  <script src="js/badges.js?v=68"></script>
+  <script src="js/shop.js?v=68"></script>
+  <script src="js/account.js?v=68"></script>
+  <script src="js/ranking.js?v=68"></script>
+  <script src="js/tutorial.js?v=68"></script>
+  <script src="js/story.js?v=68"></script>
+  <script src="js/hero.js?v=68"></script>
+  <script src="js/remind.js?v=68"></script>
+  <script src="js/ui.js?v=68"></script>
 </body>
 </html>
