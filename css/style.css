@@ -1235,4 +1235,10 @@ img.ico, img.tool-img, img.pill-ico, img.btn-ico, img.tab-ico { display: block; 
 /* 결과 그림 공유 : 그림을 찍는 잠깐 동안만 맨 아래에 게임 이름과 주소가 보입니다 */
 .share-foot { display: none; margin: 2px 0 0; font-size: 14px; font-weight: 700; color: var(--ink-soft); text-align: center; }
 .result-box.capturing .share-foot { display: block; }
+/* 그림 찍기용 복사본 : 화면 밖에 두어서 보이는 결과 창은 흔들리지 않게 */
+.result-box.share-shot {
+  position: fixed; left: -10000px; top: 0;
+  max-height: none; overflow: visible; pointer-events: none;
+}
+.result-box.share-shot, .result-box.share-shot * { animation: none !important; transition: none !important; }
 .btn-kakao:disabled { opacity: 0.7; }

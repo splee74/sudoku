@@ -2019,19 +2019,31 @@
     $('share-foot').textContent = C.PLAY_STORE_URL
       ? '🐱 스도쿠 승급전 · 플레이 스토어에서 받아 도전해 봐!'
       : '🐱 스도쿠 승급전 · 나도 도전하기 👉 ' + shareUrl().replace(/^https?:\/\//, '');
+    var shot = null;
+    function done() { if (shot && shot.parentNode) shot.parentNode.removeChild(shot); }
     return loadScript('js/vendor/html-to-image.js?v=' + (C.VERSION || ''), 'htmlToImage').then(function (lib) {
-      box.classList.add('capturing');
+      // 보이는 결과 창을 건드리면 (맨 아래 줄이 붙었다 빠지며) 화면이 잠깐 흔들리므로,
+      // 화면 밖에 똑같이 복사해 두고 그 복사본을 찍습니다
+      var rect = box.getBoundingClientRect();
+      shot = box.cloneNode(true);
+      // (이름표 id 는 글자 색 같은 꾸밈 때문에 그대로 둡니다. 원본이 앞에 있어 $() 는 원본을 찾음)
+      shot.setAttribute('aria-hidden', 'true');
+      // 반짝이 같은 잠깐 효과는 복사본에서 뺌 (움직임을 멈추면 그대로 남아 보이므로)
+      shot.querySelectorAll('[class*="fx-"]').forEach(function (el) { el.parentNode.removeChild(el); });
+      shot.classList.add('capturing', 'share-shot');
+      shot.style.width = rect.width + 'px';
+      box.parentNode.appendChild(shot);
       var bg = getComputedStyle(box).backgroundColor;
       // 단추들은 빼고 찍으므로 높이는 맨 아래 줄(게임 이름 · 주소)까지만
-      var foot = $('share-foot').getBoundingClientRect(), top = box.getBoundingClientRect().top;
-      var height = Math.ceil(foot.bottom - top + box.scrollTop + 18);
-      return lib.toBlob(box, {
+      var foot = shot.querySelector('.share-foot').getBoundingClientRect(), top = shot.getBoundingClientRect().top;
+      var height = Math.ceil(foot.bottom - top + 18);
+      return lib.toBlob(shot, {
         pixelRatio: Math.min(3, Math.max(2, window.devicePixelRatio || 2)),
         backgroundColor: bg,
         cacheBust: false,
         // 창이 길어 스크롤되는 휴대폰에서도 전체가 다 찍히게
         height: height,
-        style: { maxHeight: 'none', overflow: 'visible', animation: 'none', transform: 'none', margin: '0', boxShadow: 'none' },
+        style: { position: 'static', left: 'auto', top: 'auto', maxHeight: 'none', overflow: 'visible', animation: 'none', transform: 'none', margin: '0', boxShadow: 'none' },
         // 단추들과 반짝이 효과는 빼고 찍음
         filter: function (node) {
           if (!node.classList) return true;
@@ -2039,11 +2051,11 @@
         }
       });
     }).then(function (blob) {
-      box.classList.remove('capturing');
+      done();
       if (!blob) throw new Error('capture');
       return new File([blob], 'sudoku-record.png', { type: 'image/png' });
     }, function (e) {
-      box.classList.remove('capturing');
+      done();
       throw e;
     });
   }
