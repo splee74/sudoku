@@ -20,24 +20,24 @@ body:not([data-screen="home"]) .slot-ad { display: none !important; }
 body:not([data-screen="game"]) { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 
-/* ---------- 시작 그림 (img/gate.webp, 941×1672) ----------
+/* ---------- 시작 그림 (img/gate-dojo.webp, 941×1672 : 숫자도장 마당 + 제목 + 주인공 · 사부 · 깜냥. tools/make_gate_dojo.py 로 만듦) ----------
    휴대폰(세로로 긴 화면) : 그림이 화면을 꽉 채웁니다. 화면 비율이 그림과 다르면 양옆(또는 위아래)이 조금 잘립니다.
    가로로 넓은 화면(태블릿 · PC) : 그림 전체가 보이게 맞추고, 남는 곳은 같은 그림을 흐리게 깔아 채웁니다. */
 .splash {
   position: fixed; inset: 0; z-index: 100;
-  background: #a2cdfe;            /* 그림이 뜨기 전 잠깐 보이는 하늘색 (manifest.json 의 background_color 와 같게) */
+  background: #e9d9bd;            /* 그림이 뜨기 전 잠깐 보이는 마당 색 (manifest.json 의 background_color 와 같게) */
   overflow: hidden; cursor: pointer;
   transition: opacity 0.35s ease;
 }
 .splash::before {
   content: ""; position: absolute; inset: -40px;
-  background: url("../img/gate.webp") center / cover no-repeat;
+  background: url("../img/gate-dojo.webp") center / cover no-repeat;
   filter: blur(24px) brightness(0.9);
 }
 /* 그림은 <img> 대신 배경으로 그립니다 (흐린 뒷그림과 같은 주소라, 뒷그림이 보이면 이 그림도 꼭 보임) */
 .splash-art {
   position: absolute; inset: 0; bottom: auto; height: 100%;   /* 세로 화면에서는 index.html 의 글이 높이를 휴대폰 전체 화면 높이로 고정 */
-  background: url("../img/gate.webp") 50% 30% / cover no-repeat;   /* 위아래가 잘릴 때는 제목 쪽(위)을 더 살립니다 */
+  background: url("../img/gate-dojo.webp") 50% 30% / cover no-repeat;   /* 위아래가 잘릴 때는 제목 쪽(위)을 더 살립니다 */
 }
 @media (min-aspect-ratio: 2 / 3) {
   .splash-art {

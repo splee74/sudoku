@@ -13,14 +13,14 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=65">
-  <link rel="stylesheet" href="css/skins.css?v=65">
-  <link rel="stylesheet" href="css/screens.css?v=65">
-  <link rel="stylesheet" href="css/about.css?v=65">
-  <link rel="stylesheet" href="css/fx.css?v=65">
-  <link rel="stylesheet" href="css/story.css?v=65">
-  <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=65">
+  <link rel="stylesheet" href="css/style.css?v=66">
+  <link rel="stylesheet" href="css/skins.css?v=66">
+  <link rel="stylesheet" href="css/screens.css?v=66">
+  <link rel="stylesheet" href="css/about.css?v=66">
+  <link rel="stylesheet" href="css/fx.css?v=66">
+  <link rel="stylesheet" href="css/story.css?v=66">
+  <link rel="preload" as="image" href="img/gate-dojo.webp">
+  <link rel="stylesheet" href="css/dark.css?v=66">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -40,8 +40,8 @@
   <span class="app-ver" id="app-ver" aria-hidden="true"></span>
 
   <!-- ================= 시작 화면 =================
-       그림 : img/gate.webp (휴대폰에서는 화면을 꽉 채우고, 가로로 넓은 화면에서는 그림 전체가 보이게 맞춥니다)
-       원본은 img/18884.png ("시작하기" 단추는 그림 위에 따로 그려 깜박이게 합니다, 화면 아무 곳을 눌러도 시작).
+       그림 : img/gate-dojo.webp (tools/make_gate_dojo.py 로 만듦. 휴대폰에서는 화면을 꽉 채우고, 가로로 넓은 화면에서는 그림 전체가 보이게 맞춥니다)
+       예전 하늘색 대문 img/gate.webp 의 원본은 img/18884.png ("시작하기" 단추는 그림 위에 따로 그려 깜박이게 합니다, 화면 아무 곳을 눌러도 시작).
        단추 자리를 옮기려면 css/screens.css 의 "시작 단추 자리" 숫자를 고치세요. -->
   <div class="splash" id="splash">
     <button type="button" class="splash-music music-btn" data-music aria-label="배경 음악"></button>
@@ -52,7 +52,7 @@
   <!-- 앱을 막 켰을 때 휴대폰이 위아래 막대를 정리하느라 보이는 화면 높이가 몇 번 바뀝니다.
        그림을 보이는 화면 높이에 맞추면 그때마다 커졌다 작아졌다 흔들리므로,
        세로 화면에서는 그림 높이를 휴대폰 화면 전체 높이(바뀌지 않는 값)로 고정합니다. 아래가 조금 잘릴 뿐 움직이지 않습니다.
-       그래도 크기가 자리 잡을 때까지(길어야 0.9초)는 하늘색만 보여 주다가 그림을 부드럽게 띄웁니다 -->
+       그래도 크기가 자리 잡을 때까지(길어야 0.9초)는 마당 색만 보여 주다가 그림을 부드럽게 띄웁니다 -->
   <script>
     (function () {
       var sp = document.getElementById('splash'), art = document.getElementById('splash-art'), t = 0, done = false;
@@ -933,23 +933,23 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=65"></script>
-  <script src="js/engine.js?v=65"></script>
-  <script src="js/game.js?v=65"></script>
-  <script src="js/progress.js?v=65"></script>
-  <script src="js/settings.js?v=65"></script>
-  <script src="js/skins.js?v=65"></script>
-  <script src="js/sound.js?v=65"></script>
-  <script src="js/music.js?v=65"></script>
-  <script src="js/effects.js?v=65"></script>
-  <script src="js/badges.js?v=65"></script>
-  <script src="js/shop.js?v=65"></script>
-  <script src="js/account.js?v=65"></script>
-  <script src="js/ranking.js?v=65"></script>
-  <script src="js/tutorial.js?v=65"></script>
-  <script src="js/story.js?v=65"></script>
-  <script src="js/hero.js?v=65"></script>
-  <script src="js/remind.js?v=65"></script>
-  <script src="js/ui.js?v=65"></script>
+  <script src="js/config.js?v=66"></script>
+  <script src="js/engine.js?v=66"></script>
+  <script src="js/game.js?v=66"></script>
+  <script src="js/progress.js?v=66"></script>
+  <script src="js/settings.js?v=66"></script>
+  <script src="js/skins.js?v=66"></script>
+  <script src="js/sound.js?v=66"></script>
+  <script src="js/music.js?v=66"></script>
+  <script src="js/effects.js?v=66"></script>
+  <script src="js/badges.js?v=66"></script>
+  <script src="js/shop.js?v=66"></script>
+  <script src="js/account.js?v=66"></script>
+  <script src="js/ranking.js?v=66"></script>
+  <script src="js/tutorial.js?v=66"></script>
+  <script src="js/story.js?v=66"></script>
+  <script src="js/hero.js?v=66"></script>
+  <script src="js/remind.js?v=66"></script>
+  <script src="js/ui.js?v=66"></script>
 </body>
 </html>
