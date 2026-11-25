@@ -206,6 +206,68 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
   :root:not([data-theme="light"]) .home-bg::after { background: rgba(10, 12, 20, 0.45); }
   :root:not([data-theme="light"]) .home-bg img { filter: brightness(0.82); }
 }
+/* ---------- 게임 화면 배경 : 숫자도장 마당 (img/home-dojo.webp) ----------
+   두 겹으로 깝니다.
+   ::before  선명한 그림 (위쪽의 지붕 · '숫자도장' 간판이 캐릭터 · 점수 줄 뒤로 보임)
+   ::after   흐린 그림 + 엷은 막. 위는 투명하고 아래로 갈수록 진해져서, 판 · 숫자 단추 쪽은 차분하게
+   z-index -1 이라 화면 내용 뒤, 페이지 바탕색(--bg) 위에 그려집니다. */
+/* body 의 바탕색이 그림을 덮지 않게 (바탕색은 html 에도 있어서 그대로 보임) */
+body[data-screen="game"] { background: transparent; }
+body[data-screen="game"]::before,
+body[data-screen="game"]::after {
+  content: ""; position: fixed; z-index: -1; pointer-events: none;
+}
+body[data-screen="game"]::before {
+  inset: 0;
+  background:
+    linear-gradient(rgba(255, 250, 240, 0.12), rgba(255, 250, 240, 0.3)),
+    url("../img/home-dojo.webp") 50% 22% / cover no-repeat;
+}
+body[data-screen="game"]::after {
+  inset: -30px;
+  background:
+    linear-gradient(rgba(250, 244, 232, 0.55), rgba(250, 244, 232, 0.72)),
+    url("../img/home-dojo.webp") 50% 22% / cover no-repeat;
+  filter: blur(12px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 16%, #000 40%);
+  mask-image: linear-gradient(to bottom, transparent 16%, #000 40%);
+}
+/* 틀림 · 점수 · 시간 줄과 등급 줄 : 그림 위에서도 잘 읽히게 반투명 흰 띠 */
+#screen-game .info,
+#screen-game .gradebar {
+  background: rgba(255, 253, 248, 0.78);
+  border-radius: 14px;
+  padding-left: 10px; padding-right: 10px;
+  box-shadow: 0 2px 8px rgba(60, 40, 10, 0.12);
+}
+/* 어두운 화면 : 그림을 어둡게 */
+:root[data-theme="dark"] body[data-screen="game"]::before {
+  background:
+    linear-gradient(rgba(12, 14, 22, 0.55), rgba(12, 14, 22, 0.62)),
+    url("../img/home-dojo.webp") 50% 22% / cover no-repeat;
+}
+:root[data-theme="dark"] body[data-screen="game"]::after {
+  background:
+    linear-gradient(rgba(14, 16, 24, 0.8), rgba(14, 16, 24, 0.86)),
+    url("../img/home-dojo.webp") 50% 22% / cover no-repeat;
+}
+:root[data-theme="dark"] #screen-game .info,
+:root[data-theme="dark"] #screen-game .gradebar { background: rgba(24, 26, 36, 0.78); box-shadow: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body[data-screen="game"]::before {
+    background:
+      linear-gradient(rgba(12, 14, 22, 0.55), rgba(12, 14, 22, 0.62)),
+      url("../img/home-dojo.webp") 50% 22% / cover no-repeat;
+  }
+  :root:not([data-theme="light"]) body[data-screen="game"]::after {
+    background:
+      linear-gradient(rgba(14, 16, 24, 0.8), rgba(14, 16, 24, 0.86)),
+      url("../img/home-dojo.webp") 50% 22% / cover no-repeat;
+  }
+  :root:not([data-theme="light"]) #screen-game .info,
+  :root:not([data-theme="light"]) #screen-game .gradebar { background: rgba(24, 26, 36, 0.78); box-shadow: none; }
+}
+
 /* 판 그림 위에서도 잘 보이게 : 제목은 반투명 바탕 위에 */
 /* 제목 그림 (img/title.webp, 하얀 테두리가 있어 판 그림 위에서도 잘 보임) */
 .screen-home .home-title { margin: 0; line-height: 0; }
