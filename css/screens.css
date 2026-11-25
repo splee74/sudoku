@@ -186,18 +186,19 @@ body:not([data-screen="game"]) .page { padding-top: 8px; padding-bottom: 12px; }
 }
 .home-bg::before {
   content: ""; position: absolute; inset: -30px;
-  background: url("../img/sudoku_img01.webp") center / cover no-repeat;
+  background: url("../img/home-dojo.webp") center / cover no-repeat;
   filter: blur(18px) saturate(1.1);
 }
-.home-bg::after { content: ""; position: absolute; inset: 0; background: rgba(255, 252, 244, 0.18); }
+/* 그림 위에 엷은 막을 씌워 카드 · 글씨가 잘 보이게 */
+.home-bg::after { content: ""; position: absolute; inset: 0; z-index: 2; background: rgba(255, 252, 244, 0.16); }
 .home-bg img {
   position: relative; z-index: 1;
-  width: min(104vw, calc(100dvh * 0.62), 720px); height: auto;
-  /* 그림 가장자리를 흐린 배경 속으로 부드럽게 녹입니다 */
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 96%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 96%, transparent);
-  mask-composite: intersect;
+  /* 휴대폰 : 화면을 꽉 채움 (위쪽 지붕 · 간판을 살리고 아래 빈 마당은 단추 자리) */
+  width: min(100%, calc(100dvh * 0.8), 760px); height: 100%;
+  object-fit: cover; object-position: 50% 30%;
+  /* 넓은 화면에서 그림 양옆을 흐린 배경 속으로 부드럽게 녹입니다 */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 3%, #000 97%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 3%, #000 97%, transparent);
 }
 :root[data-theme="dark"] .home-bg::after { background: rgba(10, 12, 20, 0.45); }
 :root[data-theme="dark"] .home-bg img { filter: brightness(0.82); }

@@ -13,13 +13,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=60">
-  <link rel="stylesheet" href="css/skins.css?v=60">
-  <link rel="stylesheet" href="css/screens.css?v=60">
-  <link rel="stylesheet" href="css/about.css?v=60">
-  <link rel="stylesheet" href="css/fx.css?v=60">
+  <link rel="stylesheet" href="css/style.css?v=62">
+  <link rel="stylesheet" href="css/skins.css?v=62">
+  <link rel="stylesheet" href="css/screens.css?v=62">
+  <link rel="stylesheet" href="css/about.css?v=62">
+  <link rel="stylesheet" href="css/fx.css?v=62">
   <link rel="preload" as="image" href="img/gate.webp">
-  <link rel="stylesheet" href="css/dark.css?v=60">
+  <link rel="stylesheet" href="css/dark.css?v=62">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -106,8 +106,9 @@
 
     <!-- ================= 홈 화면 ================= -->
     <section class="screen screen-home" id="screen-home" aria-label="홈">
-      <!-- 배경 : 나무 스도쿠판 그림을 크게 깔고, 남는 곳은 같은 그림을 흐리게 (css/screens.css 의 .home-bg) -->
-      <div class="home-bg" aria-hidden="true"><img src="img/sudoku_img01.webp" alt="" width="900" height="926"></div>
+      <!-- 배경 : 이야기 속 "숫자도장" 마당 그림을 화면에 꽉 차게 깔고, 넓은 화면에서 남는 양옆은 같은 그림을 흐리게 (css/screens.css 의 .home-bg)
+           그림 : img/home-dojo.webp (img/story/bg_dojo.png 의 간판에 '숫자도장' 글씨를 넣어 만듦) -->
+      <div class="home-bg" aria-hidden="true"><img src="img/home-dojo.webp" alt="" width="880" height="1184"></div>
       <div class="top-row">
         <button type="button" class="icon-btn music-btn" data-music aria-label="배경 음악"></button>
         <button type="button" class="icon-btn dark-btn" data-dark aria-label="어두운 화면"></button>
@@ -927,22 +928,22 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=60"></script>
-  <script src="js/engine.js?v=60"></script>
-  <script src="js/game.js?v=60"></script>
-  <script src="js/progress.js?v=60"></script>
-  <script src="js/settings.js?v=60"></script>
-  <script src="js/skins.js?v=60"></script>
-  <script src="js/sound.js?v=60"></script>
-  <script src="js/music.js?v=60"></script>
-  <script src="js/effects.js?v=60"></script>
-  <script src="js/badges.js?v=60"></script>
-  <script src="js/shop.js?v=60"></script>
-  <script src="js/account.js?v=60"></script>
-  <script src="js/ranking.js?v=60"></script>
-  <script src="js/tutorial.js?v=60"></script>
-  <script src="js/hero.js?v=60"></script>
-  <script src="js/remind.js?v=60"></script>
-  <script src="js/ui.js?v=60"></script>
+  <script src="js/config.js?v=62"></script>
+  <script src="js/engine.js?v=62"></script>
+  <script src="js/game.js?v=62"></script>
+  <script src="js/progress.js?v=62"></script>
+  <script src="js/settings.js?v=62"></script>
+  <script src="js/skins.js?v=62"></script>
+  <script src="js/sound.js?v=62"></script>
+  <script src="js/music.js?v=62"></script>
+  <script src="js/effects.js?v=62"></script>
+  <script src="js/badges.js?v=62"></script>
+  <script src="js/shop.js?v=62"></script>
+  <script src="js/account.js?v=62"></script>
+  <script src="js/ranking.js?v=62"></script>
+  <script src="js/tutorial.js?v=62"></script>
+  <script src="js/hero.js?v=62"></script>
+  <script src="js/remind.js?v=62"></script>
+  <script src="js/ui.js?v=62"></script>
 </body>
 </html>

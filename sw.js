@@ -10,7 +10,7 @@
  * 새 파일(그림, js, css)을 추가했으면 아래 FILES 목록에도 한 줄 넣어 주세요.
  * 버전을 올릴 때는  python tools/bump_version.py  를 쓰면 CACHE, 화면 버전, index.html 의 ?v= 가 한 번에 바뀝니다.
  */
-var CACHE = 'sudoku-files-v61';
+var CACHE = 'sudoku-files-v62';
 var FILES = [
   './',
   'index.html',
@@ -23,7 +23,7 @@ var FILES = [
   'icons/apple-touch-icon.png',
   'img/skin-wood.jpg',
   'img/gate.webp',
-  'img/sudoku_img01.webp',
+  'img/home-dojo.webp',
   'img/chars.webp',
   'img/title.webp',
   'audio/bgm01.mp3',

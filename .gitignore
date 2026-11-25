@@ -13,6 +13,8 @@ img/*
 !img/sudoku_img01.webp
 !img/chars.webp
 !img/title.webp
+# 홈 배경 (이야기 속 숫자도장 마당)
+!img/home-dojo.webp
 !img/about/
 # 고양이 아이콘 (tools/make_icons.py 가 원본 img/cat_icon_img01.png, img/cat_icon_img02.png 에서 잘라 냄. 원본은 올리지 않음)
 !img/icons/
