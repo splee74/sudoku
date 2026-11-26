@@ -1,5 +1,5 @@
 /*
- * 내 기록 : 등급, 승급/강등, 저장하기·불러오기.
+ * 내 기록 : 등급, 승급, 저장하기·불러오기.
  * 지금은 브라우저 안(localStorage)에 저장합니다.
  * 나중에 랭킹 서버나 앱 저장소로 바꾸려면 아래 Storage 부분만 바꾸면 됩니다.
  */
@@ -41,7 +41,7 @@
       gradeIndex: 0, // 지금 등급 (0 = 하수)
       wins: 0, // 지금 등급에서 깬 판 수
       mission: freshMission(), // 지금 등급의 승급 미션 진행 (js/config.js 의 MISSIONS)
-      reach: 0, // 열린 가장 높은 등급 (이 등급까지는 골라서 할 수 있음. 승급하면 올라가고, 이 등급에서 강등되면 내려감)
+      reach: 0, // 열린 가장 높은 등급 (이 등급까지는 골라서 할 수 있음. 승급하면 올라가고, 강등은 없음)
       parked: {}, // 다른 등급에 다녀오는 동안 맡겨 둔 등급별 미션 진행 : { 등급id: { wins, mission } }
       failStreak: 0, // 연속 실패 횟수
       totalWins: 0,
@@ -361,29 +361,15 @@
   }
 
   /*
-   * 한 판 실패 처리.
-   * 반환 : { demoted: 강등됐는지, grade: 처리 후 등급 }
+   * 한 판 실패 처리. 여러 번 실패해도 등급은 내려가지 않습니다 (강등 없음).
+   * 반환 : { demoted: false, grade: 지금 등급 }
    */
   function recordLoss(data, score) {
     data.totalGames++;
     if (typeof score === 'number' && score > 0) data.totalScore += score; // 실패한 판에서 모은 점수도 쌓입니다
-    data.failStreak++;
+    data.failStreak++; // 연속 실패 횟수 (기록용)
     data.mission.streak = 0; // 연달아 깨기 미션은 처음부터
-    var demoted = false;
-    if (data.failStreak >= C.FAILS_TO_DEMOTE) {
-      data.failStreak = 0;
-      // 낮은 등급을 골라서 하는 중에는 내려가지 않습니다 (열린 가장 높은 등급에서만 강등)
-      if (data.gradeIndex > 0 && data.gradeIndex === data.reach) {
-        data.gradeIndex--;
-        data.reach = data.gradeIndex;
-        data.wins = 0;
-        data.mission = freshMission();
-        delete data.parked[C.GRADES[data.gradeIndex].id];
-        delete data.parked[C.GRADES[data.gradeIndex + 1].id];
-        demoted = true;
-      }
-    }
-    return { demoted: demoted, grade: C.GRADES[data.gradeIndex] };
+    return { demoted: false, grade: C.GRADES[data.gradeIndex] };
   }
 
   /* 등급을 직접 고릅니다. 승급까지 남은 판 수는 처음부터 다시 셉니다. */

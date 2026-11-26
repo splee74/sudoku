@@ -13,15 +13,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=75">
-  <link rel="stylesheet" href="css/skins.css?v=75">
-  <link rel="stylesheet" href="css/screens.css?v=75">
-  <link rel="stylesheet" href="css/about.css?v=75">
-  <link rel="stylesheet" href="css/fx.css?v=75">
-  <link rel="stylesheet" href="css/story.css?v=75">
+  <link rel="stylesheet" href="css/style.css?v=76">
+  <link rel="stylesheet" href="css/skins.css?v=76">
+  <link rel="stylesheet" href="css/screens.css?v=76">
+  <link rel="stylesheet" href="css/about.css?v=76">
+  <link rel="stylesheet" href="css/fx.css?v=76">
+  <link rel="stylesheet" href="css/story.css?v=76">
   <link rel="preload" as="image" href="img/gate-dojo.webp">
   <link rel="preload" as="image" href="img/gate-cast.webp">
-  <link rel="stylesheet" href="css/dark.css?v=75">
+  <link rel="stylesheet" href="css/dark.css?v=76">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -487,6 +487,31 @@
     </div>
   </div>
 
+  <!-- 시작 관문 : 대문에서 시작하기를 누르면, 구글 로그인 + 닉네임을 정해야 홈으로 들어갑니다 (js/ui.js 의 gate) -->
+  <div class="overlay gate" id="gate" hidden>
+    <div class="modal-box login-ask-box gate-box" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+      <div class="login-ask-art" aria-hidden="true"><img src="img/story/c/hero_joy.webp" alt=""></div>
+      <h2 class="login-ask-title" id="gate-title">어서 와요, 제자님!</h2>
+      <p class="login-ask-text" id="gate-text">게임을 시작하려면 Google로 로그인하고 닉네임을 정해 주세요. 랭킹에 내 이름이 올라가고, 휴대폰을 바꾸거나 앱을 지웠다 깔아도 기록이 그대로 이어져요.</p>
+      <div class="login-btns" id="gate-btns"></div>
+      <p class="gate-note" id="gate-note" role="status"></p>
+      <button type="button" class="btn btn-secondary gate-retry" id="gate-retry" hidden>다시 시도</button>
+    </div>
+  </div>
+
+  <!-- 랭킹에서 이름을 누르면 뜨는 그 사람의 기록 (js/ranking.js 의 openProfile) -->
+  <div class="overlay overlay-top" id="pp" hidden>
+    <div class="modal-box pp-box" role="dialog" aria-modal="true" aria-labelledby="pp-nick">
+      <button type="button" class="sheet-close pp-close" id="pp-close" aria-label="닫기">✕</button>
+      <div class="pp-head">
+        <h2 class="pp-nick-row"><span id="pp-nick"></span><span class="rk-crown" id="pp-crown" hidden>👑</span><span class="rk-mine" id="pp-mine" hidden>나</span></h2>
+        <span class="rk-grade pp-grade" id="pp-grade"></span>
+        <p class="pp-now" id="pp-now"></p>
+      </div>
+      <ul class="pp-stats" id="pp-stats"></ul>
+    </div>
+  </div>
+
   <div class="overlay overlay-top" id="login-ask" hidden>
     <div class="modal-box login-ask-box" role="dialog" aria-modal="true" aria-labelledby="login-ask-title">
       <div class="login-ask-art" id="login-ask-art" aria-hidden="true">🛡️</div>
@@ -617,12 +642,12 @@
           <p class="rb-note">⬆ 등급이 높을수록 한 칸 점수가 커요 · 힌트로 채운 칸은 점수가 없어요</p>
         </section>
 
-        <!-- 승급과 강등 -->
+        <!-- 승급 (강등은 없음) -->
         <section class="rb-sec" id="rb-grade">
-          <h3><span class="ab-ico" aria-hidden="true">🏆</span>승급과 강등</h3>
+          <h3><span class="ab-ico" aria-hidden="true">🏆</span>승급 규칙</h3>
           <div class="ab-updown">
             <div class="ab-card ab-up"><span aria-hidden="true">⬆️</span><b>등급마다 <em>승급 미션</em>을 모두 깨면 승급</b><small>처음에는 하수부터 시작해요</small></div>
-            <div class="ab-card ab-down"><span aria-hidden="true">⬇️</span><b><em id="rules-fails">3</em>번 연속 실패면 강등</b><small>가장 낮은 등급 밑으로는 안 내려가요</small></div>
+            <div class="ab-card ab-down"><span aria-hidden="true">🛡️</span><b>실패해도 <em>강등 없음</em></b><small>여러 번 틀려도 등급은 그대로예요</small></div>
           </div>
           <ul class="rb-tips">
             <li><span aria-hidden="true">🎚️</span><p><b>등급 이름</b>을 누르면 승급과 상관없이 원하는 등급을 골라서 할 수 있어요.</p></li>
@@ -834,23 +859,23 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=75"></script>
-  <script src="js/engine.js?v=75"></script>
-  <script src="js/game.js?v=75"></script>
-  <script src="js/progress.js?v=75"></script>
-  <script src="js/settings.js?v=75"></script>
-  <script src="js/skins.js?v=75"></script>
-  <script src="js/sound.js?v=75"></script>
-  <script src="js/music.js?v=75"></script>
-  <script src="js/effects.js?v=75"></script>
-  <script src="js/badges.js?v=75"></script>
-  <script src="js/shop.js?v=75"></script>
-  <script src="js/account.js?v=75"></script>
-  <script src="js/ranking.js?v=75"></script>
-  <script src="js/tutorial.js?v=75"></script>
-  <script src="js/story.js?v=75"></script>
-  <script src="js/hero.js?v=75"></script>
-  <script src="js/remind.js?v=75"></script>
-  <script src="js/ui.js?v=75"></script>
+  <script src="js/config.js?v=76"></script>
+  <script src="js/engine.js?v=76"></script>
+  <script src="js/game.js?v=76"></script>
+  <script src="js/progress.js?v=76"></script>
+  <script src="js/settings.js?v=76"></script>
+  <script src="js/skins.js?v=76"></script>
+  <script src="js/sound.js?v=76"></script>
+  <script src="js/music.js?v=76"></script>
+  <script src="js/effects.js?v=76"></script>
+  <script src="js/badges.js?v=76"></script>
+  <script src="js/shop.js?v=76"></script>
+  <script src="js/account.js?v=76"></script>
+  <script src="js/ranking.js?v=76"></script>
+  <script src="js/tutorial.js?v=76"></script>
+  <script src="js/story.js?v=76"></script>
+  <script src="js/hero.js?v=76"></script>
+  <script src="js/remind.js?v=76"></script>
+  <script src="js/ui.js?v=76"></script>
 </body>
 </html>

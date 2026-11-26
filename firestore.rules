@@ -47,6 +47,26 @@ service cloud.firestore {
       allow delete: if signedAs(uid);
     }
 
+    // 기록 카드 (랭킹에서 이름을 누르면 보이는 대략적인 게임 기록) : 누구나 보기, 나만 쓰기
+    function count(n) {
+      return n is int && n >= 0 && n <= 1000000000;
+    }
+    match /cards/{uid} {
+      allow read: if true;
+      allow create, update: if signedAs(uid)
+        && request.resource.data.keys().hasOnly(['nick', 'g', 'cur', 'games', 'wins', 'score', 'streak', 'perfect', 'badges', 'daily', 'stairs', 'sec', 'days', 'at'])
+        && goodNick(request.resource.data.nick)
+        && request.resource.data.g is int && request.resource.data.g >= 0 && request.resource.data.g <= 20
+        && request.resource.data.cur is int && request.resource.data.cur >= 0 && request.resource.data.cur <= 20
+        && count(request.resource.data.games) && count(request.resource.data.wins)
+        && count(request.resource.data.score) && count(request.resource.data.streak)
+        && count(request.resource.data.perfect) && count(request.resource.data.badges)
+        && count(request.resource.data.daily) && count(request.resource.data.stairs)
+        && count(request.resource.data.sec) && count(request.resource.data.days)
+        && request.resource.data.at == request.time;
+      allow delete: if signedAs(uid);
+    }
+
     // 랭킹 : 누구나 보기, 내 줄만 쓰기
     //   점수는 처음에 30만 점까지, 그 뒤로는 10초에 한 번, 한 번에 6만 점까지만 오를 수 있음 (말이 안 되는 기록 막기)
     //   오늘의 퍼즐 시간은 더 빨라지는 쪽으로만, 계단 단계 수는 올라가는 쪽으로만 바꿀 수 있음

@@ -23,6 +23,8 @@
   var uploadTimer = 0;
   var loading = null;
   var syncing = false;
+  var known = false; // Firebase 가 로그인 상태를 한 번이라도 알려 줬는지
+  var knownWait = [];
 
   function configured() {
     return !!(C.FIREBASE && C.FIREBASE.apiKey && C.FIREBASE.projectId);
@@ -115,6 +117,10 @@
     });
   }
 
+  function markKnown() {
+    known = true;
+    while (knownWait.length) knownWait.shift()();
+  }
   function handleUser(u) {
     if (!u) {
       user = null;
@@ -122,6 +128,7 @@
         S.Storage.remove(HINT_KEY);
       } catch (e) { /* 무시 */ }
       emit('out');
+      markKnown();
       return;
     }
     var p = u.providerData && u.providerData[0];
@@ -133,6 +140,7 @@
     };
     S.Storage.set(HINT_KEY, JSON.stringify({ name: user.name, provider: user.provider }));
     emit('in');
+    markKnown();
     pull();
   }
 
@@ -335,6 +343,13 @@
     },
     /* 로그인하지 않아도 랭킹은 볼 수 있게 Firebase 를 불러옵니다 */
     open: ready,
+    /* Firebase 를 불러오고 로그인 상태(되살린 로그인 포함)를 알게 될 때까지 기다립니다 */
+    settled: function () {
+      return ready().then(function () {
+        if (known) return user;
+        return new Promise(function (ok) { knownWait.push(function () { ok(user); }); });
+      });
+    },
     lastName: lastName
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -18,6 +18,8 @@
  *      판 이름 : s_2026-11-23 (오늘 계단) · w_2026-11-23 (그 주 월요일) · m_2026-11 (달)
  *               뒤에 _g3 이 붙으면 그 등급 묶음만 (3 = 등급 순서)
  *   hall/{등급id}/rows/{uid}       { nick, at }                가장 높은 등급을 처음 찍은 사람
+ *   cards/{uid}                    { nick, g, cur, games, wins, score, streak, perfect, badges, daily, stairs, sec, days, at }
+ *                                  랭킹에서 이름을 누르면 보이는 대략적인 게임 기록 (누구나 보기, 나만 쓰기)
  */
 (function (root) {
   var S = (root.SUDOKU = root.SUDOKU || {});
@@ -251,12 +253,49 @@
         if (r.ms > 0) { go(boardId('month', r.mk), 'month', r.ms); go(boardId('month', r.mk, g), 'month', r.ms); }
         if (r.sk === dayKey() && r.sv > 0) { go(boardId('day', r.sk), 'day', r.sv); go(boardId('day', r.sk, g), 'day', r.sv); }
         jobs.push(claimHall());
+        jobs.push(pushCard());
         return Promise.all(jobs).then(function () {
           if (more) later(GAP_MS);
         });
       });
     }).catch(function () { /* 인터넷이 없으면 다음에 */ });
     return chain;
+  }
+
+  /* ---------------- 기록 카드 (랭킹에서 이름을 누르면 보이는 기록) ---------------- */
+  function int(n) { n = Math.floor(Number(n) || 0); return n > 0 ? n : 0; }
+  function myCard() {
+    var d = D(), r = R(), st = d.stats || {}, dl = d.daily || {};
+    return {
+      nick: r.nick, g: int(d.reach), cur: int(d.gradeIndex),
+      games: int(d.totalGames), wins: int(d.totalWins), score: int(d.totalScore),
+      streak: int(st.bestWinStreak), perfect: int(st.perfectWins),
+      badges: int(S.Badges ? S.Badges.count(d) : 0),
+      daily: int(dl.total), stairs: int(dl.bestStairs), sec: int(st.playSec),
+      days: int(d.attend && d.attend.total)
+    };
+  }
+  var cardSent = '', cardAt = 0, cardBad = false;
+  function pushCard() {
+    var u = user();
+    if (!u || !R().nick || cardBad) return Promise.resolve();
+    var c = myCard(), key = u.uid + JSON.stringify(c);
+    if (key === cardSent || Date.now() - cardAt < 15000) return Promise.resolve(); // 바뀐 게 없거나 방금 올림
+    cardAt = Date.now();
+    c.at = stamp();
+    return fb.db.collection('cards').doc(u.uid).set(c).then(function () {
+      cardSent = key;
+    }).catch(function (e) {
+      // 보안 규칙에 cards 가 아직 없으면 (firestore.rules 를 다시 게시하기 전) 이번에 켠 동안은 그만 시도
+      if (e && e.code === 'permission-denied') cardBad = true;
+    });
+  }
+  function fetchCard(uid) {
+    return db().then(function () {
+      return fb.db.collection('cards').doc(uid).get();
+    }).then(function (snap) {
+      return snap.exists ? snap.data() : null;
+    });
   }
 
   /* 가장 높은 등급을 처음 찍었으면 명예의 전당에 이름을 올립니다 (한 번만) */
@@ -317,6 +356,7 @@
     return db().then(function () {
       var r = R(), g = r.g >= 0 ? r.g : null, jobs = [];
       jobs.push(fb.db.collection('players').doc(uid).delete());
+      jobs.push(fb.db.collection('cards').doc(uid).delete());
       jobs.push(fb.db.collection('hall').doc(topGrade().id).collection('rows').doc(uid).delete());
       [['week', r.wk], ['month', r.mk], ['day', r.sk]].forEach(function (b) {
         if (!b[1]) return;
@@ -329,6 +369,7 @@
       r.nick = '';
       r.hall = false;
       server = {};
+      cardSent = '';
       nickLoaded = '';
       hooks.save();
     });
@@ -464,8 +505,19 @@
 
   function medal(rank) { return rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : ''; }
 
+  var people = {}; // uid → 랭킹 줄에 보인 정보 (이름을 누르면 기록 창에 먼저 보여 줌)
+  function tappable(li, x, kind) {
+    if (!x.uid) return;
+    people[x.uid] = { nick: x.nick, grade: x.grade, crown: x.crown, v: x.v, kind: kind };
+    li.setAttribute('data-rk-uid', x.uid);
+    li.setAttribute('role', 'button');
+    li.setAttribute('tabindex', '0');
+    li.setAttribute('aria-label', (x.nick || '이름 없음') + ' 기록 보기');
+    li.classList.add('tap');
+  }
   function rowEl(kind, x, rank, me) {
     var li = el('li', 'rk-row' + (me ? ' me' : ''));
+    tappable(li, x, kind);
     var no = el('span', 'rk-no', medal(rank) || (rank == null ? '-' : String(rank)));
     if (medal(rank)) no.classList.add('medal');
     li.appendChild(no);
@@ -554,7 +606,7 @@
     if (me.rank != null && me.rank > TOP && (me.above.length || me.below.length)) {
       var ol = el('ol', 'rk-list rk-near');
       me.above.forEach(function (x, i) { ol.appendChild(rowEl(kind, x, me.rank - me.above.length + i, false)); });
-      ol.appendChild(rowEl(kind, { nick: r.nick, grade: D().reach, v: me.v, crown: r.crowns > 0 }, me.rank, true));
+      ol.appendChild(rowEl(kind, { uid: u.uid, nick: r.nick, grade: D().reach, v: me.v, crown: r.crowns > 0 }, me.rank, true));
       me.below.forEach(function (x, i) { ol.appendChild(rowEl(kind, x, me.rank + 1 + i, false)); });
       card.appendChild(ol);
     }
@@ -638,6 +690,7 @@
       if (!data.first.length) list.appendChild(el('li', 'rk-empty', '아직 아무도 ' + top.name + ' 등급에 오르지 못했어요. 첫 번째 주인공이 되어 보세요!'));
       data.first.forEach(function (x, i) {
         var li = el('li', 'rk-row' + (u && x.uid === u.uid ? ' me' : ''));
+        tappable(li, x, 'hall');
         li.appendChild(el('span', 'rk-no' + (i < 3 ? ' medal' : ''), medal(i + 1) || String(i + 1)));
         var who = el('span', 'rk-who');
         who.appendChild(el('b', 'rk-nick', x.nick));
@@ -662,6 +715,78 @@
     });
   }
 
+  /* ---------------- 기록 창 : 랭킹에서 이름을 누르면 그 사람의 대략적인 게임 기록 ---------------- */
+  var popFor = '';
+  function fmtTime(sec) {
+    sec = int(sec);
+    var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60);
+    return h ? h + '시간 ' + m + '분' : m ? m + '분' : sec ? '1분 미만' : '0분';
+  }
+  function statEl(icon, label, value) {
+    var li = el('li', 'pp-stat');
+    li.appendChild(el('span', 'pp-ico', icon));
+    li.appendChild(el('span', 'pp-label', label));
+    li.appendChild(el('b', 'pp-val', value));
+    return li;
+  }
+  function setGrade(g) {
+    var chip = $('pp-grade');
+    chip.textContent = g.name;
+    chip.style.setProperty('--c', g.color);
+  }
+  function openProfile(uid) {
+    var p = people[uid] || {}, u = user();
+    popFor = uid;
+    var mine = !!(u && u.uid === uid);
+    $('pp-nick').textContent = p.nick || '이름 없음';
+    $('pp-crown').hidden = !p.crown;
+    $('pp-mine').hidden = !mine;
+    setGrade(gradeOf(p.grade));
+    var info = p.kind && BOARD[p.kind];
+    $('pp-now').textContent = info && p.v != null ? info.icon + ' ' + info.title + ' · ' + fmtValue(p.kind, p.v) : '';
+    var list = $('pp-stats');
+    list.innerHTML = '';
+    list.appendChild(el('li', 'pp-wait', '기록을 불러오는 중…'));
+    $('pp').hidden = false;
+    $('pp-close').focus();
+    // 내 기록은 이 기기의 것을 바로 보여 줍니다
+    var get = mine && R().nick ? Promise.resolve(myCard()) : fetchCard(uid);
+    get.then(function (c) {
+      if (popFor !== uid || $('pp').hidden) return;
+      list.innerHTML = '';
+      if (!c) {
+        list.appendChild(el('li', 'pp-wait', '아직 공개된 기록이 없어요. 이 냥이가 다음 판을 끝내면 보여요.'));
+        return;
+      }
+      if (c.nick) $('pp-nick').textContent = c.nick;
+      var top = gradeOf(c.g), cur = gradeOf(c.cur);
+      setGrade(top);
+      var rate = c.games ? Math.round(c.wins / c.games * 100) : 0;
+      [
+        ['🏅', '최고 등급', top.name],
+        ['🎯', '지금 도전 중', cur.name],
+        ['🧩', '승급전', fmtScore(c.games) + '판 · ' + fmtScore(c.wins) + '승'],
+        ['📈', '성공률', c.games ? rate + '%' : '-'],
+        ['⭐', '모은 점수', fmtScore(c.score) + '점'],
+        ['🔥', '최다 연승', fmtScore(c.streak) + '연승'],
+        ['💎', '무결점 성공', fmtScore(c.perfect) + '판'],
+        ['📅', '오늘의 퍼즐', fmtScore(c.daily) + '번 · 최고 ' + fmtScore(c.stairs) + '단계'],
+        ['🎖️', '배지', fmtScore(c.badges) + '개'],
+        ['🗓️', '출석', fmtScore(c.days) + '일'],
+        ['⏱️', '게임한 시간', fmtTime(c.sec)]
+      ].forEach(function (x) { list.appendChild(statEl(x[0], x[1], x[2])); });
+    }).catch(function () {
+      if (popFor !== uid || $('pp').hidden) return;
+      list.innerHTML = '';
+      list.appendChild(el('li', 'pp-wait', '기록을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'));
+    });
+  }
+  function closeProfile() {
+    if ($('pp').hidden) return;
+    $('pp').hidden = true;
+    popFor = '';
+  }
+
   /* ---------------- 닉네임 창 ---------------- */
   /* 로그인 버튼을 누른 뒤 닉네임이 없으면 바로 닉네임 창을 띄우려고 표시해 둡니다
      (페이지를 옮겨 가는 로그인 방식도 있어서 sessionStorage 에 적어 둠) */
@@ -678,14 +803,25 @@
     try { return root.sessionStorage.getItem(ASK_KEY) === '1'; } catch (e) { return false; }
   }
 
+  /* 닉네임 필수 (시작할 때 로그인 + 닉네임 화면, js/ui.js 의 gate) : 정하기 전에는 창을 닫을 수 없음 */
+  var mustNick = false;
+  function requireNick(on) {
+    mustNick = !!on;
+    $('nick-cancel').hidden = mustNick && !R().nick;
+  }
   /* afterLogin : true = 로그인하자마자, 'remind' = 랭킹 화면에서 다시 권할 때 (안내 문구를 바꿈) */
   function openNick(afterLogin) {
     var box = $('nick');
     askedNick = true;
+    var must = mustNick && !R().nick;
+    $('nick-cancel').hidden = must;
+    if (must) afterLogin = 'must';
     $('nick-input').value = R().nick || '';
     $('nick-err').textContent = '';
-    $('nick-title').textContent = afterLogin === true ? '마지막으로 닉네임을 정해 주세요!' : afterLogin === 'remind' ? '닉네임을 정해 주세요!' : R().nick ? '닉네임 바꾸기' : '닉네임 정하기';
-    $('nick-text').textContent = afterLogin === true
+    $('nick-title').textContent = afterLogin === 'must' ? '닉네임을 정해 주세요!' : afterLogin === true ? '마지막으로 닉네임을 정해 주세요!' : afterLogin === 'remind' ? '닉네임을 정해 주세요!' : R().nick ? '닉네임 바꾸기' : '닉네임 정하기';
+    $('nick-text').textContent = afterLogin === 'must'
+      ? '게임을 시작하기 전에 랭킹에 보일 닉네임을 정해 주세요. 2~10글자로, 한글 · 영어 · 숫자를 쓸 수 있어요. 구글 계정의 실제 이름은 보이지 않아요.'
+      : afterLogin === true
       ? '로그인됐어요! 닉네임까지 정해야 랭킹에 내 이름이 올라가요. 2~10글자로, 한글 · 영어 · 숫자를 쓸 수 있어요.'
       : afterLogin === 'remind'
         ? '아직 닉네임이 없어서 랭킹에 내 이름이 안 보여요. 2~10글자로, 한글 · 영어 · 숫자를 쓸 수 있어요.'
@@ -695,6 +831,7 @@
   }
   function closeNick() {
     if ($('nick').hidden) return;
+    if (mustNick && !R().nick && user()) return; // 닉네임을 정해야 닫힘
     $('nick').hidden = true;
     if (hooks.nickClosed) hooks.nickClosed();
   }
@@ -803,6 +940,21 @@
       if (sc) { scope = sc.getAttribute('data-rank-scope'); return render(); }
       if (t.closest('[data-rank-nick]')) return openNick(false);
       if (t.closest('[data-rank-daily]') && hooks.playDaily) return hooks.playDaily();
+      var who = t.closest('[data-rk-uid]');
+      if (who) return openProfile(who.getAttribute('data-rk-uid'));
+    });
+    screen.addEventListener('keydown', function (e) {
+      var who = e.target.closest && e.target.closest('[data-rk-uid]');
+      if (who && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        openProfile(who.getAttribute('data-rk-uid'));
+      }
+    });
+    $('pp-close').addEventListener('click', closeProfile);
+    $('pp').addEventListener('click', function (e) { if (e.target === $('pp')) closeProfile(); });
+    $('pp').addEventListener('keydown', function (e) {
+      e.stopPropagation();
+      if (e.key === 'Escape') closeProfile();
     });
     swipe($('rank-pane'));
     $('nick-ok').addEventListener('click', submitNick);
@@ -841,6 +993,12 @@
     forget: forget,
     nickError: nickError,
     isNickOpen: function () { return !$('nick').hidden; },
+    nick: function () { return R().nick; },
+    loadNick: loadNick,
+    openNick: openNick,
+    requireNick: requireNick,
+    isProfileOpen: function () { return !$('pp').hidden; },
+    closeProfile: closeProfile,
     closeNick: closeNick,
     keys: { week: weekKey, month: monthKey, monthBefore: monthBefore }
   };

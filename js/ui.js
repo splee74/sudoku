@@ -187,7 +187,7 @@
   }
   /* 무언가 창이 떠 있으면 시간이 멈추고 키보드 입력도 받지 않습니다 */
   function overlayOpen() {
-    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || !$('stairs').hidden || !$('login-ask').hidden || !$('nick').hidden || S.Tutorial.isOpen() || S.Story.isOpen() || S.Story.listOpen();
+    return sheetOpen() || !$('modal').hidden || !$('result').hidden || !$('promo').hidden || !$('attend').hidden || !$('stairs').hidden || !$('login-ask').hidden || !$('nick').hidden || !$('gate').hidden || !$('pp').hidden || S.Tutorial.isOpen() || S.Story.isOpen() || S.Story.listOpen();
   }
   function openSheet(name) {
     if (name === 'stars' && !C.SHOP_ENABLED) return; // 상점을 껐으면 별 충전 창도 열지 않음
@@ -215,7 +215,6 @@
   }
 
   function renderRules() {
-    $('rules-fails').textContent = C.FAILS_TO_DEMOTE;
     renderGradeList($('rules-grades'), false);
   }
 
@@ -259,13 +258,25 @@
     window.scrollTo(0, 0);
   }
 
-  /* 배경 음악 (js/music.js, audio/bgm01.mp3) : 모든 화면에서 같은 곡이 끊기지 않고 이어집니다.
-     시작 그림이 뜰 때부터 틀어 봅니다. 설치한 앱은 크롬이 바로 소리를 내 주고,
-     인터넷 창처럼 막혀 있으면 화면을 처음 만지는 순간 이어서 나옵니다 (music.js 가 깨움) */
+  /* 배경 음악 (js/music.js) : 대문(시작 그림)은 조용히, 홈 · 배지 · 랭킹 · 내 기록은 bgm01, 게임은 bgm02.
+     판이 끝나면 성공은 clear, 실패는 failure 가 배경 음악 대신 나오고 (따로 팡파레는 없음),
+     결과 창을 닫거나 다음 판으로 넘어가면 그 화면의 곡으로 돌아갑니다.
+     인터넷 창처럼 소리가 막혀 있으면 화면을 처음 만지는 순간 이어서 나옵니다 (music.js 가 깨움) */
+  var endTrack = ''; // 판이 끝나고 나오는 곡 ('clear' · 'failure', '' = 없음)
   function playMusic() {
     if (!S.Music) return;
-    if (!Settings.get('music')) return S.Music.stop();
-    S.Music.play();
+    if (!Settings.get('music') || !splashDone) return S.Music.stop(0.3);
+    if (endTrack && $('result').hidden && !ending) endTrack = ''; // 결과 창이 어떻게든 닫혔으면
+    if (endTrack) return S.Music.play(endTrack);
+    S.Music.play(screen === 'game' ? 'game' : 'home');
+  }
+  /* 결과 창을 닫습니다 (결과 음악도 끝내고 지금 화면의 곡으로) */
+  function hideResult() {
+    $('result').hidden = true;
+    if (endTrack) {
+      endTrack = '';
+      playMusic();
+    }
   }
 
   /* 화면마다 있는 작은 음악 단추 🔊/🔇 (index.html 의 data-music) : 설정의 '배경 음악'과 같은 스위치 */
@@ -494,10 +505,7 @@
       box.appendChild(el);
     });
 
-    var fail = data.failStreak > 0 && data.gradeIndex > 0
-      ? ' · 연속 실패 ' + data.failStreak + '번 (' + C.FAILS_TO_DEMOTE + '번이면 강등)'
-      : '';
-    $('record-total').textContent = '지금 내 등급 ' + C.GRADES[data.gradeIndex].name + ' · ' + progressText() + fail;
+    $('record-total').textContent = '지금 내 등급 ' + C.GRADES[data.gradeIndex].name + ' · ' + progressText();
   }
 
   /* 기록 카드 아이콘 (선 그림) */
@@ -677,13 +685,90 @@
     welcomeAsk = false;
   }
 
+  /* ---------------- 시작 관문 : 구글 로그인 + 닉네임 필수 ----------------
+     대문에서 시작하기를 누르면 홈보다 먼저 뜹니다. 로그인하고 닉네임을 정해야 닫히고, 그다음 이야기 · 따라 하기 · 홈으로.
+     이미 로그인 + 닉네임이 있는 사람은 그냥 지나갑니다 (인터넷이 없어도 이 기기에 남은 로그인 · 닉네임으로 통과).
+     로그인한 채로 쓰다가 로그아웃하거나 계정을 지우면 다시 뜹니다.
+     (로그인이 준비되지 않았으면 — js/config.js 의 FIREBASE 가 비어 있으면 — 뜨지 않습니다) */
+  var gateNext = null, gateLoading = false, wasIn = false;
+  function gateOpen() { return !$('gate').hidden; }
+  function gateNeeded() {
+    if (!S.Account.configured()) return false;
+    if (S.Account.user()) return !S.Ranking.nick();
+    // 아직 로그인을 되살리는 중이어도, 전에 로그인했고 닉네임이 있으면 통과 (인터넷이 없을 때)
+    return !(S.Account.lastName() && S.Ranking.nick());
+  }
+  function openGate(next) {
+    gateNext = next || null;
+    if (!gateNeeded()) return passGate();
+    S.Ranking.requireNick(true);
+    $('gate').hidden = false;
+    gateCheck();
+  }
+  function gateCheck() {
+    gateLoading = true;
+    gateRender();
+    S.Account.settled().then(function () {
+      gateLoading = false;
+      gateRender();
+    }, function () {
+      gateLoading = false;
+      gateRender(true);
+    });
+  }
+  function gateRender(failed) {
+    if (!gateOpen()) return;
+    if (!gateNeeded()) return passGate();
+    var u = S.Account.user(), box = $('gate-btns'), note = '';
+    box.innerHTML = '';
+    if (failed) {
+      note = '로그인을 불러오지 못했어요. 인터넷에 연결한 뒤 다시 시도해 주세요.';
+    } else if (gateLoading || accountState === 'restoring') {
+      note = '로그인 상태를 확인하는 중…';
+    } else if (accountState === 'busy') {
+      note = '로그인하는 중…';
+    } else if (!u) {
+      S.Account.providers().forEach(function (p) { box.appendChild(loginButton(p, loginText(p))); });
+      if (accountState === 'error' && accountMsg) note = accountMsg;
+    } else {
+      // 로그인 완료 : 계정에 닉네임이 있으면 그대로 통과, 없으면 닉네임 창 (정하기 전에는 닫히지 않음)
+      note = S.Ranking.isNickOpen() ? '' : '닉네임을 확인하는 중…';
+      S.Ranking.loadNick().then(function () {
+        if (!gateOpen()) return;
+        if (S.Ranking.nick()) return passGate();
+        $('gate-note').textContent = '';
+        if (!S.Ranking.isNickOpen()) S.Ranking.openNick('must');
+      });
+    }
+    $('gate-note').textContent = note;
+    $('gate-retry').hidden = !failed;
+  }
+  function passGate() {
+    S.Ranking.requireNick(false);
+    if (gateOpen()) {
+      $('gate').hidden = true;
+      lastTick = Date.now();
+      if (screen === 'home') renderHome();
+    }
+    var n = gateNext;
+    gateNext = null;
+    if (n) n();
+  }
+  $('gate-retry').addEventListener('click', gateCheck);
+
   S.Account.onChange(function (status, user, msg) {
     accountState = status;
     accountMsg = status === 'error' ? msg || '' : '';
     if (status === 'error' && msg && screen !== 'record') appToast(msg);
     if (status === 'in' && user && splashDone) appToast(user.name + '님, 반가워요!');
     if (status === 'deleted') appToast('계정을 지웠어요');
-    if (status === 'error' || status === 'out') window.setTimeout(maybeAttend, 300); // 로그인을 그만두면 하던 순서(출석 창)로
+    if (status === 'in' && user) wasIn = true;
+    if (gateOpen()) gateRender();
+    else if ((status === 'out' || status === 'deleted') && wasIn && splashDone) {
+      // 로그인한 채로 쓰다가 로그아웃 · 계정 지우기 : 다시 로그인 + 닉네임을 정해야 함
+      wasIn = false;
+      window.setTimeout(function () { openGate(function () { window.setTimeout(maybeAttend, 300); }); }, 600);
+    } else if (status === 'error' || status === 'out') window.setTimeout(maybeAttend, 300); // 로그인을 그만두면 하던 순서(출석 창)로
     if (screen === 'record') renderProfile();
     if (screen === 'ranking' && (status === 'in' || status === 'out' || status === 'deleted')) S.Ranking.render();
   });
@@ -939,7 +1024,7 @@
   /* ---------------- 게임 시작 ---------------- */
   function launch() {
     S.Effects.stop();
-    $('result').hidden = true;
+    hideResult();
     beginGame(Game.create(data.gradeIndex));
     persist();
   }
@@ -1049,7 +1134,7 @@
   /* 오늘의 퍼즐 : 오늘 오른 단계 + 1 단계 판을 엽니다 (밤 12시가 지나면 1단계부터) */
   function startDaily(today) {
     S.Effects.stop();
-    $('result').hidden = true;
+    hideResult();
     var stage = Progress.stairs(data, today) + 1;
     var saved = data.dailyGame;
     if (Game.isValidSaved(saved) && saved.daily === today && (saved.stage || stage) === stage) {
@@ -1348,7 +1433,7 @@
   function leaveDaily() {
     persist();
     S.Effects.stop();
-    $('result').hidden = true;
+    hideResult();
     if (Game.isValidSaved(data.game) && !data.game.daily) beginGame(data.game);
     else launch();
   }
@@ -1889,7 +1974,9 @@
     clearSpots();
     magnifyPick = false;
     var won = game.status === 'won';
-    S.Sound.play(won ? 'win' : 'lose');
+    // 배경 음악을 결과 곡으로 바꿉니다 (성공 clear · 실패 failure). 팡파레 효과음은 따로 내지 않음
+    endTrack = won ? 'clear' : 'failure';
+    playMusic();
     if (!won && Settings.get('wrongEffect')) S.Effects.lose($('board').parentNode, $('board'));
     S.Hero.react(won ? 'win' : 'lose', 0); // 이기면 기쁨, 지면 울음 (다음 판까지 그대로)
     // 되살리기권이 있으면 이어서 할지 먼저 물어봅니다
@@ -1910,6 +1997,8 @@
   function reviveGame() {
     if (!game || !Progress.useItem(data, 'revive') || !Game.revive(game)) return;
     ending = false;
+    endTrack = ''; // 실패 곡을 멈추고 게임 곡으로
+    playMusic();
     S.Effects.clearBoard($('board'));
     startTimer();
     persist();
@@ -2275,14 +2364,8 @@
       if (res.promoted && res.replay) msg = '미션 완료! ' + grade.name + '(으)로 돌아왔어요';
       else if (res.promoted) msg = '축! ' + grade.name + ' 승급!';
       else msg = progressText();
-    } else if (res.demoted) {
-      msg = '연속 ' + C.FAILS_TO_DEMOTE + '번 실패해서\n' + grade.name + '(으)로 내려왔어요.\n다시 올라가 봐요!';
-    } else if (data.gradeIndex === 0) {
-      msg = '괜찮아요, ' + grade.name + ' 밑으로는 내려가지 않아요';
-    } else if (data.gradeIndex < data.reach) {
-      msg = '골라서 하는 낮은 등급이라 내려가지 않아요';
     } else {
-      msg = '연속 실패 ' + data.failStreak + '번\n' + C.FAILS_TO_DEMOTE + '번이면 한 단계 내려가요';
+      msg = '괜찮아요, 실패해도 등급은 내려가지 않아요';
       if (Progress.missions(data).some(function (m) { return m.type === 'streak' && !m.done; })) msg += '\n연달아 깨기 미션은 처음부터 다시 세요';
     }
     $('result-progress').textContent = msg;
@@ -2389,8 +2472,7 @@
     face.setAttribute('aria-label', grade.name + ' 고양이');
     $('promo-badge').style.setProperty('--grade', grade.color);
     $('promo-text').textContent = grade.name + ' 승급!';
-    $('promo').hidden = false;
-    S.Sound.play('promo');
+    $('promo').hidden = false; // 승급 팡파레 효과음은 내지 않음 (성공 곡 clear 가 나오는 중)
     S.Effects.confetti(3500);
     // 등급 이름이 도장처럼 쾅 찍히는 순간(css 의 promo-text) 화면이 번쩍이고 반짝이가 터집니다
     window.setTimeout(function () {
@@ -2800,7 +2882,7 @@
     if (!isDaily()) openSheet('grades');
   });
   $('btn-result-close').addEventListener('click', function () {
-    $('result').hidden = true;
+    hideResult();
     S.Effects.stop();
     showScreen('home');
   });
@@ -3132,7 +3214,8 @@
     if (!$('attend').hidden) { closeAttend(); return true; }
     if (!$('promo').hidden) { $('btn-promo-ok').click(); return true; }
     if (!$('login-ask').hidden) { closeLoginAsk(false); return true; }
-    if (!$('nick').hidden) { S.Ranking.closeNick(); return true; }
+    if (S.Ranking.isProfileOpen()) { S.Ranking.closeProfile(); return true; }
+    if (!$('nick').hidden && !gateOpen()) { S.Ranking.closeNick(); return true; }
     if (sheetOpen()) { closeSheets(); return true; }
     if (!$('stairs').hidden) { closeStairs(); return true; }
     if (!$('result').hidden) { $('btn-result-close').click(); return true; }
@@ -3143,6 +3226,12 @@
     var st = e && e.state;
     backDepth = st && st.sudokuBack ? st.depth || 0 : 0;
     if (!splashDone) return;
+    if (gateOpen() && $('modal').hidden) {
+      // 로그인 + 닉네임을 정하기 전 : 창은 닫지 않고, 홈처럼 한 번 더 누르면 앱이 닫힘
+      if (backDepth > 0) { history.go(-backDepth); return; }
+      appToast('한 번 더 누르면 나가요');
+      return;
+    }
     if (closeTopOverlay()) return; // 창만 닫음
     if (screen !== 'home') {
       // 게임 · 배지 · 내 기록 화면 → 홈 (하던 판은 저장되고 시간이 멈춤)
@@ -3256,7 +3345,10 @@
     toast: appToast,
     loginButton: function (p) { return loginButton(p, loginText(p)); },
     playDaily: homeDaily,
-    nickClosed: function () { window.setTimeout(maybeAttend, 300); },
+    nickClosed: function () {
+      if (gateOpen()) return gateRender();
+      window.setTimeout(maybeAttend, 300);
+    },
     refresh: function () { if (screen === 'ranking') S.Ranking.render(); }
   });
 
@@ -3277,7 +3369,11 @@
       sp.hidden = true;
     }, 400);
     S.Sound.play('memoOn'); // 누를 때 짧은 소리 (설정에서 효과음을 끄면 안 남)
-    playMusic(); // 배경 음악
+    playMusic(); // 배경 음악 (홈 곡)
+    // 구글 로그인 + 닉네임을 먼저 정해야 들어갈 수 있습니다 (이미 있으면 바로 지나감)
+    openGate(afterGate);
+  }
+  function afterGate() {
     /* 처음 켠 사람에게는 따라 하기를 먼저 보여 줍니다 (한 판이라도 해 본 사람은 건너뜀) */
     if (!Settings.get('tutorialDone') && data.totalGames === 0 && !data.daily.total) {
       storyState().asked = true; // 처음 온 사람은 도입부를 바로 보므로 '새 이야기' 안내는 필요 없음

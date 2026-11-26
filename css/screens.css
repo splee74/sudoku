@@ -391,6 +391,13 @@ body[data-screen="game"]::after {
 .login-ask-art img { display: block; margin: 0 auto; height: 120px; width: auto; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18)); }
 .login-ask-title { margin: 0; font-size: 24px; font-weight: 900; color: var(--grade); }
 .login-ask-text { margin: 0 0 4px; font-size: 17px; line-height: 1.55; color: var(--ink-soft); word-break: keep-all; }
+/* 시작 관문 (로그인 + 닉네임 필수) : 홈이 비치지 않게 대문 마당 그림을 흐리게 깔아 둠 */
+.gate { z-index: 11; background: #e9d9bd url("../img/gate-dojo.webp") center / cover no-repeat; }
+.gate::before { content: ""; position: absolute; inset: 0; backdrop-filter: blur(14px) brightness(0.85); -webkit-backdrop-filter: blur(14px) brightness(0.85); background: rgba(43, 42, 38, 0.35); }
+.gate-box { position: relative; text-align: center; --grade: var(--accent); }
+.gate-note { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-soft); word-break: keep-all; }
+.gate-note:empty { display: none; }
+.gate-retry { align-self: center; min-width: 140px; }
 .login-ask-later { align-self: center; font-size: 16px; padding: 6px 12px; }
 .login-delete { align-self: center; font-size: 15px; }
 .login-note { margin: -4px 0 0; color: var(--ink-soft); font-size: 15px; line-height: 1.45; }
@@ -553,6 +560,29 @@ body[data-screen="game"]::after {
 .rk-sec { margin-top: 10px; font-size: 19px; }
 .rk-sec:first-child { margin-top: 0; }
 .rk-month { margin-top: 4px; font-size: 15px; font-weight: 800; color: var(--ink-soft); }
+/* 이름을 누르면 기록 창 */
+.rk-row.tap { cursor: pointer; transition: transform 0.12s ease, background-color 0.12s ease; -webkit-tap-highlight-color: transparent; }
+.rk-row.tap:active { transform: scale(0.98); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.rk-row.tap:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* 랭킹 기록 창 (index.html 의 #pp) */
+.pp-box { position: relative; display: flex; flex-direction: column; gap: 12px; animation: rise 0.3s ease-out; max-height: calc(100dvh - 48px); overflow-y: auto; }
+.pp-close { position: absolute; top: 10px; right: 10px; }
+.pp-head { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 4px 36px 0; }
+.pp-nick-row { margin: 0; font-size: 24px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 8px; overflow-wrap: anywhere; }
+.pp-grade { font-size: 14px; padding: 2px 10px; }
+.pp-now { margin: 0; font-size: 15px; font-weight: 700; color: var(--ink-soft); }
+.pp-now:empty { display: none; }
+.pp-stats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pp-stat {
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 6px; align-items: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; min-width: 0; text-align: left;
+}
+.pp-ico { grid-row: 1 / 3; font-size: 22px; line-height: 1; }
+.pp-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.pp-val { font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pp-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.pp-wait { grid-column: 1 / -1; text-align: center; color: var(--ink-soft); font-size: 15px; padding: 18px 6px; line-height: 1.5; }
 
 /* 닉네임 창 */
 .nick-input {
