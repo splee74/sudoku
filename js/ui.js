@@ -619,7 +619,7 @@
       });
       return;
     }
-    if (!$('login-ask').hidden) closeLoginAsk();
+    if (!$('login-ask').hidden) closeLoginAsk(true);
     S.Account.signIn(id);
   }
 
@@ -627,9 +627,12 @@
    * 승급할 때 로그인 권하기 : 로그인하지 않았으면 승급 축하 창을 닫은 뒤에 매번 뜹니다.
    * (로그인이 준비되지 않았으면 — js/config.js 의 FIREBASE 가 비어 있으면 — 뜨지 않습니다)
    */
-  function maybeAskLogin(grade) {
-    if (!S.Account.configured() || S.Account.user() || accountState === 'restoring') return;
-    $('login-ask-title').textContent = grade.name + ' 승급을 축하해요!';
+  var LOGIN_ASK_TEXT = $('login-ask-text').textContent;
+  var welcomeAsk = false; // 지금 떠 있는 로그인 창이 처음 온 사람용인지
+  function openLoginAsk(art, title, text) {
+    $('login-ask-art').innerHTML = art;
+    $('login-ask-title').textContent = title;
+    $('login-ask-text').textContent = text;
     var box = $('login-ask-btns');
     box.innerHTML = '';
     S.Account.providers().forEach(function (p) {
@@ -637,9 +640,34 @@
     });
     $('login-ask').hidden = false;
   }
-  function closeLoginAsk() {
+  function maybeAskLogin(grade) {
+    if (!S.Account.configured() || S.Account.user() || accountState === 'restoring') return;
+    welcomeAsk = false;
+    openLoginAsk('🛡️', grade.name + ' 승급을 축하해요!', LOGIN_ASK_TEXT);
+  }
+  /* 앱을 처음 깐 사람 : 홈에 처음 들어오면 (이야기 · 따라 하기를 마친 뒤) 한 번만 로그인 + 닉네임을 권합니다.
+     로그인하면 닉네임 창이 바로 이어서 뜹니다 (js/ranking.js 의 openNick). 이미 닉네임이 있는 계정이면 그대로 씀 */
+  var WELCOME_KEY = 'sudoku-welcome-login'; // '1' = 띄워야 함, '2' = 이미 띄움
+  var welcomeMem = ''; // 저장이 막힌 브라우저용
+  function welcomeState(v) {
+    if (v) { welcomeMem = v; S.Storage.set(WELCOME_KEY, v); }
+    return S.Storage.get(WELCOME_KEY) || welcomeMem;
+  }
+  function maybeWelcomeLogin() {
+    if (welcomeState() !== '1') return false;
+    if (!S.Account.configured() || S.Account.user() || accountState === 'restoring') { welcomeState('2'); return false; }
+    welcomeState('2');
+    welcomeAsk = true;
+    openLoginAsk('<img src="img/story/c/hero_joy.webp" alt="">', '어서 와요, 새 제자님!',
+      'Google로 로그인하고 닉네임을 정해 주세요. 랭킹에 내 이름이 올라가고, 휴대폰을 바꾸거나 앱을 지웠다 깔아도 기록이 그대로 이어져요.');
+    return true;
+  }
+  /* pressed : 로그인 단추를 눌러서 닫힘 (그때는 닉네임 창이 이어서 뜨니 출석 창은 그 뒤에) */
+  function closeLoginAsk(pressed) {
     $('login-ask').hidden = true;
     lastTick = Date.now();
+    if (welcomeAsk && !pressed) window.setTimeout(maybeAttend, 300);
+    welcomeAsk = false;
   }
 
   S.Account.onChange(function (status, user, msg) {
@@ -648,6 +676,7 @@
     if (status === 'error' && msg && screen !== 'record') appToast(msg);
     if (status === 'in' && user && splashDone) appToast(user.name + '님, 반가워요!');
     if (status === 'deleted') appToast('계정을 지웠어요');
+    if (status === 'error' || status === 'out') window.setTimeout(maybeAttend, 300); // 로그인을 그만두면 하던 순서(출석 창)로
     if (screen === 'record') renderProfile();
     if (screen === 'ranking' && (status === 'in' || status === 'out' || status === 'deleted')) S.Ranking.render();
   });
@@ -2731,6 +2760,7 @@
   /* 그날 처음 열었으면 출석 창을 띄웁니다 (다른 창이 떠 있거나 게임 중이면 다음에) */
   function maybeAttend() {
     if (!splashDone || overlayOpen() || screen === 'game') return;
+    if (maybeWelcomeLogin()) return; // 처음 온 사람 : 로그인 + 닉네임 먼저
     // 모두에게 주는 선물 (js/config.js 의 ITEM_GIFTS) : 받았다고 먼저 알려 줌
     var gifts = Progress.takeGifts();
     if (gifts.length) {
@@ -2879,7 +2909,7 @@
   $('btn-story').addEventListener('click', function () {
     S.Story.openList({ open: storyOpenable, lock: storyLockText, name: storyName() });
   });
-  $('login-ask-later').addEventListener('click', closeLoginAsk);
+  $('login-ask-later').addEventListener('click', function () { closeLoginAsk(false); });
   $('modal-ok').addEventListener('click', function () {
     closeModal(true);
   });
@@ -3094,7 +3124,7 @@
     if (!$('modal').hidden) { closeModal(false); return true; }
     if (!$('attend').hidden) { closeAttend(); return true; }
     if (!$('promo').hidden) { $('btn-promo-ok').click(); return true; }
-    if (!$('login-ask').hidden) { closeLoginAsk(); return true; }
+    if (!$('login-ask').hidden) { closeLoginAsk(false); return true; }
     if (!$('nick').hidden) { S.Ranking.closeNick(); return true; }
     if (sheetOpen()) { closeSheets(); return true; }
     if (!$('stairs').hidden) { closeStairs(); return true; }
@@ -3219,6 +3249,7 @@
     toast: appToast,
     loginButton: function (p) { return loginButton(p, loginText(p)); },
     playDaily: homeDaily,
+    nickClosed: function () { window.setTimeout(maybeAttend, 300); },
     refresh: function () { if (screen === 'ranking') S.Ranking.render(); }
   });
 
@@ -3243,6 +3274,7 @@
     /* 처음 켠 사람에게는 따라 하기를 먼저 보여 줍니다 (한 판이라도 해 본 사람은 건너뜀) */
     if (!Settings.get('tutorialDone') && data.totalGames === 0 && !data.daily.total) {
       storyState().asked = true; // 처음 온 사람은 도입부를 바로 보므로 '새 이야기' 안내는 필요 없음
+      if (!welcomeState()) welcomeState('1'); // 따라 하기를 마치고 홈에 오면 로그인 + 닉네임 창
       if (storySeen(0)) openTutorial();
       else playStory(0, openTutorial);
     } else window.setTimeout(maybeStoryAsk, 450);

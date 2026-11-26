@@ -388,6 +388,7 @@ body[data-screen="game"]::after {
 /* 승급할 때 로그인 권하기 */
 .login-ask-box { display: flex; flex-direction: column; gap: 12px; animation: rise 0.35s ease-out; }
 .login-ask-art { font-size: 52px; line-height: 1; }
+.login-ask-art img { display: block; margin: 0 auto; height: 120px; width: auto; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18)); }
 .login-ask-title { margin: 0; font-size: 24px; font-weight: 900; color: var(--grade); }
 .login-ask-text { margin: 0 0 4px; font-size: 17px; line-height: 1.55; color: var(--ink-soft); word-break: keep-all; }
 .login-ask-later { align-self: center; font-size: 16px; padding: 6px 12px; }

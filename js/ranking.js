@@ -92,7 +92,7 @@
   }
 
   /* ---------------- 바깥과 연결 (ui.js 의 start 로 받음) ---------------- */
-  var hooks = { data: null, save: null, modal: null, toast: null, playDaily: null, refresh: null, loginButton: null };
+  var hooks = { data: null, save: null, modal: null, toast: null, playDaily: null, refresh: null, loginButton: null, nickClosed: null };
   function D() { return hooks.data(); }
   function R() {
     var d = D();
@@ -694,7 +694,9 @@
     window.setTimeout(function () { $('nick-input').focus(); }, 50);
   }
   function closeNick() {
+    if ($('nick').hidden) return;
     $('nick').hidden = true;
+    if (hooks.nickClosed) hooks.nickClosed();
   }
   function submitNick() {
     var v = $('nick-input').value;
