@@ -48,7 +48,21 @@
 그래서 GitHub에 **`splee74.github.io`** 라는 이름의 저장소를 하나 더 만들고, 그 안에 `.well-known/assetlinks.json` 과 빈 `.nojekyll` 파일만 넣어 Pages를 켜면 됩니다.
 (나중에 자기 도메인을 사면 이 과정이 더 간단해집니다)
 
-플레이스토어에 처음 올린 뒤 Play Console의 **설정 → 앱 서명** 에 나오는 "SHA-256 인증서 지문"도 `assetlinks.json` 의 `sha256_cert_fingerprints` 목록에 **함께** 넣어야 합니다. (구글이 앱에 다시 서명하기 때문)
+플레이스토어에 처음 올린 뒤 구글이 앱에 다시 서명한 "SHA-256 인증서 지문"도 `assetlinks.json` 의 `sha256_cert_fingerprints` 목록에 **함께** 넣어야 합니다.
+
+> **주의 (2026-11 겪은 일) :** Play Console 화면에 보이는 지문(기존 키 · 양자 내성 키)을 넣어도 주소창이 계속 보였습니다.
+> 실제 지문은 **App Bundle 탐색기 → 버전 → 다운로드 → "서명된 범용 APK"** 를 받아서
+> `apksigner verify --print-certs 받은파일.apk` 로 꺼낸 값(`08:04:54:FA…`)이었습니다. 이 방법으로 확인하세요.
+
+### 앱 파일 다시 만들기 (아이콘을 바꾸거나 새 버전을 올릴 때)
+
+사이트(게임)를 고치는 것은 앱을 다시 올릴 필요가 없지만, **앱 아이콘 · 앱 이름 · 시작 주소**는 앱 파일 안에 들어 있어서 다시 만들어 올려야 바뀝니다.
+앱 프로젝트는 `C:\dev\make_game\sudoku-android` 에 있습니다 (서명 키가 들어 있어서 GitHub에 올리지 않음. 따로 잘 보관).
+
+1. `twa-manifest.json` 의 `appVersionCode` 를 1 올리고 `appVersionName` 도 바꿈
+2. 그 폴더에서 PowerShell로 `bubblewrap update --skipVersionUpgrade` → `bubblewrap build --skipPwaValidation`
+   (서명 키 비밀번호는 `signing-key-info.txt`. 아이콘은 사이트의 `icons/icon-512.png`, `icons/icon-maskable-512.png` 를 받아 씀)
+3. 만들어진 `app-release-bundle.aab` 를 Play Console 에 새 버전으로 올림
 
 ### 4단계 : Play Console 에 올리기
 
