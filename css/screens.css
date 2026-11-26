@@ -513,6 +513,10 @@ body[data-screen="game"]::after {
 .rank-title { margin: 0; font-size: 22px; font-weight: 900; }
 .rank-note { margin: 0; color: var(--ink-soft); font-size: 15px; line-height: 1.5; white-space: pre-line; }
 #rank-scope { padding-bottom: 0; }
+/* 밀어서 넘기기 : 손가락을 따라 움직이고, 놓으면 옆 랭킹이 들어와요. 위아래 스크롤은 그대로 */
+.screen-ranking { overflow-x: hidden; }
+.rank-pane { display: flex; flex-direction: column; gap: 14px; touch-action: pan-y; will-change: transform; }
+.rank-pane.slide { transition: transform .16s ease-out, opacity .16s ease-out; }
 
 .rk-me {
   background: var(--surface); border: 2px solid var(--accent); border-radius: 18px;

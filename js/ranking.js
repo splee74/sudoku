@@ -717,6 +717,78 @@
     });
   }
 
+  /* ---------------- 밀어서 넘기기 : 오늘 · 주간 · 월간 · 명예의 전당 ---------------- */
+  var TABS = ['day', 'week', 'month', 'hall'];
+  var calm = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function paneTo(x, fade, anim) {
+    var p = $('rank-pane');
+    p.classList.toggle('slide', !!anim);
+    p.style.transform = x ? 'translateX(' + x + 'px)' : '';
+    p.style.opacity = fade ? String(fade) : '';
+  }
+
+  // 다른 랭킹으로 : dir 1 = 오른쪽 것(다음), -1 = 왼쪽 것(이전). 나가는 쪽으로 밀려나고 반대쪽에서 들어와요
+  function goTab(name, fromX) {
+    var to = TABS.indexOf(name), from = TABS.indexOf(tab);
+    if (to < 0) return;
+    if (to === from) { paneTo(0, 0, true); return; }
+    var dir = to > from ? 1 : -1;
+    tab = name;
+    var on = document.querySelector('[data-rank-tab="' + name + '"]');
+    if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (calm) { paneTo(0, 0, false); return render(); }
+    var w = $('rank-pane').offsetWidth || 320;
+    paneTo(-dir * w * 0.5, 0.01, true);
+    setTimeout(function () {
+      render();
+      paneTo(dir * w * 0.35, 0.01, false);
+      $('rank-pane').offsetWidth; // 새 자리를 먼저 그리고
+      paneTo(0, 0, true);
+    }, fromX ? 120 : 140);
+  }
+
+  function swipe(pane) {
+    var x0 = 0, y0 = 0, t0 = 0, dx = 0, id = null, mode = ''; // mode : '' 아직 모름, 'x' 옆으로, 'y' 위아래
+    var eaten = false; // 방금 밀었으면 손을 뗄 때 생기는 누르기는 무시
+    pane.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      id = e.pointerId; x0 = e.clientX; y0 = e.clientY; t0 = Date.now(); dx = 0; mode = '';
+    });
+    pane.addEventListener('pointermove', function (e) {
+      if (e.pointerId !== id) return;
+      var mx = e.clientX - x0, my = e.clientY - y0;
+      if (!mode) {
+        if (Math.abs(mx) < 10 && Math.abs(my) < 10) return;
+        mode = Math.abs(mx) > Math.abs(my) * 1.2 ? 'x' : 'y';
+        if (mode === 'x') try { pane.setPointerCapture(id); } catch (err) {}
+      }
+      if (mode !== 'x') return;
+      var i = TABS.indexOf(tab);
+      // 맨 끝에서 더 밀면 조금만 따라와요
+      var edge = (mx > 0 && i === 0) || (mx < 0 && i === TABS.length - 1);
+      dx = edge ? mx * 0.25 : mx;
+      paneTo(dx, 1 - Math.min(Math.abs(dx) / 600, 0.3), false);
+    });
+    function end(e) {
+      if (e.pointerId !== id) return;
+      id = null;
+      if (mode !== 'x') return;
+      eaten = true;
+      setTimeout(function () { eaten = false; }, 50);
+      var i = TABS.indexOf(tab), w = pane.offsetWidth || 320;
+      var fast = Math.abs(dx) > 30 && Date.now() - t0 < 300;
+      var j = dx < 0 ? i + 1 : i - 1;
+      if ((Math.abs(dx) > w * 0.22 || fast) && j >= 0 && j < TABS.length) goTab(TABS[j], dx);
+      else paneTo(0, 0, true);
+    }
+    pane.addEventListener('pointerup', end);
+    pane.addEventListener('pointercancel', end);
+    pane.addEventListener('click', function (e) {
+      if (eaten) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
+  }
+
   /* ---------------- 시작 (ui.js 가 부름) ---------------- */
   function start(h) {
     for (var k in h) hooks[k] = h[k];
@@ -724,12 +796,13 @@
     screen.addEventListener('click', function (e) {
       var t = e.target;
       var tb = t.closest('[data-rank-tab]');
-      if (tb) { tab = tb.getAttribute('data-rank-tab'); return render(); }
+      if (tb) return goTab(tb.getAttribute('data-rank-tab'));
       var sc = t.closest('[data-rank-scope]');
       if (sc) { scope = sc.getAttribute('data-rank-scope'); return render(); }
       if (t.closest('[data-rank-nick]')) return openNick(false);
       if (t.closest('[data-rank-daily]') && hooks.playDaily) return hooks.playDaily();
     });
+    swipe($('rank-pane'));
     $('nick-ok').addEventListener('click', submitNick);
     $('nick-cancel').addEventListener('click', closeNick);
     $('nick-input').addEventListener('keydown', function (e) {

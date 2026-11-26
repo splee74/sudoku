@@ -13,15 +13,15 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="스도쿠 승급전">
-  <link rel="stylesheet" href="css/style.css?v=70">
-  <link rel="stylesheet" href="css/skins.css?v=70">
-  <link rel="stylesheet" href="css/screens.css?v=70">
-  <link rel="stylesheet" href="css/about.css?v=70">
-  <link rel="stylesheet" href="css/fx.css?v=70">
-  <link rel="stylesheet" href="css/story.css?v=70">
+  <link rel="stylesheet" href="css/style.css?v=71">
+  <link rel="stylesheet" href="css/skins.css?v=71">
+  <link rel="stylesheet" href="css/screens.css?v=71">
+  <link rel="stylesheet" href="css/about.css?v=71">
+  <link rel="stylesheet" href="css/fx.css?v=71">
+  <link rel="stylesheet" href="css/story.css?v=71">
   <link rel="preload" as="image" href="img/gate-dojo.webp">
   <link rel="preload" as="image" href="img/gate-cast.webp">
-  <link rel="stylesheet" href="css/dark.css?v=70">
+  <link rel="stylesheet" href="css/dark.css?v=71">
   <!-- 다크 모드와 스킨을 화면이 뜨기 전에 먼저 입힙니다 (밝은 화면이 번쩍이지 않게) -->
   <script>
     (function () {
@@ -225,13 +225,16 @@
         <button type="button" class="rank-tab" role="tab" data-rank-tab="month" aria-selected="false">월간</button>
         <button type="button" class="rank-tab" role="tab" data-rank-tab="hall" aria-selected="false">명예의 전당</button>
       </div>
-      <div class="rank-head">
-        <h3 class="rank-title" id="rank-title"></h3>
-        <p class="rank-note" id="rank-note"></p>
+      <!-- 왼쪽 · 오른쪽으로 밀면 오늘 → 주간 → 월간 → 명예의 전당 으로 넘어가요 (js/ranking.js 의 "밀어서 넘기기") -->
+      <div class="rank-pane" id="rank-pane">
+        <div class="rank-head">
+          <h3 class="rank-title" id="rank-title"></h3>
+          <p class="rank-note" id="rank-note"></p>
+        </div>
+        <div class="grade-chips" id="rank-scope"></div>
+        <div id="rank-me"></div>
+        <ol class="rk-list" id="rank-list"></ol>
       </div>
-      <div class="grade-chips" id="rank-scope"></div>
-      <div id="rank-me"></div>
-      <ol class="rk-list" id="rank-list"></ol>
     </section>
 
     <!-- ================= 내 기록 화면 ================= -->
@@ -830,23 +833,23 @@
 
   <canvas id="confetti" hidden></canvas>
 
-  <script src="js/config.js?v=70"></script>
-  <script src="js/engine.js?v=70"></script>
-  <script src="js/game.js?v=70"></script>
-  <script src="js/progress.js?v=70"></script>
-  <script src="js/settings.js?v=70"></script>
-  <script src="js/skins.js?v=70"></script>
-  <script src="js/sound.js?v=70"></script>
-  <script src="js/music.js?v=70"></script>
-  <script src="js/effects.js?v=70"></script>
-  <script src="js/badges.js?v=70"></script>
-  <script src="js/shop.js?v=70"></script>
-  <script src="js/account.js?v=70"></script>
-  <script src="js/ranking.js?v=70"></script>
-  <script src="js/tutorial.js?v=70"></script>
-  <script src="js/story.js?v=70"></script>
-  <script src="js/hero.js?v=70"></script>
-  <script src="js/remind.js?v=70"></script>
-  <script src="js/ui.js?v=70"></script>
+  <script src="js/config.js?v=71"></script>
+  <script src="js/engine.js?v=71"></script>
+  <script src="js/game.js?v=71"></script>
+  <script src="js/progress.js?v=71"></script>
+  <script src="js/settings.js?v=71"></script>
+  <script src="js/skins.js?v=71"></script>
+  <script src="js/sound.js?v=71"></script>
+  <script src="js/music.js?v=71"></script>
+  <script src="js/effects.js?v=71"></script>
+  <script src="js/badges.js?v=71"></script>
+  <script src="js/shop.js?v=71"></script>
+  <script src="js/account.js?v=71"></script>
+  <script src="js/ranking.js?v=71"></script>
+  <script src="js/tutorial.js?v=71"></script>
+  <script src="js/story.js?v=71"></script>
+  <script src="js/hero.js?v=71"></script>
+  <script src="js/remind.js?v=71"></script>
+  <script src="js/ui.js?v=71"></script>
 </body>
 </html>
