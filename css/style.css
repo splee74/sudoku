@@ -1201,6 +1201,27 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
   #screen-game .game { gap: clamp(6px, 1.1dvh, 8px); }
 }
 
+/* 폭이 좁은 휴대폰 (갤럭시 S25 등, 너비 400px 이하) : 판을 최대한 크게
+   - 좌우 여백을 줄이고, 캐릭터 · 도구 · 숫자 · 새 게임 단추 높이를 조금씩 줄여 판에 자리를 줍니다
+   - 칸 숫자도 한 단계 크게 (Aa 의 작게 · 보통 · 크게 모두) */
+@media (max-width: 400px) {
+  :root { --cell-fs: 0.7; --note-fs: 0.84; }
+  :root[data-font="s"] { --cell-fs: 0.58; --note-fs: 0.72; }
+  :root[data-font="l"] { --cell-fs: 0.82; --note-fs: 0.96; }
+  body[data-screen="game"] .page { padding-left: 6px; padding-right: 6px; padding-top: 4px; }
+  body[data-screen="game"] .gradebar { margin-bottom: 4px; min-height: 34px; }
+  #screen-game .hero { height: clamp(38px, 6dvh, 56px); }
+  #screen-game .hero-face { width: clamp(38px, 6dvh, 56px); height: clamp(38px, 6dvh, 56px); }
+  #screen-game .info { min-height: 30px; }
+  #screen-game .tool { min-height: clamp(40px, 6dvh, 56px); padding-top: 2px; padding-bottom: 2px; }
+  #screen-game .tool img.tool-img { width: clamp(22px, 3.4dvh, 30px); height: clamp(22px, 3.4dvh, 30px); }
+  #screen-game .numpad:not(.few) .num { height: clamp(42px, 6.6dvh, 58px); }
+  #screen-game #btn-new { min-height: clamp(38px, 5.6dvh, 52px); }
+  #screen-game .game { gap: clamp(4px, 0.8dvh, 8px); }
+  #screen-game .side { gap: clamp(4px, 0.8dvh, 8px); }
+  #screen-game .board-col { gap: clamp(2px, 0.6dvh, 6px); }
+}
+
 /* 판을 깼을 때 화면 전체가 환하게 한 번 번쩍 (js/effects.js 의 flowers) */
 .fx-screenflash {
   position: fixed; inset: 0; z-index: 19; pointer-events: none;
