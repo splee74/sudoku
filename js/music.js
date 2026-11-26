@@ -3,7 +3,7 @@
  *   대문(시작 그림)   : 없음
  *   홈 · 배지 · 랭킹 · 내 기록 : audio/bgm01.mp3   ('home')
  *   게임              : audio/bgm02.mp3   ('game')
- *   성공 결과 창       : audio/clear.mp3   ('clear')
+ *   성공 결과 창       : audio/clear.mp3   ('clear', 한 번만)
  *   실패 결과 창       : audio/failure.mp3 ('failure')
  * 같은 곡이 이어지는 화면끼리는 처음부터 다시 시작하지 않고 그대로 이어집니다.
  * 곡이 바뀔 때는 앞 곡을 짧게 줄이고 새 곡을 부드럽게 키웁니다 (두 곡이 겹치지 않게).
@@ -21,7 +21,7 @@
   var TRACKS = {
     home: { src: 'audio/bgm01.mp3', level: 0.36 },
     game: { src: 'audio/bgm02.mp3', level: 0.36 },
-    clear: { src: 'audio/clear.mp3', level: 0.5 },
+    clear: { src: 'audio/clear.mp3', level: 0.5, once: true }, // 성공 곡은 한 번만 (끝나면 조용히)
     failure: { src: 'audio/failure.mp3', level: 0.5 }
   };
   var SWAP_OUT = 0.25; // 곡을 바꿀 때 앞 곡을 줄이는 시간(초)
@@ -29,6 +29,7 @@
   var audio = null, ctx = null, gain = null;
   var want = ''; // 지금 나와야 하는 곡 이름 ('' = 없음)
   var loaded = ''; // audio 에 들어 있는 곡 이름
+  var finished = false; // 한 번만 트는 곡(once)이 끝났는지
 
   function enabled() {
     return !(S.Settings && S.Settings.get('music') === false);
@@ -40,6 +41,7 @@
     audio.loop = true;
     audio.preload = 'auto';
     audio.setAttribute('playsinline', '');
+    audio.addEventListener('ended', function () { finished = true; });
     var AC = root.AudioContext || root.webkitAudioContext;
     if (AC) {
       try {
@@ -92,6 +94,7 @@
 
   function start() {
     if (!want || !audio || (root.document && root.document.hidden)) return;
+    if (finished && TRACKS[want].once) return; // 다 들은 곡은 다시 틀지 않음
     if (ctx && ctx.state === 'suspended' && ctx.resume) ctx.resume();
     var p = audio.paused ? audio.play() : null;
     if (p && p.catch) p.catch(function () { /* 막힘 : 화면을 만지면 다시 시도 */ });
@@ -101,6 +104,8 @@
   /* 새 곡을 처음부터 넣고 틉니다 */
   function load(name) {
     loaded = name;
+    finished = false;
+    audio.loop = !TRACKS[name].once;
     mute();
     audio.pause();
     audio.src = TRACKS[name].src;
