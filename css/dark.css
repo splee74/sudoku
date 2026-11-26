@@ -35,7 +35,6 @@
 :root[data-theme="dark"] .toast { color: var(--bg); }
 :root[data-theme="dark"] .gain { color: #ff9e5e; text-shadow: 0 0 3px #000, 0 0 3px #000, 0 0 6px #000; }
 :root[data-theme="dark"] #result-score { color: #ff9e5e; }
-:root[data-theme="dark"] .result-mark.fail { background: #6b665c; }
 :root[data-theme="dark"] .cell.wrong.sel { background: #6e2c25; }
 :root[data-theme="dark"] .switch { background: #5c574d; }
 :root[data-theme="dark"] .daily-btn { color: #ff8f75; border-color: #ff8f75; }

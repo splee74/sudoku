@@ -2180,7 +2180,9 @@
   function renderResult(won, finished, before, res) {
     var grade = C.GRADES[data.gradeIndex];
     var next = C.GRADES[data.gradeIndex + 1];
-    $('result-mark').textContent = won ? '○' : '×';
+    // 맨 위 캐릭터 : 성공이면 기뻐하는 얼굴 하나를 고르고 (주인공이 조금 더 자주), 실패면 우는 주인공
+    var joy = ['hero_joy', 'hero_joy', 'master_joy'];
+    $('result-char').src = 'img/story/c/' + (won ? joy[Math.floor(Math.random() * joy.length)] : 'hero_sad') + '.webp';
     $('result-mark').className = 'result-mark' + (won ? '' : ' fail');
     $('result-title').textContent = won ? '성공!' : '실패';
     $('result-sub').textContent = won
