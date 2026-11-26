@@ -645,21 +645,28 @@
     welcomeAsk = false;
     openLoginAsk('🛡️', grade.name + ' 승급을 축하해요!', LOGIN_ASK_TEXT);
   }
-  /* 앱을 처음 깐 사람 : 홈에 처음 들어오면 (이야기 · 따라 하기를 마친 뒤) 한 번만 로그인 + 닉네임을 권합니다.
+  /* 로그인하지 않은 사람 : 홈에 들어오면 한 번만 로그인 + 닉네임을 권합니다.
+     처음 깐 사람은 이야기 · 따라 하기를 마친 뒤, 원래 하던 사람은 앱을 켜고 홈에 왔을 때.
      로그인하면 닉네임 창이 바로 이어서 뜹니다 (js/ranking.js 의 openNick). 이미 닉네임이 있는 계정이면 그대로 씀 */
-  var WELCOME_KEY = 'sudoku-welcome-login'; // '1' = 띄워야 함, '2' = 이미 띄움
+  var WELCOME_KEY = 'sudoku-welcome-login'; // '1' = 처음 온 사람에게 띄워야 함, '3' = 하던 사람에게 띄워야 함, '2' = 이미 띄움
   var welcomeMem = ''; // 저장이 막힌 브라우저용
   function welcomeState(v) {
     if (v) { welcomeMem = v; S.Storage.set(WELCOME_KEY, v); }
     return S.Storage.get(WELCOME_KEY) || welcomeMem;
   }
   function maybeWelcomeLogin() {
-    if (welcomeState() !== '1') return false;
+    var st = welcomeState();
+    if (st !== '1' && st !== '3') return false;
     if (!S.Account.configured() || S.Account.user() || accountState === 'restoring') { welcomeState('2'); return false; }
     welcomeState('2');
     welcomeAsk = true;
-    openLoginAsk('<img src="img/story/c/hero_joy.webp" alt="">', '어서 와요, 새 제자님!',
-      'Google로 로그인하고 닉네임을 정해 주세요. 랭킹에 내 이름이 올라가고, 휴대폰을 바꾸거나 앱을 지웠다 깔아도 기록이 그대로 이어져요.');
+    if (st === '1') {
+      openLoginAsk('<img src="img/story/c/hero_joy.webp" alt="">', '어서 와요, 새 제자님!',
+        'Google로 로그인하고 닉네임을 정해 주세요. 랭킹에 내 이름이 올라가고, 휴대폰을 바꾸거나 앱을 지웠다 깔아도 기록이 그대로 이어져요.');
+    } else {
+      openLoginAsk('<img src="img/story/c/master_smile.webp" alt="">', '지금까지의 기록을 지켜 두세요!',
+        'Google로 로그인하고 닉네임을 정하면 랭킹에 내 이름이 올라가요. 휴대폰을 바꾸거나 앱을 지웠다 깔아도 등급과 기록이 그대로 이어져요.');
+    }
     return true;
   }
   /* pressed : 로그인 단추를 눌러서 닫힘 (그때는 닉네임 창이 이어서 뜨니 출석 창은 그 뒤에) */
@@ -3277,7 +3284,10 @@
       if (!welcomeState()) welcomeState('1'); // 따라 하기를 마치고 홈에 오면 로그인 + 닉네임 창
       if (storySeen(0)) openTutorial();
       else playStory(0, openTutorial);
-    } else window.setTimeout(maybeStoryAsk, 450);
+    } else {
+      if (!welcomeState()) welcomeState('3'); // 원래 하던 사람 : 로그인 안 했으면 홈에서 한 번 권함
+      window.setTimeout(maybeStoryAsk, 450);
+    }
   }
   $('splash').addEventListener('click', leaveSplash);
   $('splash-start').focus();
