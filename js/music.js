@@ -4,7 +4,7 @@
  *   홈 · 배지 · 랭킹 · 내 기록 : audio/bgm01.mp3   ('home')
  *   게임              : audio/bgm02.mp3   ('game')
  *   성공 결과 창       : audio/clear.mp3   ('clear', 한 번만)
- *   실패 결과 창       : audio/failure.mp3 ('failure')
+ *   실패 결과 창       : audio/failure.mp3 ('failure', 한 번만)
  * 같은 곡이 이어지는 화면끼리는 처음부터 다시 시작하지 않고 그대로 이어집니다.
  * 곡이 바뀔 때는 앞 곡을 짧게 줄이고 새 곡을 부드럽게 키웁니다 (두 곡이 겹치지 않게).
  * 곡을 더 넣으려면 아래 TRACKS 에 한 줄 더 적고 sw.js 의 FILES 에도 넣어 주세요.
@@ -22,7 +22,7 @@
     home: { src: 'audio/bgm01.mp3', level: 0.36 },
     game: { src: 'audio/bgm02.mp3', level: 0.36 },
     clear: { src: 'audio/clear.mp3', level: 0.5, once: true }, // 성공 곡은 한 번만 (끝나면 조용히)
-    failure: { src: 'audio/failure.mp3', level: 0.5 }
+    failure: { src: 'audio/failure.mp3', level: 0.5, once: true } // 실패 곡도 한 번만
   };
   var SWAP_OUT = 0.25; // 곡을 바꿀 때 앞 곡을 줄이는 시간(초)
 
