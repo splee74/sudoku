@@ -1438,7 +1438,7 @@
     else launch();
   }
 
-  /* 결과 창의 "다시 하기" 단추 */
+  /* 결과 창의 "한!판!더!" 단추 (막 승급했으면 "○○에서 고고싱!") */
   function pressAgain() {
     if (!isDaily()) return launch();
     if (game.status !== 'won') data.dailyGame = null; // 실패한 단계 : 같은 판을 처음부터 다시
@@ -2359,7 +2359,7 @@
       $('btn-again').textContent = won ? (n + 1) + '단계 도전' : '다시 도전';
       return;
     }
-    $('btn-again').textContent = '다시 하기';
+    $('btn-again').textContent = won && res.promoted ? grade.name + '에서 고고싱!' : '한!판!더!';
     if (won) {
       if (res.promoted && res.replay) msg = '미션 완료! ' + grade.name + '(으)로 돌아왔어요';
       else if (res.promoted) msg = '축! ' + grade.name + ' 승급!';
