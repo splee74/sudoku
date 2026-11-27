@@ -64,6 +64,9 @@
    (서명 키 비밀번호는 `signing-key-info.txt`. 아이콘은 사이트의 `icons/icon-512.png`, `icons/icon-maskable-512.png` 를 받아 씀)
 3. 만들어진 `app-release-bundle.aab` 를 Play Console 에 새 버전으로 올림
 
+> **알림 :** `twa-manifest.json` 의 `enableNotifications` 는 `true` 여야 합니다. `false` 면 앱이 알림 권한을 신청하지 않아서, 휴대폰 설정에서 알림 스위치가 회색으로 막힙니다 (1.0.2 / 버전 코드 3 에서 켬).
+> **빌드가 `'gradlew.bat' is not recognized` 로 멈추면 :** PowerShell 에서 `Remove-Item Env:NoDefaultCurrentDirectoryInExePath` 를 먼저 실행하고 다시 빌드하세요.
+
 ### 4단계 : Play Console 에 올리기
 
 1. <https://play.google.com/console> 개발자 계정 만들기 (한 번 25달러)
