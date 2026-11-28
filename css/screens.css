@@ -556,6 +556,7 @@ body[data-screen="game"]::after {
 .rk-val { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .rk-date { font-size: 15px; font-weight: 600; color: var(--ink-soft); }
 .rk-empty { text-align: center; color: var(--ink-soft); font-size: 16px; padding: 22px 8px; line-height: 1.5; }
+.rk-retry { white-space: pre-line; cursor: pointer; }
 .rk-sec { margin-top: 10px; font-size: 19px; }
 .rk-sec:first-child { margin-top: 0; }
 .rk-month { margin-top: 4px; font-size: 15px; font-weight: 800; color: var(--ink-soft); }

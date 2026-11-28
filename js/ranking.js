@@ -27,6 +27,9 @@
 
   var TOP = 50; // 한 번에 보여 주는 순위 수
   var CACHE_MS = 60 * 1000; // 같은 랭킹을 다시 열 때 이 시간 안이면 다시 받지 않음 (무료 사용량 아끼기)
+  var SYNC_WAIT_MS = 20 * 1000; // 내 기록 올리기를 한 번에 기다리는 가장 긴 시간
+  var FIRST_WAIT_MS = 4 * 1000; // 랭킹을 열 때 내 기록 올리기를 기다리는 시간 (넘으면 그냥 받아 옴)
+  var LOAD_WAIT_MS = 15 * 1000; // 랭킹 받아 오기를 기다리는 시간 (넘으면 "다시 불러오기")
   var CREATE_MAX = 300000; // 처음 올릴 때 한 번에 올릴 수 있는 점수 (보안 규칙과 같게)
   var STEP_MAX = 60000; // 그 뒤로 한 번에 더할 수 있는 점수 (보안 규칙과 같게)
   var GAP_MS = 11000; // 같은 줄을 다시 올리려면 기다리는 시간 (보안 규칙은 10초)
@@ -223,8 +226,30 @@
   }
 
   /* 지금 기록을 모두 서버에 맞춥니다 (로그인 + 닉네임이 있을 때만) */
+  /*
+   * 시간 제한 : Firestore 의 저장(set)은 서버가 받았다고 답할 때까지 끝나지 않아서,
+   * 인터넷이 불안정하면 끝없이 기다릴 수 있습니다. ms 가 지나면 fallback 으로 넘어갑니다
+   * (fallback 을 안 주면 'timeout' 오류). 저장은 Firestore 가 알아서 나중에 마저 보냅니다.
+   */
+  function within(p, ms, fallback) {
+    var useFallback = arguments.length > 2;
+    return new Promise(function (resolve, reject) {
+      var t = window.setTimeout(function () {
+        if (useFallback) resolve(fallback);
+        else reject(new Error('timeout'));
+      }, ms);
+      p.then(function (v) { window.clearTimeout(t); resolve(v); }, function (e) { window.clearTimeout(t); reject(e); });
+    });
+  }
+
   function sync() {
     chain = chain.then(function () {
+      return within(syncNow(), SYNC_WAIT_MS, null); // 한 번이 멈춰도 다음 올리기가 줄줄이 막히지 않게
+    });
+    return chain;
+  }
+  function syncNow() {
+    return Promise.resolve().then(function () {
       var u = user(), r = R(), d = D();
       if (!u || !r.nick) return;
       return db().then(function () {
@@ -259,7 +284,6 @@
         });
       });
     }).catch(function () { /* 인터넷이 없으면 다음에 */ });
-    return chain;
   }
 
   /* ---------------- 기록 카드 (랭킹에서 이름을 누르면 보이는 기록) ---------------- */
@@ -638,7 +662,18 @@
     if (text) list.appendChild(el('li', 'rk-empty', text));
   }
 
+  /* 불러오지 못했을 때 : 글을 누르면 다시 불러옵니다 */
+  function retry(text) {
+    status('');
+    var li = el('li', 'rk-empty rk-retry', text + '\n👆 눌러서 다시 불러오기');
+    li.setAttribute('role', 'button');
+    li.tabIndex = 0;
+    li.addEventListener('click', function () { render(); });
+    $('rank-list').appendChild(li);
+  }
+
   function failText(e) {
+    if (e && e.message === 'timeout') return '랭킹을 불러오는 데 너무 오래 걸려요';
     if (e && e.message === 'not-configured') return '랭킹은 준비 중이에요';
     if (e && e.code === 'permission-denied') return '랭킹은 준비 중이에요 (곧 열려요)';
     return '랭킹을 불러오지 못했어요. 인터넷 연결을 확인해 주세요';
@@ -657,9 +692,10 @@
     status('불러오는 중…');
     meCard(kind, null);
     // 먼저 내 기록을 올린 뒤에 받아 옵니다 (방금 끝낸 판이 바로 보이게)
-    var first = user() && r.nick ? sync() : Promise.resolve();
+    // (올리기가 늦으면 FIRST_WAIT_MS 만 기다리고 그냥 받아 옴)
+    var first = user() && r.nick ? within(sync(), FIRST_WAIT_MS, null) : Promise.resolve();
     first.then(function () {
-      return fetchBoard(kind, id);
+      return within(fetchBoard(kind, id), LOAD_WAIT_MS);
     }).then(function (data) {
       if (my !== drawn) return;
       meCard(kind, data);
@@ -671,13 +707,13 @@
     }).catch(function (e) {
       if (my !== drawn) return;
       meCard(kind, null);
-      status(failText(e));
+      retry(failText(e));
     });
   }
 
   function renderHall(my) {
     status('불러오는 중…');
-    fetchHall().then(function (data) {
+    within(fetchHall(), LOAD_WAIT_MS).then(function (data) {
       if (my !== drawn) return;
       var list = $('rank-list');
       list.innerHTML = '';
@@ -711,7 +747,7 @@
       });
     }).catch(function (e) {
       if (my !== drawn) return;
-      status(failText(e));
+      retry(failText(e));
     });
   }
 
