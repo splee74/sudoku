@@ -1442,7 +1442,7 @@
   /* "승급전으로 돌아가기" 단추 : 하던 오늘의 퍼즐은 저장되니 가볍게 한 번만 묻습니다 */
   function askLeaveDaily() {
     if (game.status !== 'playing') return leaveDaily();
-    ask('승급전으로 돌아갈까요?\n오늘의 퍼즐은 저장돼서\n나중에 이어서 할 수 있어요.', '돌아가기', function () {
+    ask('승급전으로 돌아갈까요?\n오늘의 퍼즐은 저장돼서\n나중에 이어서 할 수 있어요.', '승급전으로 가기', function () {
       if (!ending && isDaily()) leaveDaily();
     });
   }
