@@ -60,6 +60,121 @@
     });
   }
 
+  /*
+   * 저장소(Firestore) 읽기 · 쓰기는 Firestore 웹 주소(REST)로 바로 보냅니다.
+   *   Firebase 의 Firestore 묶음(SDK)은 서버와 따로 연결을 맺어 두고 쓰는데, 휴대폰에 따라 이 연결이
+   *   맺어지지 않아 저장 · 랭킹이 끝없이 멈추는 일이 있었습니다. 웹 주소는 보통 인터넷 요청이라 그런 일이 없습니다.
+   *   쓰는 모양은 SDK 와 같게 : db.collection('a').doc('b').get() / .set({...}) / .delete()
+   *   STAMP 를 넣은 칸은 서버 시각으로 채웁니다 (보안 규칙의 request.time 과 같음).
+   */
+  var STAMP = { stamp: true };
+  var REST_WAIT_MS = 20000; // 요청 하나를 기다리는 가장 긴 시간
+
+  function restRoot() { return 'projects/' + C.FIREBASE.projectId + '/databases/(default)/documents'; }
+  function restUrl(path) {
+    return 'https://firestore.googleapis.com/v1/' + path.split('/').map(encodeURIComponent).join('/') + '?key=' + C.FIREBASE.apiKey;
+  }
+  function encodeValue(v) {
+    if (v === null || v === undefined) return { nullValue: null };
+    if (typeof v === 'boolean') return { booleanValue: v };
+    if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+    if (typeof v === 'string') return { stringValue: v };
+    if (v instanceof Date) return { timestampValue: v.toISOString() };
+    if (Array.isArray(v)) return { arrayValue: { values: v.map(encodeValue) } };
+    var fields = {};
+    for (var k in v) fields[k] = encodeValue(v[k]);
+    return { mapValue: { fields: fields } };
+  }
+  function decodeValue(x) {
+    if (!x) return undefined;
+    if ('integerValue' in x) return Number(x.integerValue);
+    if ('doubleValue' in x) return Number(x.doubleValue);
+    if ('stringValue' in x) return x.stringValue;
+    if ('booleanValue' in x) return x.booleanValue;
+    if ('nullValue' in x) return null;
+    if ('timestampValue' in x) {
+      var d = new Date(x.timestampValue);
+      return { toDate: function () { return d; }, toMillis: function () { return d.getTime(); } };
+    }
+    if ('arrayValue' in x) return (x.arrayValue.values || []).map(decodeValue);
+    if ('mapValue' in x) return decodeFields(x.mapValue.fields || {});
+    return undefined;
+  }
+  function decodeFields(f) {
+    var out = {};
+    for (var k in f) out[k] = decodeValue(f[k]);
+    return out;
+  }
+  /* 로그인 표 (보안 규칙의 request.auth). 로그인 안 했으면 빈 글자 */
+  function idToken() {
+    var u = fb && fb.auth.currentUser;
+    return u ? u.getIdToken() : Promise.resolve('');
+  }
+  function restFetch(url, opts) {
+    return idToken().then(function (token) {
+      opts = opts || {};
+      opts.headers = { 'Content-Type': 'application/json' };
+      if (token) opts.headers.Authorization = 'Bearer ' + token;
+      var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      if (ctrl) opts.signal = ctrl.signal;
+      var timer = window.setTimeout(function () { if (ctrl) ctrl.abort(); }, REST_WAIT_MS);
+      return fetch(url, opts).then(function (res) {
+        window.clearTimeout(timer);
+        return res;
+      }, function (e) {
+        window.clearTimeout(timer);
+        var err = new Error('인터넷 연결을 확인해 주세요');
+        err.code = 'unavailable';
+        throw err;
+      });
+    }).then(function (res) {
+      if (res.ok || res.status === 404) return res;
+      return res.json().catch(function () { return {}; }).then(function (body) {
+        var e = new Error((body.error && body.error.message) || 'firestore ' + res.status);
+        e.code = res.status === 403 ? 'permission-denied' : res.status === 401 ? 'unauthenticated' : 'firestore-' + res.status;
+        throw e;
+      });
+    });
+  }
+  function restCommit(write) {
+    return restFetch(restUrl(restRoot()).replace('?key=', ':commit?key='), {
+      method: 'POST', body: JSON.stringify({ writes: [write] })
+    });
+  }
+  function restDocRef(path) {
+    return {
+      path: path,
+      collection: function (name) { return restCollection(path + '/' + name); },
+      get: function () {
+        return restFetch(restUrl(restRoot() + '/' + path)).then(function (res) {
+          if (res.status === 404) return { exists: false, data: function () { return null; }, get: function () { return undefined; } };
+          return res.json().then(function (doc) {
+            var data = decodeFields(doc.fields || {});
+            return { exists: true, data: function () { return data; }, get: function (k) { return data[k]; } };
+          });
+        });
+      },
+      /* 문서를 통째로 바꿉니다 (SDK 의 set 과 같음) */
+      set: function (data) {
+        var fields = {}, transforms = [];
+        for (var k in data) {
+          if (data[k] === STAMP) transforms.push({ fieldPath: k, setToServerValue: 'REQUEST_TIME' });
+          else fields[k] = encodeValue(data[k]);
+        }
+        var write = { update: { name: restRoot() + '/' + path, fields: fields } };
+        if (transforms.length) write.updateTransforms = transforms;
+        return restCommit(write).then(function () {});
+      },
+      delete: function () {
+        return restCommit({ delete: restRoot() + '/' + path }).then(function () {});
+      }
+    };
+  }
+  function restCollection(path) {
+    return { doc: function (id) { return restDocRef(path + '/' + id); } };
+  }
+  var restDb = { collection: function (name) { return restCollection(name); } };
+
   /* Firebase 를 필요할 때만 불러옵니다 (로그인을 안 쓰는 사람은 받지 않음) */
   function ready() {
     if (fb) return Promise.resolve(fb);
@@ -67,12 +182,12 @@
     if (loading) return loading;
     loading = loadScript(SDK + 'firebase-app-compat.js')
       .then(function () {
-        return Promise.all([loadScript(SDK + 'firebase-auth-compat.js'), loadScript(SDK + 'firebase-firestore-compat.js')]);
+        return loadScript(SDK + 'firebase-auth-compat.js'); // 저장소는 웹 주소로 쓰니 Firestore 묶음은 받지 않음
       })
       .then(function () {
         var firebase = root.firebase;
         var app = firebase.apps.length ? firebase.app() : firebase.initializeApp(C.FIREBASE);
-        fb = { auth: app.auth(), db: app.firestore(), firebase: firebase };
+        fb = { auth: app.auth(), db: restDb, firebase: firebase, stamp: function () { return STAMP; } };
         fb.auth.languageCode = 'ko';
         fb.auth.onAuthStateChanged(handleUser);
         // 다른 창으로 로그인했다가 돌아온 경우 (redirect 방식)
@@ -180,7 +295,7 @@
     return fb.db.collection('users').doc(user.uid).set({
       save: JSON.stringify(copy),
       name: user.name,
-      updatedAt: fb.firebase.firestore.FieldValue.serverTimestamp()
+      updatedAt: STAMP
     });
   }
 

@@ -140,7 +140,7 @@
     return S.Account.open().then(function (x) { fb = x; return x; });
   }
   function rows(id) { return fb.db.collection('boards').doc(id).collection('rows'); }
-  function stamp() { return fb.firebase.firestore.FieldValue.serverTimestamp(); }
+  function stamp() { return fb.stamp(); } // 서버 시각 (js/account.js 의 STAMP)
 
   /*
    * 랭킹 읽기는 Firestore 웹 주소(REST)로 직접 묻습니다.
