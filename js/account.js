@@ -14,6 +14,10 @@
   var SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
   var HINT_KEY = 'sudoku-account-v1'; // 로그인했던 적이 있는지 (다음에 켤 때 미리 준비하려고)
   var UPLOAD_DELAY = 3000;
+  // 계정 저장은 1분에 한 번까지만 (게임 중에는 5초마다 기기에 저장해서, 그대로 올리면 Firebase 무료 한도를 금방 넘음)
+  var UPLOAD_GAP = 60 * 1000;
+  // Firebase 하루 한도가 다 찼다는 답(429)을 받으면 이만큼 쉬었다가 다시 해 봄
+  var QUOTA_REST = 30 * 60 * 1000;
 
   var fb = null; // { auth, db }
   var user = null; // { uid, name, photo, provider }
@@ -68,6 +72,7 @@
    *   STAMP 를 넣은 칸은 서버 시각으로 채웁니다 (보안 규칙의 request.time 과 같음).
    */
   var STAMP = { stamp: true };
+  var quotaUntil = 0; // 이 시각까지는 저장소에 쓰지 않음 (하루 한도가 다 참)
   var REST_WAIT_MS = 20000; // 요청 하나를 기다리는 가장 긴 시간
 
   function restRoot() { return 'projects/' + C.FIREBASE.projectId + '/databases/(default)/documents'; }
@@ -131,12 +136,18 @@
       if (res.ok || res.status === 404) return res;
       return res.json().catch(function () { return {}; }).then(function (body) {
         var e = new Error((body.error && body.error.message) || 'firestore ' + res.status);
-        e.code = res.status === 403 ? 'permission-denied' : res.status === 401 ? 'unauthenticated' : 'firestore-' + res.status;
+        e.code = res.status === 403 ? 'permission-denied' : res.status === 401 ? 'unauthenticated' : res.status === 429 ? 'resource-exhausted' : 'firestore-' + res.status;
+        if (res.status === 429) quotaUntil = Date.now() + QUOTA_REST;
         throw e;
       });
     });
   }
   function restCommit(write) {
+    if (Date.now() < quotaUntil) {
+      var q = new Error('quota');
+      q.code = 'resource-exhausted';
+      return Promise.reject(q);
+    }
     return restFetch(restUrl(restRoot()).replace('?key=', ':commit?key='), {
       method: 'POST', body: JSON.stringify({ writes: [write] })
     });
@@ -296,19 +307,27 @@
     if (saidErrors[code]) return;
     saidErrors[code] = 1;
     var detail = e && e.message && e.message !== code ? ' ' + String(e.message).slice(0, 80) : '';
+    if (code === 'resource-exhausted') return emit('error', '오늘은 서버가 바빠서 기록을 계정에 저장하지 못했어요.\n기록은 이 휴대폰에 그대로 있고, 나중에 저절로 올라가요');
     emit('error', code === 'unavailable' ? '인터넷이 불안정해서 기록을 계정에 저장하지 못했어요' : '기록을 계정에 저장하지 못했어요 (' + code + detail + ')');
   }
 
   /* 계정에 올리기 (하다가 멈춘 판은 빼고) */
+  var pushed = ''; // 마지막으로 계정에 올린 내용 (같으면 다시 올리지 않음)
+  var pushedAt = 0;
   function push(d) {
     if (!fb || !user) return Promise.resolve();
     var copy = JSON.parse(JSON.stringify(d));
     copy.game = null;
     copy.dailyGame = null;
+    var save = JSON.stringify(copy), key = user.uid + save;
+    if (key === pushed) return Promise.resolve(); // 바뀐 게 없음 (게임 중 5초마다 하는 저장은 대부분 여기서 끝)
     return fb.db.collection('users').doc(user.uid).set({
-      save: JSON.stringify(copy),
+      save: save,
       name: user.name,
       updatedAt: STAMP
+    }).then(function () {
+      pushed = key;
+      pushedAt = Date.now();
     });
   }
 
@@ -316,11 +335,21 @@
   function schedule(d) {
     if (!user || syncing) return;
     window.clearTimeout(uploadTimer);
-    uploadTimer = window.setTimeout(function () {
-      push(d).then(function () {
-        emit('synced');
-      }).catch(saveError);
-    }, UPLOAD_DELAY);
+    var wait = Math.max(UPLOAD_DELAY, UPLOAD_GAP - (Date.now() - pushedAt), quotaUntil - Date.now());
+    uploadTimer = window.setTimeout(flush, wait);
+  }
+  /* 기다리던 계정 저장을 지금 합니다 (앱을 닫거나 다른 앱으로 넘어갈 때도 부름) */
+  function flush() {
+    window.clearTimeout(uploadTimer);
+    if (!user || syncing || !getData) return;
+    push(getData()).then(function () {
+      emit('synced');
+    }).catch(saveError);
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden' && Date.now() >= quotaUntil) flush();
+    });
   }
 
   function makeProvider(id) {

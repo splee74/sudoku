@@ -158,6 +158,7 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     }).then(function (res) {
       if (res.status === 403) { var e = new Error('denied'); e.code = 'permission-denied'; throw e; }
+      if (res.status === 429) { var q = new Error('quota'); q.code = 'resource-exhausted'; throw q; }
       if (!res.ok) throw new Error(action + ' ' + res.status);
       return res.json();
     });
@@ -277,6 +278,7 @@
     if (saidErrors[code] || !hooks.toast) return;
     saidErrors[code] = 1;
     var detail = e && e.message && e.message !== code ? ' ' + String(e.message).slice(0, 80) : '';
+    if (code === 'resource-exhausted') return hooks.toast('오늘은 서버가 바빠서 랭킹에 점수를 올리지 못했어요. 나중에 저절로 올라가요');
     hooks.toast(code === 'unavailable' ? '인터넷이 불안정해서 랭킹에 점수를 올리지 못했어요' : '랭킹에 점수를 올리지 못했어요 (' + code + detail + ')');
   }
 
@@ -730,6 +732,7 @@
 
   function failText(e) {
     if (e && e.message === 'timeout') return '랭킹을 불러오는 데 너무 오래 걸려요';
+    if (e && e.code === 'resource-exhausted') return '오늘은 랭킹 서버가 바빠요. 조금 뒤에 다시 봐 주세요';
     if (e && e.message === 'not-configured') return '랭킹은 준비 중이에요';
     if (e && e.code === 'permission-denied') return '랭킹은 준비 중이에요 (곧 열려요)';
     return '랭킹을 불러오지 못했어요. 인터넷 연결을 확인해 주세요';
