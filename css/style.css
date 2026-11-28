@@ -1010,9 +1010,6 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
 :root[data-theme="dark"] .tool-hint.ticket { background: #5a4613; border-color: #c99a1d; }
 
 /* ---------- 새 아이템 ---------- */
-/* 돋보기 : 들어갈 수 있는 칸이 초록 테두리로 깜박입니다 */
-.cell.spot { box-shadow: inset 0 0 0 3px #2fb36a; animation: fx-spot 1s ease-in-out infinite; }
-@keyframes fx-spot { 50% { background: color-mix(in srgb, #2fb36a 28%, var(--cell-bg, var(--surface))); } }
 /* 점수 2배권을 쓴 판 : 점수 옆 ×2 표시 */
 .score.x2 b { color: #d9480f; }
 .score.x2::after {
@@ -1020,6 +1017,8 @@ button.grade-row:hover, button.grade-row:active { background: var(--peer); }
   background: #ffd43b; color: #5c3b00; font-size: 14px; font-weight: 900; vertical-align: 2px;
 }
 .score.fx-timecut { display: inline-block; }
+/* 콤보 지킴이를 쓴 판 : 점수 앞 🎯 표시 */
+.score.guard::before { content: "🎯"; margin-right: 3px; font-size: 14px; vertical-align: 1px; }
 /* 저절로 쓰이는 아이템 표시 */
 .item-auto {
   flex: none; max-width: 78px; padding: 6px 8px; border-radius: 10px;

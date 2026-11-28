@@ -239,6 +239,8 @@
           }
           if (saved.items && typeof saved.items === 'object') {
             for (var it in data.items) data.items[it] = num(saved.items[it], 0);
+            // 돋보기(magnify)는 콤보 지킴이(combo)로 바뀜 : 아직 콤보 지킴이를 저장한 적 없으면 돋보기 개수를 옮겨 줌
+            if (saved.items.combo === undefined) data.items.combo = num(saved.items.magnify, 0);
           }
           data.starterGiven = saved.starterGiven === true;
           data.itemsReset = num(saved.itemsReset, 0);

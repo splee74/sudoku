@@ -9,8 +9,8 @@
 
   S.Config = {
     // 화면 오른쪽 위에 작게 보이는 버전 (휴대폰에 새 파일이 들어왔는지 확인용)
-    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v80 → 'v80'
-    VERSION: 'v80',
+    // 고칠 때마다  python tools/bump_version.py  로 올립니다 (sw.js 의 CACHE, index.html 의 ?v= 도 함께) : sudoku-files-v81 → 'v81'
+    VERSION: 'v81',
 
     FAILS_TO_DEMOTE: 3, // (쓰지 않음 : 강등은 없앴습니다)
     MAX_MISTAKES: 3, // 한 판에서 틀릴 수 있는 횟수
@@ -114,7 +114,7 @@
       { id: 'shield', img: 'eraser', icon: '🩹', name: '실수 지우개', desc: '틀린 횟수 1번을 없던 일로 해요' },
       { id: 'memo', img: 'pencil', icon: '✏️', name: '자동 메모권', desc: '빈칸마다 들어갈 수 있는 숫자를 모두 메모해 줘요' },
       { id: 'double', img: 'sparkle', icon: '✨', name: '점수 2배권', desc: '이번 판에서 받는 점수가 모두 2배가 돼요' },
-      { id: 'magnify', img: 'cat-curious', icon: '🔍', name: '돋보기', desc: '고른 숫자가 들어갈 수 있는 자리를 판에 모두 보여 줘요' },
+      { id: 'combo', img: 'target', icon: '🎯', name: '콤보 지킴이', desc: '이번 판에서는 틀려도 연속 콤보가 끊기지 않아요. 점수 2배권과 찰떡궁합!' },
       { id: 'revive', img: 'heart', icon: '💖', name: '되살리기권', desc: '3번 틀려 실패하면, 그 판을 이어서 할 수 있어요', auto: true, autoText: '실패하면 물어봐요' },
       { id: 'guard', icon: '🛡️', name: '연속 보호권', desc: '하루 빠져도 출석과 오늘의 퍼즐 연속 일수가 끊기지 않아요 (빠진 하루에 1장)', auto: true, autoText: '저절로 쓰여요' }
     ],
@@ -144,7 +144,7 @@
     // 상점 켜기 : false 면 별(⭐) 칸, 아이템 "사기" 단추, 별 충전 창을 모두 숨깁니다.
     //   (별 판매 = 인앱 결제를 붙인 뒤에 true 로. 아이템은 시작 선물과 출석 선물로만 얻음)
     SHOP_ENABLED: false,
-    ITEM_PRICES: { hint: 30, time: 20, shield: 30, memo: 50, double: 40, magnify: 30, revive: 80, guard: 60 },
+    ITEM_PRICES: { hint: 30, time: 20, shield: 30, memo: 50, double: 40, combo: 30, revive: 80, guard: 60 },
     STAR_PACKS: [
       { id: 'stars_100', stars: 100, price: '₩1,200' },
       { id: 'stars_550', stars: 550, price: '₩5,900', tag: '10% 더' },
@@ -162,7 +162,7 @@
       { hint: 1 },
       { time: 1 },
       { shield: 1 },
-      { magnify: 1 },
+      { combo: 1 },
       { memo: 1 },
       { double: 1, guard: 1 },
       { hint: 2, revive: 1, shield: 1 } // 7일째 : 큰 상자

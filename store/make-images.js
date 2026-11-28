@@ -30,7 +30,7 @@ const SAVE = {
   bestScores: { hasu: 980, pyeongmin: 2650, jungsu: 6120, gosu: 8840 },
   totalScore: 61230, game: null, dailyGame: null,
   daily: { last: today, streak: 5, bestStreak: 8, total: 12, score: 0, seconds: 0, bestStairs: 9 },
-  items: { hint: 3, time: 2, shield: 3, memo: 1, double: 1, magnify: 2, revive: 1 },
+  items: { hint: 3, time: 2, shield: 3, memo: 1, double: 1, combo: 2, revive: 1 },
   stats: { perfectWins: 11, noHintWins: 19, hintsUsed: 14, winStreak: 6, bestWinStreak: 9, maxPromoted: 3, wins9: 9, best9: 402, playSec: 9800 },
   gradeStats: { gosu: { played: 4, won: 3, sec: 1600, perfect: 2 } },
   // 오늘 이미 출석한 것으로 (출석 창이 화면을 가리지 않게)

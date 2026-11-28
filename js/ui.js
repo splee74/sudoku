@@ -26,9 +26,6 @@
   var ending = false;
   var said = {}; // 이번 판에서 이미 보여 준 응원 메시지
   var toastTimer = 0;
-  var spotSet = {}; // 돋보기로 보여 주는 칸
-  var spotTimer = 0;
-  var magnifyPick = false; // 돋보기를 쓰고 숫자를 고르는 중
 
   /* ---------------- 공통 ---------------- */
   function formatTime(ms) {
@@ -1036,8 +1033,6 @@
     memo = false;
     ending = false;
     said = {};
-    magnifyPick = false;
-    spotSet = {};
     setPaused(false);
     hideToast();
     S.Effects.clearBoard($('board'));
@@ -1571,7 +1566,6 @@
       if (peerSet[idx]) cls += ' peer';
       if (showSame && hl && v === hl) cls += ' same';
       if (dupSet[idx]) cls += ' dup';
-      if (spotSet[idx] && !v) cls += ' spot';
       if (idx === sel) cls += ' sel';
       el.className = cls;
       el.setAttribute('data-v', v ? v : ''); // 스킨에서 숫자별 색을 입힐 때 씁니다
@@ -1609,6 +1603,7 @@
     $('memo-onoff').textContent = memo ? '켜짐' : '꺼짐';
     $('game-score').textContent = formatScore(game.score);
     $('game-score-wrap').classList.toggle('x2', !!game.double);
+    $('game-score-wrap').classList.toggle('guard', !!game.comboGuard);
     $('game-score-wrap').hidden = !Settings.get('showScore');
     // 힌트를 다 쓰면 힌트권 개수를 보여 줍니다
     var tickets = Progress.itemCount(data, 'hint');
@@ -1861,11 +1856,6 @@
   function pressDigit(d) {
     if (!playing() || d < 1 || d > game.size) return;
     if (Game.placedCount(game, d) >= game.size) return; // 다 채운 숫자 (키보드로 눌러도 무시)
-    if (magnifyPick) {
-      magnifyPick = false;
-      return applyMagnify(d);
-    }
-    clearSpots();
     // 칸을 고르지 않았거나 바꿀 수 없는 칸이면 → 같은 숫자 강조만
     if (sel < 0 || !Game.isEditable(game, sel)) {
       hl = hl === d ? 0 : d;
@@ -1971,8 +1961,6 @@
     ending = true;
     stopTimer();
     hideToast();
-    clearSpots();
-    magnifyPick = false;
     var won = game.status === 'won';
     // 배경 음악을 결과 곡으로 바꿉니다 (성공 clear · 실패 failure). 팡파레 효과음은 따로 내지 않음
     endTrack = won ? 'clear' : 'failure';
@@ -2105,6 +2093,12 @@
       d.className = 'x2';
       d.textContent = '점수 2배권 적용';
       box.appendChild(d);
+    }
+    if (g.comboGuard) {
+      var cg = document.createElement('li');
+      cg.className = 'x2';
+      cg.textContent = '🎯 콤보 지킴이 적용';
+      box.appendChild(cg);
     }
   }
 
@@ -2512,7 +2506,7 @@
     if (id === 'time' && game.elapsedMs < 1000) return '아직 줄일 시간이 없어요';
     if (id === 'shield' && game.mistakes <= 0) return '틀린 횟수가 없어요';
     if (id === 'double' && game.double) return '이번 판에 이미 쓰고 있어요';
-    if (id === 'magnify' && magnifyPick) return '찾을 숫자를 누르세요';
+    if (id === 'combo' && game.comboGuard) return '이번 판에 이미 쓰고 있어요';
     return '';
   }
 
@@ -2655,12 +2649,6 @@
     closeSheets();
     if (paused) setPaused(false);
     if (id === 'hint') return pressHint();
-    if (id === 'magnify') {
-      // 숫자 단추를 눌러 둔 상태면 그 숫자를, 아니면 다음에 누르는 숫자를 찾습니다
-      if (hl > 0 && Game.placedCount(game, hl) < game.size) return applyMagnify(hl);
-      magnifyPick = true;
-      return toast('🔍 찾을 숫자 단추를 눌러 달라냥', 2200);
-    }
     var ok = false;
     if (id === 'time') {
       var cut = Game.cutTime(game, C.TIME_ITEM_SEC * 1000);
@@ -2675,7 +2663,10 @@
       toast(ok ? '✏️ 빈칸 ' + cnt + '곳에 메모했다냥' : '이미 메모가 다 되어 있다냥');
     } else if (id === 'double') {
       ok = Game.useDouble(game);
-      if (ok) toast('✨ 이번 판 점수 2배다냥!');
+      if (ok) toast(game.comboGuard ? '✨ 점수 2배! 콤보 지킴이랑 찰떡궁합이다냥!' : '✨ 이번 판 점수 2배다냥!');
+    } else if (id === 'combo') {
+      ok = Game.useComboGuard(game);
+      if (ok) toast(game.double ? '🎯 콤보 지킴이! 점수 2배랑 찰떡궁합이다냥!' : '🎯 이번 판은 틀려도 콤보가 이어진다냥!');
     }
     if (!ok) return;
     Progress.useItem(data, id);
@@ -2685,38 +2676,12 @@
     renderGame();
     if (id === 'time') S.Effects.restart($('game-timer'), 'fx-timecut');
     if (id === 'shield') S.Effects.restart($('game-marks'), 'fx-heal');
-    if (id === 'double') S.Effects.restart($('game-score-wrap'), 'fx-timecut');
+    if (id === 'double' || id === 'combo') S.Effects.restart($('game-score-wrap'), 'fx-timecut');
     if (id === 'memo') {
       var all = [];
       for (var i = 0; i < game.cells.length; i++) if (game.cells[i] === 0) all.push(i);
       if (all.length) wave(all, sel >= 0 ? sel : all[0]);
     }
-  }
-
-  /* 돋보기 : 숫자 d가 들어갈 수 있는 칸을 몇 초 동안 보여 줍니다 */
-  function applyMagnify(d) {
-    if (!playing() || Progress.itemCount(data, 'magnify') <= 0) return;
-    if (Game.placedCount(game, d) >= game.size) return toast(d + '은(는) 이미 다 채웠다냥');
-    var list = Game.spots(game, d);
-    if (!list.length) return toast('들어갈 자리를 못 찾았다냥');
-    Progress.useItem(data, 'magnify');
-    game.itemsUsed++;
-    persist();
-    clearSpots();
-    for (var i = 0; i < list.length; i++) spotSet[list[i]] = true;
-    hl = d;
-    renderGame();
-    S.Sound.play('hint');
-    S.Hero.react('item', 1400);
-    toast('🔍 ' + d + '이(가) 들어갈 곳 ' + list.length + '군데다냥');
-    spotTimer = window.setTimeout(function () {
-      clearSpots();
-      renderGame();
-    }, 6000);
-  }
-  function clearSpots() {
-    window.clearTimeout(spotTimer);
-    spotSet = {};
   }
 
   /* ---------------- 출석 체크 ---------------- */

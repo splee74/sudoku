@@ -56,6 +56,7 @@
       extraHints: 0, // 힌트권(아이템)으로 쓴 힌트 수
       itemsUsed: 0, // 이번 판에서 쓴 아이템 수
       double: false, // 점수 2배권을 썼는지
+      comboGuard: false, // 콤보 지킴이를 썼는지 (이번 판은 틀려도 콤보가 이어짐)
       elapsedMs: 0,
       history: [],
       score: 0, // 이번 판 점수
@@ -93,6 +94,7 @@
     if (typeof st.extraHints !== 'number') st.extraHints = 0;
     if (typeof st.itemsUsed !== 'number') st.itemsUsed = 0;
     st.double = st.double === true;
+    st.comboGuard = st.comboGuard === true;
     if (!Array.isArray(st.scored) || st.scored.length !== st.cells.length) {
       st.scored = [];
       for (var i = 0; i < st.cells.length; i++) {
@@ -246,7 +248,7 @@
     snapshot(st, [idx]);
     st.cells[idx] = d;
     st.mistakes++;
-    st.streak = 0; // 틀리면 연속 보너스가 끊깁니다
+    if (!st.comboGuard) st.streak = 0; // 틀리면 연속 보너스가 끊깁니다 (콤보 지킴이를 썼으면 이어짐)
     st.lastGain = 0;
     if (st.mistakes >= C.MAX_MISTAKES) st.status = 'lost';
     return 'wrong';
@@ -390,18 +392,12 @@
     return true;
   }
 
-  /* 돋보기 : 숫자 d가 들어갈 수 있는 빈칸 목록 (같은 줄·상자에 d가 아직 없는 칸) */
-  function spots(st, d) {
-    var out = [];
-    for (var i = 0; i < st.cells.length; i++) {
-      if (st.cells[i] !== 0 || !isEditable(st, i)) continue;
-      var p = E.peers(st, i), ok = true;
-      for (var k = 0; k < p.length; k++) {
-        if (st.cells[p[k]] === d && st.solution[p[k]] === d) { ok = false; break; }
-      }
-      if (ok) out.push(i);
-    }
-    return out;
+  /* 콤보 지킴이 : 이번 판은 틀려도 연속 콤보가 끊기지 않습니다 (틀린 횟수는 그대로 셈) */
+  function useComboGuard(st) {
+    if (st.status !== 'playing' || st.comboGuard) return false;
+    st.comboGuard = true;
+    st.itemsUsed++;
+    return true;
   }
 
   /* 숫자 d가 판에 올바르게 몇 개 놓였는지 */
@@ -430,7 +426,7 @@
     autoMemo: autoMemo,
     useDouble: useDouble,
     revive: revive,
-    spots: spots,
+    useComboGuard: useComboGuard,
     placedCount: placedCount
   };
 })(typeof window !== 'undefined' ? window : globalThis);
