@@ -266,8 +266,18 @@
       });
     }).catch(function (e) {
       if (e && e.code === 'permission-denied') bad[id] = true;
+      pushError(e);
       return false;
     });
+  }
+  /* 점수를 올리지 못했을 때 : 원인을 알 수 있게 오류 이름을 보여 줍니다 (같은 오류는 켤 때마다 한 번만) */
+  var saidErrors = {};
+  function pushError(e) {
+    var code = (e && e.code) || (e && e.message) || 'unknown';
+    if (saidErrors[code] || !hooks.toast) return;
+    saidErrors[code] = 1;
+    var detail = e && e.message && e.message !== code ? ' ' + String(e.message).slice(0, 80) : '';
+    hooks.toast(code === 'unavailable' ? '인터넷이 불안정해서 랭킹에 점수를 올리지 못했어요' : '랭킹에 점수를 올리지 못했어요 (' + code + detail + ')');
   }
 
   /* 지금 기록을 모두 서버에 맞춥니다 (로그인 + 닉네임이 있을 때만) */

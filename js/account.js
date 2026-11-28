@@ -282,8 +282,21 @@
       })
       .catch(function (e) {
         syncing = false;
-        emit('error', message(e));
+        saveError(e);
       });
+  }
+
+  /*
+   * 계정에 기록을 올리거나 받아 오지 못했을 때 : 로그인 실패가 아니니 그렇게 말하고,
+   * 원인을 알 수 있게 오류 이름을 괄호에 붙입니다. 같은 오류는 켤 때마다 한 번만 알려 줍니다.
+   */
+  var saidErrors = {};
+  function saveError(e) {
+    var code = (e && e.code) || (e && e.message) || 'unknown';
+    if (saidErrors[code]) return;
+    saidErrors[code] = 1;
+    var detail = e && e.message && e.message !== code ? ' ' + String(e.message).slice(0, 80) : '';
+    emit('error', code === 'unavailable' ? '인터넷이 불안정해서 기록을 계정에 저장하지 못했어요' : '기록을 계정에 저장하지 못했어요 (' + code + detail + ')');
   }
 
   /* 계정에 올리기 (하다가 멈춘 판은 빼고) */
@@ -306,9 +319,7 @@
     uploadTimer = window.setTimeout(function () {
       push(d).then(function () {
         emit('synced');
-      }).catch(function (e) {
-        emit('error', message(e));
-      });
+      }).catch(saveError);
     }, UPLOAD_DELAY);
   }
 
