@@ -235,15 +235,23 @@
       });
   }
 
+  /*
+   * 로그아웃 : 나가기 전에 기록을 한 번 올리되, 2초만 기다립니다.
+   * (Firestore 저장은 서버 답이 올 때까지 끝나지 않아서, 인터넷이 불안정하면 로그아웃이 영영 안 되던 문제)
+   */
   function signOut() {
-    if (!fb) return;
     window.clearTimeout(uploadTimer);
-    var d = getData ? getData() : null;
-    (d && user ? push(d) : Promise.resolve())
-      .catch(function () {})
-      .then(function () {
-        return fb.auth.signOut();
-      });
+    return ready().then(function () {
+      var d = getData ? getData() : null;
+      var up = d && user ? push(d).catch(function () {}) : Promise.resolve();
+      var wait = new Promise(function (resolve) { window.setTimeout(resolve, 2000); });
+      return Promise.race([up, wait]);
+    }).then(function () {
+      return fb.auth.signOut();
+    }).catch(function () {
+      // Firebase 를 못 불러와도 이 기기에서는 로그아웃한 것으로
+      handleUser(null);
+    });
   }
 
   /*

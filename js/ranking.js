@@ -28,7 +28,6 @@
   var TOP = 50; // 한 번에 보여 주는 순위 수
   var CACHE_MS = 60 * 1000; // 같은 랭킹을 다시 열 때 이 시간 안이면 다시 받지 않음 (무료 사용량 아끼기)
   var SYNC_WAIT_MS = 20 * 1000; // 내 기록 올리기를 한 번에 기다리는 가장 긴 시간
-  var FIRST_WAIT_MS = 4 * 1000; // 랭킹을 열 때 내 기록 올리기를 기다리는 시간 (넘으면 그냥 받아 옴)
   var LOAD_WAIT_MS = 15 * 1000; // 랭킹 받아 오기를 기다리는 시간 (넘으면 "다시 불러오기")
   var CREATE_MAX = 300000; // 처음 올릴 때 한 번에 올릴 수 있는 점수 (보안 규칙과 같게)
   var STEP_MAX = 60000; // 그 뒤로 한 번에 더할 수 있는 점수 (보안 규칙과 같게)
@@ -144,36 +143,82 @@
   function stamp() { return fb.firebase.firestore.FieldValue.serverTimestamp(); }
 
   /*
-   * 개수 세기 : Firebase 앱용 묶음(compat)에는 개수 세기가 없어서 Firestore 웹 주소로 직접 묻습니다.
-   * (읽기 권한은 같은 보안 규칙을 따름. 1,000줄마다 읽기 1번으로 쳐서 아주 쌈)
+   * 랭킹 읽기는 Firestore 웹 주소(REST)로 직접 묻습니다.
+   *   랭킹 · 기록 카드 · 명예의 전당은 보안 규칙에서 누구나 읽을 수 있어서 로그인 정보가 필요 없고,
+   *   Firebase 묶음(SDK)을 받거나 연결을 맺을 때까지 기다리지 않아서 바로 나옵니다.
+   *   (휴대폰에 따라 SDK 연결이 아주 늦거나 멈추는 일이 있었음)
+   */
+  function restBase() {
+    return 'https://firestore.googleapis.com/v1/projects/' + C.FIREBASE.projectId + '/databases/(default)/documents/';
+  }
+  function restPath(path) { return path.split('/').map(encodeURIComponent).join('/'); }
+  function restPost(path, action, body) {
+    if (!S.Account || !S.Account.configured()) return Promise.reject(new Error('not-configured'));
+    return fetch(restBase() + restPath(path) + ':' + action + '?key=' + C.FIREBASE.apiKey, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    }).then(function (res) {
+      if (res.status === 403) { var e = new Error('denied'); e.code = 'permission-denied'; throw e; }
+      if (!res.ok) throw new Error(action + ' ' + res.status);
+      return res.json();
+    });
+  }
+  /* Firestore 값 모양 { integerValue: '3' } → 3 */
+  function restValue(x) {
+    if (!x) return undefined;
+    if ('integerValue' in x) return Number(x.integerValue);
+    if ('doubleValue' in x) return Number(x.doubleValue);
+    if ('stringValue' in x) return x.stringValue;
+    if ('booleanValue' in x) return x.booleanValue;
+    if ('timestampValue' in x) return new Date(x.timestampValue);
+    if ('nullValue' in x) return null;
+    return undefined;
+  }
+  function restDoc(doc) {
+    var out = { uid: doc.name.split('/').pop() }, f = doc.fields || {};
+    for (var k in f) out[k] = restValue(f[k]);
+    return out;
+  }
+  /* 문서 하나 (없으면 null) */
+  function restGet(path) {
+    if (!S.Account || !S.Account.configured()) return Promise.reject(new Error('not-configured'));
+    return fetch(restBase() + restPath(path) + '?key=' + C.FIREBASE.apiKey).then(function (res) {
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error('get ' + res.status);
+      return res.json().then(restDoc);
+    });
+  }
+  /* 목록 : parent 아래의 rows 를 field 로 줄 세워 limit 개 (where : [op, 값] 이면 거르기) */
+  function restRows(parent, field, dir, limit, where) {
+    var q = { from: [{ collectionId: 'rows' }], orderBy: [{ field: { fieldPath: field }, direction: dir }], limit: limit };
+    if (where) q.where = { fieldFilter: { field: { fieldPath: field }, op: where[0], value: { integerValue: String(Math.floor(where[1])) } } };
+    return restPost(parent, 'runQuery', { structuredQuery: q }).then(function (list) {
+      var out = [];
+      for (var i = 0; i < list.length; i++) if (list[i].document) out.push(restDoc(list[i].document));
+      return out;
+    });
+  }
+  function boardRows(id, dir, limit, where) {
+    return restRows('boards/' + id, 'v', dir, limit, where).then(function (list) {
+      return list.map(function (x) { return { uid: x.uid, nick: x.nick, grade: x.grade, v: x.v, crown: !!x.crown }; });
+    });
+  }
+
+  /*
+   * 개수 세기 (1,000줄마다 읽기 1번으로 쳐서 아주 쌈)
    *   op : 'GREATER_THAN' · 'LESS_THAN' (없으면 전체 개수)
    */
   function count(id, op, v) {
     var q = { from: [{ collectionId: 'rows' }] };
     if (op) q.where = { fieldFilter: { field: { fieldPath: 'v' }, op: op, value: { integerValue: String(Math.floor(v)) } } };
-    var url = 'https://firestore.googleapis.com/v1/projects/' + C.FIREBASE.projectId +
-      '/databases/(default)/documents/boards/' + encodeURIComponent(id) + ':runAggregationQuery?key=' + C.FIREBASE.apiKey;
-    var u = fb && fb.auth.currentUser;
-    return (u ? u.getIdToken() : Promise.resolve(''))
-      .then(function (token) {
-        var headers = { 'Content-Type': 'application/json' };
-        if (token) headers.Authorization = 'Bearer ' + token;
-        return fetch(url, {
-          method: 'POST', headers: headers,
-          body: JSON.stringify({ structuredAggregationQuery: { structuredQuery: q, aggregations: [{ alias: 'n', count: {} }] } })
-        });
-      })
-      .then(function (res) {
-        if (!res.ok) throw new Error('count ' + res.status);
-        return res.json();
-      })
-      .then(function (list) {
-        for (var i = 0; i < list.length; i++) {
-          var f = list[i].result && list[i].result.aggregateFields;
-          if (f && f.n) return Number(f.n.integerValue || 0);
-        }
-        return 0;
-      });
+    return restPost('boards/' + id, 'runAggregationQuery', {
+      structuredAggregationQuery: { structuredQuery: q, aggregations: [{ alias: 'n', count: {} }] }
+    }).then(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        var f = list[i].result && list[i].result.aggregateFields;
+        if (f && f.n) return Number(f.n.integerValue || 0);
+      }
+      return 0;
+    });
   }
   function better(kind) { return BOARD[kind].low ? 'LESS_THAN' : 'GREATER_THAN'; }
 
@@ -315,10 +360,9 @@
     });
   }
   function fetchCard(uid) {
-    return db().then(function () {
-      return fb.db.collection('cards').doc(uid).get();
-    }).then(function (snap) {
-      return snap.exists ? snap.data() : null;
+    return restGet('cards/' + uid).then(function (x) {
+      if (x) delete x.uid;
+      return x;
     });
   }
 
@@ -453,66 +497,68 @@
   var cache = {}; // 판 이름 → { t, data }
   var hallCache = null;
 
-  function snapRows(snap) {
-    var out = [];
-    snap.forEach(function (doc) {
-      var x = doc.data();
-      out.push({ uid: doc.id, nick: x.nick, grade: x.grade, v: x.v, crown: !!x.crown });
-    });
-    return out;
+  /* 마지막으로 받은 랭킹을 이 기기에 남겨 둡니다 (다음에 열면 받아 오는 동안 이것부터 바로 보여 줌) */
+  var SAVED_KEY = 'sudoku-rank-cache-v1';
+  function savedBoards() {
+    try { return JSON.parse(S.Storage.get(SAVED_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function saveBoard(id, data) {
+    var all = savedBoards();
+    all[id] = { t: Date.now(), data: data };
+    var ids = Object.keys(all).sort(function (a, b) { return all[b].t - all[a].t; });
+    for (var i = 12; i < ids.length; i++) delete all[ids[i]]; // 최근 12개 판만
+    try { S.Storage.set(SAVED_KEY, JSON.stringify(all)); } catch (e) { /* 저장 공간이 없으면 그냥 넘어감 */ }
+  }
+  function savedBoard(id) {
+    var hit = savedBoards()[id];
+    return hit ? hit.data : null;
   }
 
   /* 판 하나 → { list: [...], me: { v, rank, total, above, below } | null } */
   function fetchBoard(kind, id) {
     var hit = cache[id];
     if (hit && Date.now() - hit.t < CACHE_MS) return Promise.resolve(hit.data);
-    return db().then(function () {
-      var low = BOARD[kind].low, u = user();
-      var top = rows(id).orderBy('v', low ? 'asc' : 'desc').limit(TOP).get().then(snapRows);
-      var me = u ? rows(id).doc(u.uid).get() : Promise.resolve(null);
-      var total = count(id).catch(function () { return null; });
-      return Promise.all([top, me, total]).then(function (res) {
-        var list = res[0], snap = res[1], out = { list: list, total: res[2], me: null };
-        if (!snap || !snap.exists) return out;
-        var v = snap.get('v');
-        var at = -1;
-        for (var i = 0; i < list.length; i++) if (list[i].uid === u.uid) at = i;
-        if (at >= 0) {
-          out.me = { v: v, rank: at + 1, above: [], below: [] };
-          return out;
-        }
-        // 50위 밖 : 나보다 앞선 사람 수를 세고, 바로 위아래 두 명씩
-        var ahead = count(id, better(kind), v).catch(function () { return null; });
-        var above = rows(id).where('v', low ? '<' : '>', v).orderBy('v', low ? 'desc' : 'asc').limit(2).get().then(snapRows);
-        var below = rows(id).where('v', low ? '>' : '<', v).orderBy('v', low ? 'asc' : 'desc').limit(2).get().then(snapRows);
-        return Promise.all([ahead, above, below]).then(function (x) {
-          out.me = { v: v, rank: x[0] == null ? null : x[0] + 1, above: x[1].reverse(), below: x[2] };
-          return out;
-        });
+    var low = BOARD[kind].low, u = user();
+    var top = boardRows(id, low ? 'ASCENDING' : 'DESCENDING', TOP);
+    var me = u && u.uid ? restGet('boards/' + id + '/rows/' + u.uid).catch(function () { return null; }) : Promise.resolve(null);
+    var total = count(id).catch(function () { return null; });
+    return Promise.all([top, me, total]).then(function (res) {
+      var list = res[0], mine = res[1], out = { list: list, total: res[2], me: null };
+      if (!mine || typeof mine.v !== 'number') return out;
+      var v = mine.v;
+      var at = -1;
+      for (var i = 0; i < list.length; i++) if (list[i].uid === u.uid) at = i;
+      if (at >= 0) {
+        out.me = { v: v, rank: at + 1, above: [], below: [] };
+        return out;
+      }
+      // 50위 밖 : 나보다 앞선 사람 수를 세고, 바로 위아래 두 명씩
+      var ahead = count(id, better(kind), v).catch(function () { return null; });
+      var above = boardRows(id, low ? 'DESCENDING' : 'ASCENDING', 2, [low ? 'LESS_THAN' : 'GREATER_THAN', v]).catch(function () { return []; });
+      var below = boardRows(id, low ? 'ASCENDING' : 'DESCENDING', 2, [low ? 'GREATER_THAN' : 'LESS_THAN', v]).catch(function () { return []; });
+      return Promise.all([ahead, above, below]).then(function (x) {
+        out.me = { v: v, rank: x[0] == null ? null : x[0] + 1, above: x[1].reverse(), below: x[2] };
+        return out;
       });
     }).then(function (data) {
       cache[id] = { t: Date.now(), data: data };
+      saveBoard(id, data);
       return data;
     });
   }
 
   function fetchHall() {
     if (hallCache && Date.now() - hallCache.t < CACHE_MS * 5) return Promise.resolve(hallCache.data);
-    return db().then(function () {
+    return Promise.resolve().then(function () {
       var months = [];
       for (var i = 1; i <= MONTHS_IN_HALL; i++) months.push(monthBefore(monthKey(), i));
       var tops = months.map(function (m) {
-        return rows(boardId('month', m)).orderBy('v', 'desc').limit(3).get().then(snapRows).then(function (list) {
+        return boardRows(boardId('month', m), 'DESCENDING', 3).then(function (list) {
           return { month: m, list: list };
         }).catch(function () { return { month: m, list: [] }; });
       });
-      var first = fb.db.collection('hall').doc(topGrade().id).collection('rows').orderBy('at', 'asc').limit(30).get().then(function (snap) {
-        var out = [];
-        snap.forEach(function (doc) {
-          var x = doc.data();
-          out.push({ uid: doc.id, nick: x.nick, at: x.at && x.at.toDate ? x.at.toDate() : null });
-        });
-        return out;
+      var first = restRows('hall/' + topGrade().id, 'at', 'ASCENDING', 30).then(function (list) {
+        return list.map(function (x) { return { uid: x.uid, nick: x.nick, at: x.at instanceof Date ? x.at : null }; });
       });
       return Promise.all([Promise.all(tops), first]);
     }).then(function (res) {
@@ -689,26 +735,37 @@
     roll(r);
     var key = kind === 'day' ? dayKey() : kind === 'week' ? r.wk : r.mk;
     var id = boardId(kind, key, scope === 'grade' ? Math.max(0, D().reach || 0) : null);
-    status('불러오는 중…');
-    meCard(kind, null);
-    // 먼저 내 기록을 올린 뒤에 받아 옵니다 (방금 끝낸 판이 바로 보이게)
-    // (올리기가 늦으면 FIRST_WAIT_MS 만 기다리고 그냥 받아 옴)
-    var first = user() && r.nick ? within(sync(), FIRST_WAIT_MS, null) : Promise.resolve();
-    first.then(function () {
-      return within(fetchBoard(kind, id), LOAD_WAIT_MS);
-    }).then(function (data) {
-      if (my !== drawn) return;
+    function draw(data) {
       meCard(kind, data);
       var list = $('rank-list');
       list.innerHTML = '';
       if (!data.list.length) return status(kind === 'day' ? '아직 오늘 계단을 오른 사람이 없어요. 첫 번째가 되어 보세요!' : '아직 아무도 없어요. 첫 번째가 되어 보세요!');
       var u = user();
       data.list.forEach(function (x, i) { list.appendChild(rowEl(kind, x, i + 1, u && x.uid === u.uid)); });
-    }).catch(function (e) {
-      if (my !== drawn) return;
+    }
+    // 지난번에 받아 둔 랭킹이 있으면 바로 보여 주고, 새로 받아 오면 바꿉니다
+    var old = cache[id] ? cache[id].data : savedBoard(id);
+    if (old) draw(old);
+    else {
+      status('불러오는 중…');
+      meCard(kind, null);
+    }
+    function load() {
+      return within(fetchBoard(kind, id), LOAD_WAIT_MS).then(function (data) {
+        if (my === drawn) draw(data);
+      });
+    }
+    load().catch(function (e) {
+      if (my !== drawn || old) return; // 보여 준 랭킹이 있으면 그대로 둠
       meCard(kind, null);
       retry(failText(e));
     });
+    // 내 기록 올리기는 따로 : 올리고 나서 내 줄이 바뀌었으면 (push 가 cache 를 지움) 조용히 다시 받아 옴
+    if (user() && r.nick) {
+      sync().then(function () {
+        if (my === drawn && !cache[id]) load().catch(function () {});
+      });
+    }
   }
 
   function renderHall(my) {
