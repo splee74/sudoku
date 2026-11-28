@@ -169,6 +169,17 @@
     $('modal').hidden = false;
     $('modal-ok').focus();
   }
+  /* 한 번 더 묻기 : 설정의 "한 번 더 묻기" 가 켜져 있으면 확인 창을, 꺼져 있으면 바로 합니다 */
+  function ask(text, okText, fn) {
+    if (!Settings.get('confirmAsk')) return fn();
+    showModal(text, okText, '아니요', fn);
+  }
+  /* 받침에 따라 '을' / '를' */
+  function eulReul(word) {
+    var c = word.charCodeAt(word.length - 1) - 0xac00;
+    return c >= 0 && c <= 11171 && c % 28 ? '을' : '를';
+  }
+
   function closeModal(ok) {
     $('modal').hidden = true;
     lastTick = Date.now();
@@ -392,7 +403,8 @@
       launch();
       showScreen('game');
     }
-    if (!cur || untouched(cur)) return go();
+    if (!cur) return go();
+    if (untouched(cur)) return ask('하던 판을 지우고\n새 게임을 시작할까요?', '새 게임', go);
     showModal('하던 판은 실패로 기록됩니다.\n새 게임을 시작할까요?', '새 게임', '아니요', function () {
       abandon(cur, go);
     });
@@ -1067,8 +1079,11 @@
   /* "새 게임" 버튼 : 숫자를 넣은 판을 버리면 실패로 기록됩니다 */
   function pressNew() {
     if (ending) return;
-    if (isDaily()) return leaveDaily(); // 오늘의 퍼즐 중에는 "승급전으로 돌아가기" 단추
-    if (!game || game.status !== 'playing' || untouched()) return launch();
+    if (isDaily()) return askLeaveDaily(); // 오늘의 퍼즐 중에는 "승급전으로 돌아가기" 단추
+    if (!game || game.status !== 'playing') return launch();
+    if (untouched()) return ask('지금 판을 지우고\n새 게임을 시작할까요?', '새 게임', function () {
+      if (!ending && game.status === 'playing') launch();
+    });
     showModal('하던 판은 실패로 기록됩니다.\n새 게임을 시작할까요?', '새 게임', '아니요', function () {
       stopTimer();
       var before = data.totalScore;
@@ -1114,7 +1129,7 @@
   /* "오늘의 퍼즐" 단추 : 승급전 ↔ 오늘의 퍼즐을 오갑니다 */
   function pressDaily() {
     if (ending) return;
-    if (isDaily()) return leaveDaily();
+    if (isDaily()) return askLeaveDaily();
     openStairs();
   }
 
@@ -1422,6 +1437,14 @@
     persist(); // 하던 승급전 판은 그대로 두었다가, 돌아오면 이어서 합니다
     startDaily(today);
     showScreen('game');
+  }
+
+  /* "승급전으로 돌아가기" 단추 : 하던 오늘의 퍼즐은 저장되니 가볍게 한 번만 묻습니다 */
+  function askLeaveDaily() {
+    if (game.status !== 'playing') return leaveDaily();
+    ask('승급전으로 돌아갈까요?\n오늘의 퍼즐은 저장돼서\n나중에 이어서 할 수 있어요.', '돌아가기', function () {
+      if (!ending && isDaily()) leaveDaily();
+    });
   }
 
   /* 오늘의 퍼즐에서 승급전으로 돌아갑니다 */
@@ -1931,10 +1954,12 @@
   }
 
   /* 힌트 : 3번을 다 쓰면 힌트권(아이템)을 씁니다 */
-  function pressHint() {
+  function pressHint(asked) {
     if (!playing()) return;
     var ticket = game.hintsLeft <= 0;
     if (ticket && Progress.itemCount(data, 'hint') <= 0) return;
+    // 기본 힌트를 다 쓰면 힌트권(아이템)을 쓰니 한 번 묻습니다 (가방에서 '쓰기'로 이미 물었으면 그냥)
+    if (ticket && asked !== true) return askItem('hint', function () { pressHint(true); });
     var target = Game.hint(game, sel, Settings.get('autoNotes'), ticket);
     if (target < 0) return;
     if (ticket) {
@@ -2531,7 +2556,7 @@
       cnt.textContent = '× ' + n; // 줄이 바뀌어도 × 와 숫자가 떨어지지 않게
       name.appendChild(cnt);
       var desc = document.createElement('span');
-      desc.textContent = it.id === 'time' ? '걸린 시간을 ' + C.TIME_ITEM_SEC + '초 줄여요' : it.desc;
+      desc.textContent = itemDesc(it);
       text.appendChild(name);
       text.appendChild(desc);
       row.appendChild(icon);
@@ -2644,11 +2669,26 @@
     });
   }
 
+  /* 아이템을 쓰기 전에 한 번 묻습니다 */
+  function askItem(id, fn) {
+    var it = itemInfo(id);
+    ask(it.icon + ' ' + it.name + eulReul(it.name) + ' 쓸까요?\n' + itemDesc(it) + '\n(남은 ' + Progress.itemCount(data, id) + '장)', '쓰기', function () {
+      if (game && game.status === 'playing' && !ending && Progress.itemCount(data, id) > 0) fn();
+    });
+  }
+  function itemDesc(it) {
+    return it.id === 'time' ? '걸린 시간을 ' + C.TIME_ITEM_SEC + '초 줄여요' : it.desc;
+  }
+
   function useItemPress(id) {
     if (!game || game.status !== 'playing' || ending || itemBlock(id) || Progress.itemCount(data, id) <= 0) return;
     closeSheets();
+    askItem(id, function () { useItemNow(id); });
+  }
+  function useItemNow(id) {
+    if (itemBlock(id)) return;
     if (paused) setPaused(false);
-    if (id === 'hint') return pressHint();
+    if (id === 'hint') return pressHint(true);
     var ok = false;
     if (id === 'time') {
       var cut = Game.cutTime(game, C.TIME_ITEM_SEC * 1000);

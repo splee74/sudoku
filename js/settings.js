@@ -33,6 +33,7 @@
 
     { key: 'showScore', group: '편의 기능', title: '점수 표시', desc: '게임 중에 점수와, 맞힐 때 올라가는 점수를 보여 줍니다', on: true },
     { key: 'showTimer', group: '편의 기능', title: '시간 표시', desc: '게임 중에 걸린 시간을 보여 줍니다', on: true },
+    { key: 'confirmAsk', group: '편의 기능', title: '한 번 더 묻기', desc: '새 게임 · 승급전으로 돌아가기 · 아이템 쓰기 전에 "정말 할까요?" 창을 띄웁니다 (하던 판이 실패로 기록될 때는 꺼도 늘 물어봐요)', on: true },
     { key: 'autoNotes', group: '편의 기능', title: '메모 자동 정리', desc: '숫자를 넣으면 같은 줄·상자의 메모에서 그 숫자를 지웁니다', on: true },
 
     { key: 'remind', group: '알림', title: '매일 알림', desc: '하루 한 번 "오늘의 스도쿠가 기다려요" 알림을 보내 줍니다 (휴대폰에 설치한 앱에서 돼요, 그날 이미 했으면 안 보냄)', on: false }

@@ -409,16 +409,15 @@ body[data-screen="game"]::after {
   font-size: 19px; font-weight: 800; color: var(--ink-soft);
 }
 .mode-tab[aria-selected="true"] { color: var(--ink); box-shadow: inset 0 -3px 0 var(--ink); }
+/* 하수 ~ 신 10개를 5개씩 두 줄로 (옆으로 밀지 않아도 한 화면에 다 보임) */
 .grade-chips {
-  display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 6px;
-  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding: 2px 0 6px;
 }
-.grade-chips::-webkit-scrollbar { display: none; }
 .grade-chips[hidden] { display: none; }
 .gchip {
-  flex: none; white-space: nowrap;
+  min-width: 0; white-space: nowrap; text-align: center;
   background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
-  padding: 6px 16px; font-size: 17px; font-weight: 700;
+  padding: 6px 2px; font-size: 17px; font-weight: 700;
 }
 .gchip.on { background: var(--c); border-color: var(--c); color: #fff; }
 .rec-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
